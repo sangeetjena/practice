@@ -1,0 +1,2 @@
+def prnting():
+    print("hllo")
