@@ -1,0 +1,60 @@
+from typing import List
+
+"""
+https://leetcode.com/problems/largest-color-value-in-a-directed-graph/
+There is a directed graph of n colored nodes and m edges. The nodes are numbered from 0 to n - 1.
+
+You are given a string colors where colors[i] is a lowercase English letter representing the color of the ith node in this graph (0-indexed). You are also given a 2D array edges where edges[j] = [aj, bj] indicates that there is a directed edge from node aj to node bj.
+
+A valid path in the graph is a sequence of nodes x1 -> x2 -> x3 -> ... -> xk such that there is a directed edge from xi to xi+1 for every 1 <= i < k. The color value of the path is the number of nodes that are colored the most frequently occurring color along that path.
+
+Return the largest color value of any valid path in the given graph, or -1 if the graph contains a cycle.
+
+ 
+
+Example 1:
+
+
+
+Input: colors = "abaca", edges = [[0,1],[0,2],[2,3],[3,4]]
+Output: 3
+Explanation: The path 0 -> 2 -> 3 -> 4 contains 3 nodes that are colored "a" (red in the above image).
+"""
+class Solution:
+    def convertDict(self, edges:List[List[int]]):
+        edgeDict ={}
+        for i in range(0,len(edges)):
+            if edges[i][0] in edgeDict:
+                edgeDict[edges[i][0]].append(edges[i][1])
+            else:
+                edgeDict[edges[i][0]] = [edges[i][1]]
+        print(edgeDict)
+        return edgeDict
+
+
+    def largestPathValue(self, colors: str, edges: List[List[int]]) -> int:
+        edgesDict = self.convertDict(edges)
+        stack = [0]
+        validpath = []
+        visited = []
+        while len(stack)!=0:
+            element = stack[-1]
+            del stack[-1]
+            validpath.append(element)
+            if element not in edgesDict:
+                continue
+            for i in edgesDict[element]:
+                if i in visited:
+                    continue
+                stack.append(i)
+                visited.append(i)
+        print(validpath)
+        if len(validpath)<2:
+            return -1
+        colorcode = [colors[i] for i in validpath]
+        print(colorcode)
+
+colors = "abaca"
+edges = [[0,1],[0,2],[2,3],[3,4]]
+colobj = Solution()
+colobj.largestPathValue(colors, edges)
