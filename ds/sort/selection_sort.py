@@ -1,3 +1,6 @@
+# time complexity : O(n^2)
+# space complexity : inplace
+
 def selection_sort(arr):
     print(arr)
     complexity = 0
@@ -9,4 +12,4 @@ def selection_sort(arr):
     print(arr)
     print("complexity  = {0}".format(complexity))
 
-selection_sort([3,6,2,7,9,1])
+selection_sort([3,6,2,3,7,9,1])

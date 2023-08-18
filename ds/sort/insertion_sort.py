@@ -1,3 +1,7 @@
+# time complexity : O(n^2)
+# space complexity : O(n)
+# logic: swap data between j, j+!
+
 def insertion_sort(arr):
     print(arr)
     complexity = 0
