@@ -1,83 +1,40 @@
+"""
+The diameter/width of a tree is defined as the number of nodes on the longest path between two end nodes.
+
+The diagram below shows two trees each with a diameter of nine, the leaves that form the ends of the longest path are shaded (note that there is more than one path in each tree of length nine, but no path longer than nine nodes).
+
+                10
+               /  \
+              5    20
+             /\    /\
+            1  6  15 30
+                \
+                 7
+The longest diameter : 7-6-5-10-20-30
+"""
 class tree():
-    def __init__(self, val):
+    def __init__(self, val, left, right):
         self.value = val
-        self.left = None
-        self.right = None
+        self.left = left
+        self.right = right
 
-class diameterOfTree():
-    def __init__(self):
-        self.leftmaxdepth=0
-        self.rightmaxdepth=0
-        self.stack=[]
-        self.lstack=[]
-        self.rstack=[]
+def find_max_diameter_of_tree(node, maxlen):
+    if node == None:
+        return 0
+    l = find_max_diameter_of_tree(node.left, maxlen)
+    r = find_max_diameter_of_tree(node.right, maxlen)
+    maxlen[-1] = max(maxlen[-1], 1 + l + r)
+    return 1 + max(l, r)
 
-    def maxdiameter(self, root):
-        self.stack.append(root)
-        maxlen = 0
-        maxlenL = 0
-        maxlenR = 0
-        templen = 0
-        node = root
-        while len(self.stack)>0:
-            print(node.value)
-            if node.left != None and node not in self.lstack:
-                self.lstack.append(node)
-                self.stack.append(node)
-                node = node.left
-                templen+=1
-                continue
-            elif node.right != None and node not in self.rstack:
-                self.rstack.append(node)
-                self.stack.append(node)
-                node = node.right
-                templen+=1
-                continue
-            else:
-                node = self.stack[-1]
-                del self.stack[-1]
-                if maxlen < templen:
-                    maxlen = templen
-                print(templen)
-                templen -= 1
-                if node == root and node not in self.rstack:
-                    maxlenL=maxlen
-                    maxlen = 0
-                    continue
-                elif node == root and node in self.rstack:
-                    maxlenR = maxlen
+h7 = tree(7, None, None)
+h6 = tree(6, None, h7)
+h1 = tree(1, None, None)
+h5 = tree(5, h1, h6)
+h15 = tree(15, None, None)
+h30 = tree(30, None, None)
+h20 = tree(20, h15, h30)
+h10 = tree(10, h5, h20)
 
-        return (maxlenL,maxlenR)
-
-
-root = tree('a')
-obj = tree('b')
-obj1 = tree('c')
-obj2 = tree('d')
-obj3 = tree('e')
-obj4 = tree('f')
-obj5 = tree('g')
-obj6 = tree('k')
-obj7 = tree('l')
-obj8 = tree('j')
-obj9 = tree('h')
-obj10 = tree('i')
-
-
-root.left = obj
-root.left.left = obj1
-root.left.right = obj2
-root.right = obj3
-root.left.left.left=obj4
-root.left.left.right=obj5
-root.left.left.left.left=obj6
-root.left.left.left.right=obj7
-root.left.right.left=obj9
-root.left.right.right=obj10
-root.left.right.right.right=obj8
-
-
-x = diameterOfTree()
-ml, mr = x.maxdiameter(root.left)
-
-print(ml,mr)
+maxlen = [0]
+find_max_diameter_of_tree(h10,maxlen)
+print(maxlen)

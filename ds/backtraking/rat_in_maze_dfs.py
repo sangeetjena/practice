@@ -1,3 +1,6 @@
+"""
+check if mouse can exit the mesh or not
+"""
 def RatInMazeDfs(arr, di, dj):
     stck = [(0, 0)]
     p = [0, 1, -1]
