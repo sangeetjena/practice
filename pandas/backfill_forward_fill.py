@@ -30,7 +30,11 @@ campaign_id | change_date | old_value | new_value
         1001 | 2020-08-03 |        10 |        30
         1001 | 2020-08-04 |        30 |        50
 Main question
-With the above information, can you build a DAILY time series showing the budget for each campaign during the whole cycle of the campaign? The data will show the budget by the end of each day for each campaign, which means it should take the new_value of the day if there is a record in the change history table. In addition, for days that are not in the change history table, it should be forward filled by the new_value and backfilled by the old_value. The expected result is as below.
+With the above information, can you build a DAILY time series showing the budget for each campaign during the
+whole cycle of the campaign? The data will show the budget by the end of each day for each campaign,
+which means it should take the new_value of the day if there is a record in the change history table.
+In addition, for days that are not in the change history table, it should be forward filled by the new_value
+and backfilled by the old_value. The expected result is as below.
 
 campaign_id | event_date | budget
 -------------+------------+--------

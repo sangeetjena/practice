@@ -23,19 +23,19 @@ class tree:
         self.left = left
         self.right = right
 
-def lowest_cmmon_ansestor(node, l, r, lca):
+def lowest_cmmon_ansestor(node, l , r):
     if node == None:
         return False
     if node.value == l or node.value == r:
-        return True
-    left = lowest_cmmon_ansestor(node.left, l, r, lca)
-    right = lowest_cmmon_ansestor(node.right, l, r, lca)
-    if len(lca) == 0 and left and right:
-        lca.append(node.value)
-        return lca[-1]
-    elif len(lca) >0:
-        return lca[-1]
-    return left or right
+        return node
+    left = lowest_cmmon_ansestor(node.left, l , r)
+    right = lowest_cmmon_ansestor(node.right, l , r)
+    # if left is null then right has value else Null, if it has value then that will be the node else it will return  null -> not got value
+    if left == False: return right
+    if right == False: return left
+    # if found both the side then update node to current node.
+    return node
+
 
  # create tree and pass it to the above function to calculate lca
 h7 = tree(7, None, None)
@@ -47,5 +47,5 @@ h30 = tree(30, None, None)
 h20 = tree(20, h15, h30)
 h10 = tree(10, h5, h20)
 
-print(lowest_cmmon_ansestor(h10, 7,30, []))
+print(lowest_cmmon_ansestor(h10, 6,7).value)
 
