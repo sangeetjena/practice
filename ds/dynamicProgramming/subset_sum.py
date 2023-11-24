@@ -15,8 +15,8 @@ def count_sub_set_sum(arr,sum, i):
         return 0
     return (count_sub_set_sum(arr,sum, i-1) + count_sub_set_sum(arr,sum-arr[i], i-1))
 
-arr = [1,5,6,3,4]
-print(count_sub_set_sum(arr, 9,len(arr)-1))
+arr = [1,2,3,5,6,7]
+print(count_sub_set_sum(arr, 10,len(arr)-1))
 
 arr = [1,2,1]
 print(count_sub_set_sum(arr, 2,len(arr)-1))

@@ -1,5 +1,7 @@
 """
 there will be n overlapping interval, our job is to remove all overlapping interval with minimum removal.
+soln:
+sort intervals in the ascending order and then compare overlaping interval and remove the one which is bigger.
 """
 
 def remove_overlap(arr):
@@ -12,6 +14,9 @@ def remove_overlap(arr):
     cnt = 0
     while p1< len(arr) and p2 < len(arr):
         if arr[p2][0] < arr[p1][1]:
+            # remove the one which has higher end value.
+            if (arr[p2][1]) < (arr[p1][1]):
+                p1 = p2
             cnt +=1
             p2+=1
         else:

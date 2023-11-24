@@ -23,6 +23,9 @@ def sub_arr_sum_k(arr, k):
         if sum == k:
             cnt += 1
         if sum - k in dict:
+            # why cnt +, because if previous sum can be formulated in multiple way
+            # ex [5,-5,5] here 2way we can find array whose sum =5 i.e [5], [5,-5,5]
+            # that is the reason count is not just cnt + 1 we have to calculate all combination of previous sum + current count.
             cnt += dict[sum - k]
         dict[sum] += 1
     return cnt
@@ -30,3 +33,6 @@ def sub_arr_sum_k(arr, k):
 
 arr = [10, 2, -2, -20, 10]
 print(sub_arr_sum_k(arr, -10))
+
+arr = [5,5,5,-5,5,-5]
+print(sub_arr_sum_k(arr,5))

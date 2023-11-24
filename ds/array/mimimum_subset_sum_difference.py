@@ -1,5 +1,5 @@
 """
-find number of subset possible in an array whose difference is minimum.
+find subsets which has minimum difference.
 """
 def min_sub_set_diff(arr):
     sum1 = 0
@@ -13,4 +13,7 @@ def min_sub_set_diff(arr):
     return  abs(sum1 - sum2)
 
 arr = [1,5,6,2,4,3]
+print(min_sub_set_diff(arr))
+
+arr = [1,2,4,3,6,9,13]
 print(min_sub_set_diff(arr))

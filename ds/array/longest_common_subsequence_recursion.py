@@ -24,6 +24,7 @@ Input: text1 = "abc", text2 = "def"
 Output: 0
 Explanation: There is no such common subsequence, so the result is 0.
 
+Link: https://www.youtube.com/watch?v=0yvOxPwe3Dg&t=342s
 """
 
 def lcs(arr1, arr2):

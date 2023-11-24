@@ -75,6 +75,7 @@ pg_vw = pd.DataFrame({"datetime": ["2022-01-15 08:00:00",
                                  "home",
                                  "jobs" ]})
 pg_vw["datetime"] = pg_vw.apply(lambda x:pd.to_datetime(x["datetime"]), axis=1 )
+pg_vw["datetime"] = pg_vw["datetime"].apply(lambda x:pd.to_datetime(x))
 pg_vw["nextdatetime"] = pg_vw.sort_values(by=["memberId","datetime"], ascending=True).groupby("memberId")["datetime"].shift(1)
 pg_vw.fillna(value="2000-01-01 00:00:00", inplace=True)
 pg_vw["diff_date"] = (pg_vw["datetime"] - pg_vw["nextdatetime"]).dt.total_seconds()

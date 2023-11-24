@@ -14,6 +14,8 @@ The solution should return true if it is possible and false otherwise.
 Example
 trips = [[1, 1, 3], [2, 2, 6], [3, 5, 9]]
 
+[passenger, in, out]
+
 capacity = 5
 
 Output = true
