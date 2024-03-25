@@ -13,6 +13,10 @@ approach: reverse tracking.
 def min_step_to_jump(arr, dest):
     dp = [0 for i in range(len(arr))]
     for i in reversed(range(0, len(arr)-1)):
+        # handle case if move is 0 at any point
+        if arr[i] == 0:
+            dp[i] = 9999
+            continue
         dp[i] = 1 + min(dp[i+1: i+1+arr[i]])
     print(dp)
     return dp[0]
