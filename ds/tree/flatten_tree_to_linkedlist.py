@@ -16,6 +16,7 @@ def flatten_tree(node):
         return
     # traversing left and right then changing link sothat we need not to memorize right or left node.
     # Note: for in order (l,r) , pre order traversal (right) we need to store before changing the link
+    # in order to convert a tree to a linkedlist cut all right node and put it into left side.
     flatten_tree(node.left)
     flatten_tree(node.right)
     if prev != None:
