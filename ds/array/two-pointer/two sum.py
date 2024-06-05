@@ -1,5 +1,6 @@
 """
 https://leetcode.com/problems/two-sum/description/
+using hash table
 """
 
 class Solution:
