@@ -1,5 +1,36 @@
 """
 scan a tree horizontally
+https://leetcode.com/problems/binary-tree-level-order-traversal/
+"""
+
+
+# Definition for a binary tree node.
+# class TreeNode:
+#     def __init__(self, val=0, left=None, right=None):
+#         self.val = val
+#         self.left = left
+#         self.right = right
+class Solution:
+    def levelOrder(self, root: Optional[TreeNode]) -> List[List[int]]:
+        if root == None:
+            return []
+        parentlist = [root]
+        templist = []
+        totallist = [[root.val]]
+        while len(parentlist)>0:
+            for root in parentlist:
+                if root.left != None:
+                    templist.append(root.left)
+                if root.right != None:
+                    templist.append(root.right)
+            if len(templist) > 0:
+                totallist.append([node.val for node in templist])
+            parentlist = templist
+            templist = []
+        return totallist
+
+        
+
 """
 class tree():
     def __init__(self, val, left, right):
@@ -30,3 +61,4 @@ h10 = tree(10, h5, h20)
 
 scan_horizontally(h10, 0)
 print(horizontal)
+"""
