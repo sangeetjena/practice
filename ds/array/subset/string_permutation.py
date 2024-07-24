@@ -2,6 +2,27 @@
 https://leetcode.com/problems/letter-case-permutation/
 # back tracking
 """
+
+
+class Solution(object):
+    def letterCasePermutation(self, S):
+        """
+        :type S: str
+        :rtype: List[str]
+        """
+        def backtrack(sub="", i=0):
+            if len(sub) == len(S):
+                res.append(sub)
+            else:
+                if S[i].isalpha():
+                    backtrack(sub + S[i].swapcase(), i + 1)
+                backtrack(sub + S[i], i + 1)
+                
+        res = []
+        backtrack()
+        return res
+        
+"""
 class Solution:
     def letterCasePermutation(self, s: str) -> List[str]:
         # back tracking, similar to subset 1 and 2 problem.
@@ -28,4 +49,4 @@ class Solution:
         letterCase(lst, ind)
         print(finallist)
         return finallist
-        
+"""     
