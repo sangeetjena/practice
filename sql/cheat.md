@@ -36,3 +36,22 @@ with recurrsive cte as (
   )
 select * form cte
 ```
+
+##### Ex: print employee in level (1,4,5)
+```
+with recurrsive cte as (
+  select empid, "" as managername, empname, 1 as level
+  from emp
+  where managerid is null
+
+  union all
+
+  select c.empid, c.empname as managername, e.empname, level+1 as level
+  from
+    cte c
+  join emp e
+  on (e.managerid = c.empid)
+)
+select * from cte where level in (1,4,5)
+
+```
