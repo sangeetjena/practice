@@ -16,14 +16,18 @@ date_sub(dt, interval rnk day)
 
 Recurrsive query:
 ===========================
+
+```
 wtih [RECURRSIVE] cte as (
   select [ base query]
-  union all
+    union all
   recurrsive query from cte [with condition to break the loop]
 )
 select from cte
+```
 
-ex: print numbers from 1 to 10:
+##### ex: print numbers from 1 to 10:
+```
 with recurrsive cte as (
   select 1 as num
     union all
@@ -31,3 +35,4 @@ with recurrsive cte as (
     from cte where num <10
   )
 select * form cte
+```
