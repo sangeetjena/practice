@@ -56,7 +56,8 @@ select * from cte where level in (1,4,5)
 
 ```
 
-##### pivot & unpivot
+pivot & unpivot
+=========================
 ```
 SELECT (ColumnNames) 
 FROM (TableName) 
