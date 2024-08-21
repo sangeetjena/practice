@@ -55,3 +55,14 @@ with recursive cte as (
 select * from cte where level in (1,4,5)
 
 ```
+
+##### pivot & unpivot
+```
+SELECT (ColumnNames) 
+FROM (TableName) 
+PIVOT
+ ( 
+   AggregateFunction(ColumnToBeAggregated)
+   FOR PivotColumn IN (PivotColumnValues)
+ ) AS (Alias) //Alias is a temporary name for a table
+```
