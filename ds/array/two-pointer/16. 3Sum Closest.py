@@ -1,6 +1,6 @@
 """
 https://leetcode.com/problems/3sum-closest/description/
-
+similar to trangle problem
 """
 
 class Solution:
