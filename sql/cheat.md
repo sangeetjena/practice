@@ -1,9 +1,29 @@
 
 analytical functions:
 ============================
-```SUM(salary) OVER (PARTITION BY id ORDER BY month RANGE BETWEEN 2 PRECEDING AND CURRENT ROW) AS Salary
+```
+  ROWS BETWEEN lower_bound AND upper_bound
+
+  UNBOUNDED PRECEDING – All rows before the current row.
+  n PRECEDING – n rows before the current row.
+  CURRENT ROW – Just the current row.
+  n FOLLOWING – n rows after the current row.
+  UNBOUNDED FOLLOWING – All rows after the current row.
+```
+```
+
+  SUM(salary) OVER (PARTITION BY id ORDER BY month RANGE BETWEEN 2 PRECEDING AND CURRENT ROW) AS Salary
+
   sum(weight)over(order by turn asc rows between unbounded preceding and current row )
+
   rank()over(order by total_weight desc)
+
+  LEAST(from_id,to_id)
+
+  GREATEST(from_id,to_id)
+
+  LAG(expression [,offset[,default_value]]) OVER(ORDER BY columns)
+  LAG(count,1,0) OVER(ORDER BY month) AS previous_count,
 ```
 
 
