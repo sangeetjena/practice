@@ -1,6 +1,6 @@
 """
 https://leetcode.com/problems/fruit-into-baskets/description/
-
+NOte: as we have two basket in this problem so we can have max two type of tree in the max window. so this problem is find max window with at most two kind of tree.
 """
 class Solution:
     def totalFruit(self, fruits: List[int]) -> int:
