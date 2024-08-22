@@ -1,6 +1,8 @@
 """
 https://leetcode.com/problems/longest-repeating-character-replacement/description/
 https://www.youtube.com/watch?v=gqXU1UyA8pk&t=288s
+Note: i will use a window and keep count of frequency of number , then leaving the highest frequency number if sum of rest of the frequency < k then it is a vaid window .,
+take max of prev window with current window. else increase the starting of window and recude the frequency.
 """
 
 class Solution:
