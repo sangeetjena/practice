@@ -14,6 +14,8 @@ class Solution(object):
             if len(sub) == len(S):
                 res.append(sub)
             else:
+                # if it is alphabet swap once and then take wtihout swap value
+                # for numeric only take without swap case 
                 if S[i].isalpha():
                     backtrack(sub + S[i].swapcase(), i + 1)
                 backtrack(sub + S[i], i + 1)
