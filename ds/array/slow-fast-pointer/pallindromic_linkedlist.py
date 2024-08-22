@@ -1,6 +1,7 @@
 """
 https://leetcode.com/problems/palindrome-linked-list/
 https://www.youtube.com/watch?v=yOzXms1J6Nk
+# reach to the half of the linked list  and second half linked list reverse it then check two linkedin list if same or not.
 """
 
 # Definition for singly-linked list.
