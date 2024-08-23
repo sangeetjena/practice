@@ -58,6 +58,8 @@ Date format: https://www.geeksforgeeks.org/sql-date-functions/
 ===========================
 ``` 
   DATE_FORMAT(created_at, '%Y-%m') = '2020-02'
+  TO_DATE( '10 Aug 2018', 'DD MON YYYY' )
+  CAST('2018' AS DATE)
   date_sub(dt, interval 1 day)
   DATE_ADD(BirthTime, INTERVAL 1 YEAR)
   DATEDIFF(interval,date1, date2);           #interval – minute/hour/month/year,etc
