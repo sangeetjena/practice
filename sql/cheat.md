@@ -26,12 +26,47 @@ analytical functions:
   LAG(count,1,0) OVER(ORDER BY month) AS previous_count,
 ```
 
-
-
-Date format:
+String format:
 ===========================
-```DATE_FORMAT(created_at, '%Y-%m') = '2020-02'
-   date_sub(dt, interval rnk day)
+```
+ascii('t')
+char_length('Hello!')
+CONCAT_WS('_', 'geeks', 'for', 'geeks')
+FIND_IN_SET('b', 'a, b, c, d, e, f')
+Format("0.981", "Percent")
+INSTR('geeks for geeks', 'e')
+INSTR('geeks for geeks', 'e', 1, 2 )
+SUBSTR('geeksforgeeks', 1, 5)
+POSITION('e' IN 'geeksforgeeks')
+LOCATE('for', 'geeksforgeeks', 1)
+LPAD('geeks', 8, '0')
+LTRIM('123123geeks', '123')
+TRIM(LEADING '0' FROM '000123')
+LOWER('GEEKSFORGEEKS.ORG')
+REPLACE('123geeks123', '123')
+SPACE(7)
+
+SUBSTRING_INDEX(): This function is used to find a sub string before the given symbol.
+SUBSTRING_INDEX('www.geeksforgeeks.org', '.', 1)
+
+
+
+```
+
+
+Date format: https://www.geeksforgeeks.org/sql-date-functions/
+===========================
+``` 
+  DATE_FORMAT(created_at, '%Y-%m') = '2020-02'
+  date_sub(dt, interval 1 day)
+  DATE_ADD(BirthTime, INTERVAL 1 YEAR)
+  DATEDIFF(interval,date1, date2);           #interval – minute/hour/month/year,etc
+                                            #date1 & date2- date/time expression
+
+  Extract(DAY FROM BirthTime)
+  Extract(YEAR FROM BirthTime)
+  Extract(SECOND FROM 
+BirthTime)
 ```
 
 Recursive query:
