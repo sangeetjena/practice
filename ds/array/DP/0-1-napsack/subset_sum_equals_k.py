@@ -1,5 +1,5 @@
 """
-
+target sum = k
 
 """
 def sub_set_sum_equals_to_k(arr, k):
