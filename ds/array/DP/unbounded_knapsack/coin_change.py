@@ -6,12 +6,14 @@ also need to take coins first and then amount.
 
 """
 class Solution:
-    def change(self, amount: int, coins: List[int]) -> int:
-        dp = [0 for _ in range(amount+1)]
-        dp[0] = 1
-        for coin in coins:
-            for j in range(coin, amount+1):
-                dp[j] += dp[j-coin]
-        return dp[-1]
-        
+    def coinChange(self, coins: List[int], amount: int) -> int:
+        dp = [float('inf') for i in range(amount+1)]
+        dp[0] = 0
+        for i in range(1,amount+1):
+            for j in coins:
+                if j<= i:
+                    # if not taking the value then take value at same position 
+                    # if taken then 1+ value of remaining waight.
+                    dp[i] = min(dp[i], 1 + dp[i-j] )
+        return -1 if dp[-1]==float('inf') else dp[-1]
         
