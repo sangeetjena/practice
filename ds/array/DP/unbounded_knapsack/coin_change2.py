@@ -1,6 +1,8 @@
 """
 https://leetcode.com/problems/coin-change-ii/description/
 
+Note: similar to coin 1 problem, but need to find no of all possible combination
+also need to take coins first and then amount.
 """
 
 class Solution:
