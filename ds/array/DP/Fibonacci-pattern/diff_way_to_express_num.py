@@ -1,5 +1,7 @@
 """
+https://www.geeksforgeeks.org/count-ofdifferent-ways-express-n-sum-1-3-4/
 
+Note: similar to climbing stair
 
 """
 def countWays(n): 
