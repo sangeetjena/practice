@@ -1,10 +1,11 @@
 """
 https://leetcode.com/problems/longest-palindromic-substring/
-https://www.youtube.com/watch?v=XYQecbcd6_c
+2pointer: https://www.youtube.com/watch?v=XYQecbcd6_c
+dp: https://www.youtube.com/watch?v=UflHuQj6MVA
 """
 Approach1:
 =============
-
+dp implementation: https://www.youtube.com/watch?v=UflHuQj6MVA
 
 
 
