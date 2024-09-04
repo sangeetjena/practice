@@ -22,7 +22,7 @@ class Solution:
         for i in range(len(s)):
             l=r=i
             templen=0
-            # for odd length
+            # for odd length pallindrom
             while l>=0 and r<len(s) and s[l]==s[r]:
                 templen = r-l
                 if templen > maxlen:
@@ -32,7 +32,7 @@ class Solution:
                 r+=1
             l,r = i, i+1
             templen=0
-            # for even length substring.
+            # for even length pallindrom.
             while l>=0 and r<len(s) and s[l] == s[r]:
                 templen = r-l
                 if templen > maxlen:
