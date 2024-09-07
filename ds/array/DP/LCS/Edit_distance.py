@@ -1,6 +1,8 @@
 """
 https://leetcode.com/problems/edit-distance/description/
 
+https://www.youtube.com/watch?v=XYi2-LPrwm4
+
 Note: similar to the LCS
 only difference is if match then don't need to increase just check if precious elemnts had anything to relace, delete . i.e dp[i-1][j-1]
 and if not match then check digonal, up, and down to check if any replace , delete or insert. 1 + min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1])
