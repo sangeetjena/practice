@@ -10,7 +10,9 @@ class Solution:
         if m + n != len(s3):
             return False
         dp = [[False] * (n + 1) for _ in range(m + 1)]
+        # base case :if not element selected then set that index to true.
         dp[0][0] = True
+        # base case: its previous index value should be true and the current char should match with s3 same index
         for i in range(1, m + 1):
             dp[i][0] = dp[i - 1][0] and s1[i - 1] == s3[i - 1]
         for j in range(1, n + 1):
