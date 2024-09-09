@@ -20,8 +20,8 @@ class Solution:
                 if word2[i-1] == word1[j-1]:
                     dp[i][j] = dp[i-1][j-1]
                 else:
-                    # if not match then option 1: delete from word1 or 2
-                    # or replace charector between word1 and word2
+                    # if not match then option 1: delete or insert in word1 or word2 i.e (dp[i-1][j] or dp[i][j-1])
+                    # or replace charector between word1 and word2, if relaced i.e 1 operation and then bothe the word became same so check what was max operation to the previous index i.e [i-1][j-1]
                     dp[i][j] = 1 + min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1])
         lcs = dp[-1][-1]
         print(dp)
