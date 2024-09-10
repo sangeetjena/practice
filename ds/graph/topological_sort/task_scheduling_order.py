@@ -1,6 +1,11 @@
 """
 https://leetcode.com/problems/course-schedule/description/
 
+Note:
+step 1: add parent node to cycle list
+step 2: check if parent node is a edge node or in visited list then delete from dfs and remove form cycle.
+step 3: find all child node and check if child node is in cycle list, if found detect cycle and return.
+step 4: after adding all child node mark parent node as visited.
 
 """
 
