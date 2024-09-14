@@ -1,4 +1,8 @@
 ```
+https://leetcode.com/discuss/study-guide/1337373/Tree-question-pattern-oror2021-placement
+```
+
+```
 Ancestor problem :-
 
 1.https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-search-tree/
