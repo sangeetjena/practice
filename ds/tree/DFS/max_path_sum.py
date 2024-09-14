@@ -2,6 +2,7 @@
 https://leetcode.com/problems/binary-tree-maximum-path-sum/
 
 Note: same as max diameter, only diff is return max sum to parent only positive no else return 0
+also max path possible along diameter, so find max sum along diameter of the tree.
 """
 # Definition for a binary tree node.
 # class TreeNode:
