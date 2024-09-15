@@ -1,7 +1,12 @@
 ```
 https://leetcode.com/discuss/study-guide/3900838/%22Mastering-Graph-Algorithms%3A-A-Comprehensive-DSA-Graph-Common-Question-Patterns-CheatSheet%22
 ```
-
+```
+https://medium.com/@ninads79shukla/patterns-and-templates-for-common-data-structures-and-algorithm-questions-part-2-graphs-4398c6d0503c
+```
+```
+https://hackernoon.com/5-graph-patterns-to-ace-coding-interviews
+```
 
 shortest path:
     dijkstras algorithm : this algo works both in directed and undirected graph. it will sum weight when it move to
