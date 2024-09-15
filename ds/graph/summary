@@ -1,3 +1,8 @@
+```
+https://leetcode.com/discuss/study-guide/3900838/%22Mastering-Graph-Algorithms%3A-A-Comprehensive-DSA-Graph-Common-Question-Patterns-CheatSheet%22
+```
+
+
 shortest path:
     dijkstras algorithm : this algo works both in directed and undirected graph. it will sum weight when it move to
     next vertex. so it will not work for negative edge.
