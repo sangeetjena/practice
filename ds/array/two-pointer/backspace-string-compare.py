@@ -9,6 +9,9 @@ class Solution:
     def backspaceCompare(self, s: str, t: str) -> bool:
         def nexIndex(index, st):
             backspace = 0
+            # if have backspace then count no of backspace and decrement index
+            # if find an char decrement backspace and decrement index
+            # else retrun index.
             while index>=0:
                 if backspace == 0 and st[index]!='#':
                     return index
@@ -21,6 +24,8 @@ class Solution:
         i = len(s)
         j = len(t)
         while i>=0 and j>=0:
+            # get index from above helper methode and check if the value is matching 
+            # if any of index value reach 0 then retrun false.
             i = nexIndex(i-1, s)
             j = nexIndex(j-1,t)
             print(i,j)
