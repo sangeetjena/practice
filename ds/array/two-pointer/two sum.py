@@ -1,6 +1,6 @@
 """
 https://leetcode.com/problems/two-sum/description/
-using hash table
+Note: using hash table, similar to prefix sum
 """
 
 class Solution:
