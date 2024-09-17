@@ -1,6 +1,8 @@
 """
 https://leetcode.com/problems/4sum/description/
 https://www.youtube.com/watch?v=EYeR-_1NRlQ
+
+Note: similar to 3sum or trangle add another outer loop.
 """
 
 class Solution:
