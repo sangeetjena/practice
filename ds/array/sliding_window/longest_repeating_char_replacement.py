@@ -1,6 +1,19 @@
 """
 https://leetcode.com/problems/longest-repeating-character-replacement/description/
 https://www.youtube.com/watch?v=gqXU1UyA8pk&t=288s
+
+You are given a string s and an integer k. You can choose any character of the string and change it to any other uppercase English character. You can perform this operation at most k times.
+
+Return the length of the longest substring containing the same letter you can get after performing the above operations.
+
+ 
+
+Example 1:
+
+Input: s = "ABAB", k = 2
+Output: 4
+Explanation: Replace the two 'A's with two 'B's or vice versa.
+
 Note: i will use a window and keep count of frequency of number , then leaving the highest frequency number if sum of rest of the frequency < k then it is a vaid window .,
 take max of prev window with current window. else increase the starting of window and recude the frequency.
 """
