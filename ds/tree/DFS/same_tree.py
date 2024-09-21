@@ -3,13 +3,23 @@ https://leetcode.com/problems/same-tree/solutions/4782659/beats-100-users-c-java
 
 """
 
+# Definition for a binary tree node.
+# class TreeNode:
+#     def __init__(self, val=0, left=None, right=None):
+#         self.val = val
+#         self.left = left
+#         self.right = right
 class Solution:
-    def isSameTree(self, p: TreeNode, q: TreeNode) -> bool:
+    def isSameTree(self, p: Optional[TreeNode], q: Optional[TreeNode]) -> bool:
+        # if both none then true as it is leaf node
         if not p and not q:
             return True
+        # if above if not executre then either both are not null or one omong them is null
         if not p or not q:
             return False
+        # if come to here then both are not null
         return p.val == q.val and self.isSameTree(p.left, q.left) and self.isSameTree(p.right, q.right)
+        
 
 
 ==================
