@@ -31,6 +31,7 @@ class Solution:
                 continue
             sm+=node.val
             temp_path.append(node.val)
+            # if i got a lead node and target is matching then one match path i found.
             if sm == targetSum and node.left is None and node.right is None:
                 if len(temp_path)>0:
                     all_path.append(copy.deepcopy(temp_path))
