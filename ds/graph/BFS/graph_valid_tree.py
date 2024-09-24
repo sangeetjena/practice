@@ -12,7 +12,7 @@ Note:
 
 
 """
-
+==========DFS =============
 class Solution:
     def validTree(self, n: int, edges: List[List[int]]) -> bool:
         # for a valid tree no of adges will be no of node -1
@@ -50,5 +50,41 @@ class Solution:
         if cnt >1:
             return False
         return True
+        
+==========BFS ============
+from collections import deque
+class Solution:
+    def validTree(self, n: int, edges: List[List[int]]) -> bool:
+        # for a valid tree no of adges will be no of node -1
+        if len(edges)!=n-1:
+            return False
+        dct = defaultdict(list)
+        # for undirected graph edgecenty list will containe parent to child and child to parent relation.
+        for p,c in edges:
+            dct[p].append(c)
+            dct[c].append(p)
+        # for undirected graph extra cycle variable is not needed as we can move unrestrictedly upward or downward.
+        visited = []
+        bfs  = deque([])
+        cnt = 0
+        for k in dct.keys():
+            if k in visited:
+                continue
+            cnt+=1
+            bfs.append((k,-1))
+            while len(bfs)>0:
+                node, parent = bfs.popleft()
+                visited.append(node)
+                for k in dct[node]:
+                    if k == parent:
+                        continue
+                    if k in visited:
+                        return False
+                    bfs.append((k, node))
+            if cnt>1:
+                return False
+        return True
+        
+
             
         
