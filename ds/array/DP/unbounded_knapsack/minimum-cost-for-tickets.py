@@ -8,6 +8,7 @@ else find the min between ticket for day 1,7 and 30 and also add cost to each da
 """
 class Solution:
     def mincostTickets(self, days: List[int], costs: List[int]) -> int:
+        # create entry for all date range either travelling date or not. idea is non travelling date will simply hold the min cost of last visited date to avoid search.
         dp = [0 for _ in range(days[-1]+1)]
         for i in range(1, days[-1]+1):
             # for non visited date cost will be cost of last visited date only
