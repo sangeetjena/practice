@@ -15,6 +15,14 @@ Example 2:
 Input: nums = [0,1,0,3,2,3]
 Output: 4
 
+
+Note:
+it is similar to the bobble sort. 
+j-i
+j--i
+j----i
+where j and i will start from same posistion then i will keep increasing and j will catchup from 0 to i
+if value at i is greater than val(j) that means new LIS found and it length will be legth at [(j) +1]
 """
 
 class Solution:
