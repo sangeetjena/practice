@@ -28,7 +28,6 @@ if value at i is greater than val(j) that means new LIS found and it length will
 class Solution:
     def lengthOfLIS(self, nums: List[int]) -> int:
         dp = [1 for _ in range(len(nums))]
-        mx = 1
         for i in range(len(nums)):
             for j in range(i):
                 # that means increasing subsequence possible
