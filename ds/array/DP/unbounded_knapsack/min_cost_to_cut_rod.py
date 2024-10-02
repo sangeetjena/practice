@@ -4,6 +4,7 @@ https://leetcode.com/problems/minimum-cost-to-cut-a-stick/description/
 Note: this has to try with all possible cuts and take the min from them
 Option1:-(top down approach) ( mamoisation) 1st take one cut and check what is it s left and right size and cost.
 then compare with other cuts and take the min form that cut.
+Option2: (bottom up)
 """
 class Solution:
     
