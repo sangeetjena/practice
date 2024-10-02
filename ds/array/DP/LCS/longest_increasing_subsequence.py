@@ -33,6 +33,8 @@ class Solution:
                 # that means increasing subsequence possible
                 if nums[i] > nums[j]:
                     dp[i] = max(dp[i], 1+dp[j])
+                # if not less then discard it as it will not help in any way to to create a sequence
+        # Note: the highest lic can be there at any indexed number, so take max of all all lis
         return max(dp)
 
         
