@@ -1,4 +1,5 @@
 """
+https://leetcode.com/problems/number-of-visible-people-in-a-queue/description/
 1944: Number of visible people in the queue
 """
 from typing import List
