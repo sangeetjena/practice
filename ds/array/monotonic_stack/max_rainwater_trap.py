@@ -1,10 +1,14 @@
 """
+https://leetcode.com/problems/trapping-rain-water/description/
+
+Note:
 this problem can be solved using monotonic stack or by using two list one looking to its
 left and other look to its right.
 
 in  monotonic stack stack will store the value if value is strictly decreasing ,
 if encounter greater value then pop the top element.
 that means elements left in the stack after removing top elements will be strictly greater.
+
 """
 
 
