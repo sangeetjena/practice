@@ -43,6 +43,7 @@ class Solution:
             
             if cnt<0:
                 q.append((cnt,val, i ))
+            # Note: have to push to the heap before n, sothat in next cycle it will come at n interval.
             if len(q)>0 and (i-q[0][2])>=n:
                 heapq.heappush(lst, (q[0][0], q[0][1]))
                 del q[0]
