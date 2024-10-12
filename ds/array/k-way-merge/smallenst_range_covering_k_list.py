@@ -2,6 +2,7 @@
 https://leetcode.com/problems/smallest-range-covering-elements-from-k-lists/description/
 
 Note:
+tips: find min and max between all arrays in each iteration.
 # put all 1st element form each list
 # then extract smallest element and take next element and check if min and max value changes or not
 # break the loop once one list reached to the end length and return min difference between min and max
