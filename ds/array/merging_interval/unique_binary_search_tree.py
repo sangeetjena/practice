@@ -12,7 +12,9 @@ class Solution:
         for window in range(2, n+1):
             total = 0
             for node in range(1, window+1):
-                left = node-1
+                # for ex 4 element, if root is at 0 then left has 0 node and right has 4-0=4
+                # if root is at 1 then left has 1 node and right has 4-1 = 3 mode...
+                left = node-1 
                 right = window-node
                 total+= nodes[left] * nodes[right]
             nodes[window] = total
