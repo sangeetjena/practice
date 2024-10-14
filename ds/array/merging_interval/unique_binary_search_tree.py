@@ -1,5 +1,6 @@
 """
 https://leetcode.com/problems/unique-binary-search-trees/submissions/1268231700/
+Note: DP problem
 here value of nodes doesnot matter, it depends if you take a value as root how many elements are there in its left and its right.
 that will decide how many tree can be formed.
 1st take small window and check if we will take one value in the windlow how many tree can beformed, store that to the dp 
