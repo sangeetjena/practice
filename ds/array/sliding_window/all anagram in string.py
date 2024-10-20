@@ -32,10 +32,12 @@ class Solution:
         while end < len(s):
             if s[end] in dp.keys():
                 dp[s[end]]-=1
+             # check anagram legth increased, then remove element to make the window = anagram legth
             if (end-start+1) > len(p):
                 if s[start] in dp.keys():
                     dp[s[start]]+=1
                 start+=1 
+            # if window length is =anagram length then check if all char present in the wondow
             if all(value==0 for value in dp.values()):
                 pos.append(start)
             end+=1
