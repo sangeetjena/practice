@@ -1,6 +1,7 @@
 """
 https://leetcode.com/problems/maximum-level-sum-of-a-binary-tree/
 
+Note: find sum in each level, from that find max sum 
 """
 
 # Definition for a binary tree node.
