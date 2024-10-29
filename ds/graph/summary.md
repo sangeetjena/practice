@@ -7,17 +7,10 @@ https://medium.com/@ninads79shukla/patterns-and-templates-for-common-data-struct
 ```
 https://hackernoon.com/5-graph-patterns-to-ace-coding-interviews
 ```
+| Algorithm         | Purpose                                         | Graph Type                 | Edge Weights         | Key Characteristics                                   |
+|-------------------|-------------------------------------------------|----------------------------|-----------------------|------------------------------------------------------|
+| **Dijkstra's**     | Shortest path from a single source to all vertices | Weighted, directed/undirected | Non-negative         | Greedy algorithm; uses a priority queue; does not handle negative weights; not suitable for negative cycles. |
+| **Prim's**        | Minimum Spanning Tree (MST)                     | Weighted, undirected       | Any (including zero) | Greedy algorithm; starts from an arbitrary node; expands the MST by adding the smallest edge connecting to a vertex outside the tree. |
+| **Bellman-Ford**  | Shortest path from a single source to all vertices | Weighted, directed/undirected | Can be negative      | Dynamic programming approach; handles negative weights; can detect negative cycles; slower than Dijkstra's for large graphs. |
+| **Kruskal's**     | Minimum Spanning Tree (MST)                     | Weighted, undirected       | Any (including zero) | Greedy algorithm; sorts edges by weight; uses Union-Find to prevent cycles; works well for sparse graphs. |
 
-shortest path:
-    dijkstras algorithm : this algo works both in directed and undirected graph. it will sum weight when it move to
-    next vertex. so it will not work for negative edge.
-
-MST:
-definition: A spanning tree is a subset of Graph G, which has all the vertices covered with minimum possible number of
-edges. Hence, a spanning tree does not have cycles and it cannot be disconnected..
-    algorithms:
-        prims algorithm (greedy algorithm): works only with undirected graph. this algorithm will not sum edge value,
-        rather it will take the lowest edge value only. means same as dijkstras algo without adding previous edge value.
-            time complexity:
-            space complexity:
-        kruskal algorithm (greedy)
