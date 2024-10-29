@@ -18,6 +18,7 @@ class Solution:
             # alsways take min cost path
             cost, stops, node = heapq.heappop(pq)
             # return the 1st hit target
+            # why it will work ? because we are always taking min cost (min heap) so the 1st found will always be smallest.
             if node == dst and stops - 1 <= k:
                 return cost
             # checking for k stop special case is check if its already visited and new search is coming with less stop then consider that.
