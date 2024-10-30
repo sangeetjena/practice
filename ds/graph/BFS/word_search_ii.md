@@ -1,4 +1,4 @@
-"""
+```
 https://leetcode.com/problems/word-search-ii/description/
 Given an m x n grid of characters board and a string word, return true if word exists in the grid.
 
@@ -12,9 +12,9 @@ Example 1:
 Input: board = [["A","B","C","E"],["S","F","C","S"],["A","D","E","E"]], word = "ABCCED"
 Output: true
 
-Note: simple dfs , but while back tracking remove node from visited set
+``Note: simple dfs , but while back tracking remove node from visited set
 
-"""
+```
 
 class Solution:
     def exist(self, board: List[List[str]], word: str) -> bool:
