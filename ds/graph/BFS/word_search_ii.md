@@ -12,7 +12,7 @@ Example 1:
 Input: board = [["A","B","C","E"],["S","F","C","S"],["A","D","E","E"]], word = "ABCCED"
 Output: true
 
-``Note: simple dfs , but while back tracking remove node from visited set
+**Note:** simple dfs , but while back tracking remove node from visited set
 
 ```
 
