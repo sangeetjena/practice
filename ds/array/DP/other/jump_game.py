@@ -1,0 +1,22 @@
+"""
+https://leetcode.com/problems/jump-game/description/?envType=problem-list-v2&envId=dynamic-programming
+
+Note: take all the index within the reange of (i+w) and take max from it. because that value can travell the max.
+
+"""
+class Solution:
+    def canJump(self, nums: List[int]) -> bool:
+        dp = []
+        dp.append((nums[0],0))
+        while dp:
+            w,i = dp[-1]
+            del dp[-1]
+            if i+w >= len(nums)-1:
+                return True
+            if w == 0:
+                continue
+            # i added [(0,0,0)] to avoid issue with max, if list return empty list then max will fail( case
+            # when we can't move forward)
+            r,i, w = max([(x+nums[x],x, nums[x]) for x in range(i+1,min(i+w+1, len(nums)))] + [(0,0,0)])
+            dp.append((w,i))
+        return False
