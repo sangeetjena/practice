@@ -19,7 +19,29 @@ Explanation: The triangle looks like:
 The minimum path sum from top to bottom is 2 + 3 + 5 + 1 = 11 (underlined above).
 
 
+Note: similar to arrange cake by colour problem, this also can be solved using dfs and bfs like a tree.
+
 """
+===========DP===========
+class Solution:
+    def minimumTotal(self, triangle: List[List[int]]) -> int:
+        #similar to colur cake problem 
+        for i in range(1,len(triangle)):
+            for j in range(len(triangle[i])):
+                if j==0:
+                    triangle[i][j] = triangle[i][j] + (triangle[i-1][j])
+                elif j == len(triangle[i])-1:
+                    triangle[i][j] = triangle[i][j] + (triangle[i-1][j-1])
+                else:
+                    # add min between it previous parents to the current value
+                    triangle[i][j] = triangle[i][j] + min(triangle[i-1][j-1],triangle[i-1][j] )
+        print(triangle)
+        # min will be available in the last row.
+        return min(triangle[-1])
+
+            
+
+
 
 ==========BFS==========
 class Solution:
