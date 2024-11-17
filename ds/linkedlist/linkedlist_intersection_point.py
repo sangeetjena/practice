@@ -2,6 +2,7 @@
 https://leetcode.com/problems/intersection-of-two-linked-lists/description/
 
 Note: simply increment the pointer of the longest linkedlist by its difference of length with smaller list, and start comparing two pointer
+why incremnt from begining ? because the question mentioned that two list merge, i.e after merge two list will continue to the end, so the end pointer should be same.
 """
 # Definition for singly-linked list.
 # class ListNode:
