@@ -1,4 +1,4 @@
-#1. Python `range()` Function Cheat Sheet
+# 1. Python `range()` Function Cheat Sheet
 
 The `range()` function in Python is commonly used to generate a sequence of numbers. It's frequently used in **for loops** and other situations where you need to iterate a certain number of times.
 
@@ -41,7 +41,7 @@ Index 1: b
 Index 2: c
 Index 3: d
 ```
-#2 Python List Cheat Sheet
+# 2 Python List Cheat Sheet
 
 A **list** in Python is an ordered collection of items that can be of any data type. Lists are mutable, which means you can modify them after they are created.
 
