@@ -176,3 +176,136 @@ print(flattened)  # Output: [1, 2, 3, 4, 5, 6]
 
 
 ```
+# 3. Python Dictionary Cheat Sheet
+
+A **dictionary** in Python is an unordered collection of key-value pairs. It is mutable and supports fast lookups by key.
+
+## 3.1. **Creating a Dictionary**
+
+```python
+# Empty dictionary
+my_dict = {}
+
+# Dictionary with integer keys
+age = {1: "John", 2: "Alice", 3: "Bob"}
+
+# Dictionary with mixed data types
+person = {"name": "John", "age": 30, "is_employee": True}
+
+# Nested dictionary
+employees = {
+    "emp1": {"name": "Alice", "age": 25},
+    "emp2": {"name": "Bob", "age": 28}
+}
+```
+## 3.2. Accessing Values
+```
+# Access value by key
+person = {"name": "John", "age": 30}
+print(person["name"])  # Output: John
+
+# Using .get() to avoid KeyError
+print(person.get("age"))  # Output: 30
+print(person.get("salary", "Not available"))  # Output: Not available
+
+```
+## 3.3. Adding or Modifying Key-Value Pairs
+
+```
+# Add a new key-value pair
+person["salary"] = 50000
+print(person)  # Output: {'name': 'John', 'age': 30, 'salary': 50000}
+
+# Modify an existing value
+person["age"] = 31
+print(person)  # Output: {'name': 'John', 'age': 31, 'salary': 50000}
+
+
+```
+## ** 3.4. Removing Key-Value Pairs
+```
+# Using .pop() to remove a key and return its value
+removed_value = person.pop("salary")
+print(removed_value)  # Output: 50000
+print(person)  # Output: {'name': 'John', 'age': 31}
+
+# Using del to remove a key-value pair
+del person["age"]
+print(person)  # Output: {'name': 'John'}
+
+# Using .clear() to remove all key-value pairs
+person.clear()
+print(person)  # Output: {}
+
+```
+
+## ** 3.5. Dictionary Methods
+```
+# Get all keys
+keys = person.keys()
+print(keys)  # Output: dict_keys(['name'])
+
+# Get all values
+values = person.values()
+print(values)  # Output: dict_values(['John'])
+
+# Get all key-value pairs
+items = person.items()
+print(items)  # Output: dict_items([('name', 'John')])
+
+# Check if a key exists in a dictionary
+print("name" in person)  # Output: True
+print("age" in person)  # Output: False
+
+# Copy the dictionary
+person_copy = person.copy()
+print(person_copy)  # Output: {'name': 'John'}
+
+# Update dictionary with another dictionary or key-value pairs
+person.update({"age": 30, "is_employee": True})
+print(person)  # Output: {'name': 'John', 'age': 30, 'is_employee': True}
+
+```
+
+## 3.6. Iterating Over a Dictionary
+```
+# Iterate over keys
+for key in person:
+    print(key)
+
+# Iterate over values
+for value in person.values():
+    print(value)
+
+# Iterate over key-value pairs
+for key, value in person.items():
+    print(f"{key}: {value}")
+
+```
+
+## 3.7. Nested Dictionaries
+```
+# Access nested dictionary values
+employees = {
+    "emp1": {"name": "Alice", "age": 25},
+    "emp2": {"name": "Bob", "age": 28}
+}
+
+# Access 'emp1' details
+print(employees["emp1"]["name"])  # Output: Alice
+
+```
+
+## 3.8. Dictionary Comprehension
+```
+# Create a dictionary from a list of tuples
+pairs = [("a", 1), ("b", 2), ("c", 3)]
+my_dict = dict(pairs)
+print(my_dict)  # Output: {'a': 1, 'b': 2, 'c': 3}
+
+# Create a dictionary with square of numbers
+squares = {x: x**2 for x in range(5)}
+print(squares)  # Output: {0: 0, 1: 1, 2: 4, 3: 9, 4: 16}
+
+
+```
