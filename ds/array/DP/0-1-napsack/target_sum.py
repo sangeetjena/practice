@@ -32,6 +32,7 @@ class Solution:
     def findTargetSumWays(self, nums: List[int], target: int) -> int:
         total = sum(nums)
         # if i have only one element and that one element match to target then there is only one way i canform the target
+        # in one set one element will be there and in other set 0 element will be there.
         if len(nums) == 1:
             return 1 if (nums[0] == target) or (-nums[0] == target) else 0
         if (total+target)%2 != 0:
