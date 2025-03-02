@@ -64,6 +64,8 @@ class Solution:
                 cycle.add(node)
                 if node in visited:
                     del dfs[-1]
+                    # removing node from cycle as in the back tracking thise node might be pointed by other branch. so if we will not
+                    # remove from cycle, while traversing from other node, then it will be treated as cycle. That is the reason behind why at the time of back tracking, we are removing this note from the cycle list.
                     cycle.remove(node)
                     if node not in out:
                         # reverse ordering as we need to print child 1st.
