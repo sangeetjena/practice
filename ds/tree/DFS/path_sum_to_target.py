@@ -2,6 +2,8 @@
 https://leetcode.com/problems/path-sum-iii/description/
 
 Note: similar to prefix sum ( sub array sum to target)
+go down to the childs and keep adding to the total sum . and check if any prefix sum found.
+at the time of returning to the parent substract the child value from the prefix sum.
 """
 # optimal solution using prefix sum:
 # Definition for a binary tree node.
@@ -22,9 +24,11 @@ class Solution:
             if (total+root.val) - targetSum in prefixSum.keys():
                 self.totalMatch+=prefixSum[(total+root.val)-targetSum]
                 print("found one" + str(self.totalMatch))
+            # add value to the prefix sum
             prefixSum[total + root.val]+=1
             findTarget(root.left,total+root.val, prefixSum)
             findTarget(root.right, total+root.val, prefixSum)
+            # during back tracking remove the value from the prefix sum.
             prefixSum[total + root.val]-=1
         findTarget(root, 0, defaultdict(int, {0:1}))
         return self.totalMatch
