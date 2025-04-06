@@ -66,3 +66,10 @@ Dijkstra’s algorithm and 0-1 BFS
 ```
 These are the problems that can directly be by applying either Kruskal’s or Prim’s algorithm. For example, Min Cost to Connect All Points For ex, in this problem, we model each point as a graph and model the edges b/w each node with the weight as the Manhattan distance b/w the two points. Then we apply any of the minimum spanning tree algorithms directly.
 ```
+
+
+# Trie pattern
+
+| LeetCode Link | Git Link |
+|--------------|---------|
+| [Search system](https://leetcode.com/problems/search-suggestions-system/description/?envType=problem-list-v2&envId=trie) | [Git Link](https://github.com/sangeetjena/practice/blob/master/ds/graph/trie/search.py) |
