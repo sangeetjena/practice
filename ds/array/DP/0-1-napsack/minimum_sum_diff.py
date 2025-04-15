@@ -53,6 +53,7 @@ class Solution:
         total = sum(nums) 
         half = total // 2 # the best sum required for each, we have to find sum nearest to this
         for k in range(1, N):
+            # we are taking grouping of all possibile sets, so all the number combination will come. 
             left = left_sums[k] # if taking k no. from left_sums
             right = right_sums[N-k] # then we have to take remaining N-k from right_sums.
             print(left, right)
@@ -61,10 +62,12 @@ class Solution:
                 print(x)
                 r = half - x # required, how much we need to add in x to bring it closer to half.
                 p = bisect.bisect_left(right, r) # we are finding index of value closest to r, present in right, using binary search
+                print("p="+str(p))
                 for q in [p, p-1]:
                     if 0 <= q < len(right):
                         left_ans_sum = x + right[q]
                         right_ans_sum = total - left_ans_sum
+                        print(left_ans_sum, right_ans_sum)
                         diff = abs(left_ans_sum - right_ans_sum)
                         ans = min(ans, diff) 
         return ans
