@@ -12,8 +12,11 @@ analytical functions:
 ```
 ```
 
-  SUM(salary) OVER (PARTITION BY id ORDER BY month RANGE BETWEEN 2 PRECEDING AND CURRENT ROW) AS Salary
+  SELECT *, AVG(amount) OVER (PARTITION BY salesperson ORDER BY sale_date ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING ) AS avg_future_sales
+  FROM sales;
 
+  SUM(amount) OVER (PARTITION BY salesperson ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)
+  SUM(amount) OVER ( PARTITION BY salesperson ORDER BY sale_date ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW ) AS running_total
   sum(weight)over(order by turn asc rows between unbounded preceding and current row )
 
   rank()over(order by total_weight desc)
