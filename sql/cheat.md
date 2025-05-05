@@ -126,4 +126,23 @@ PIVOT
    AggregateFunction(ColumnToBeAggregated)
    FOR PivotColumn IN (PivotColumnValues)
  ) AS (Alias) //Alias is a temporary name for a table
+
+
+SELECT *
+FROM (
+    SELECT salesperson, month, amount
+    FROM sales
+) AS source_table
+PIVOT (
+    SUM(amount)
+    FOR month IN ([Jan], [Feb], [Mar])
+) AS pivot_table;
+
+
+| salesperson | Jan | Feb | Mar |
+| ----------- | --- | --- | --- |
+| Alice       | 100 | 150 | 200 |
+| Bob         | 120 | 180 | 160 |
+
+
 ```
