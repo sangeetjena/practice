@@ -5,8 +5,7 @@ Note:
 brute force: starting from smaller to larger find one length and check if using that length we can form k cuts or not.
 Optimised solution: 
 tick here is take the largest ribbon and check using binary search if any size(cut) in large ribbon can form cuts in rest of the ribbon and can reach the value k .
-use bingary search to find the correct cut.
-                    if enough cut is not possible using mid size then move left else earch for other larger size by moving to right.
+if cut is possible in rest of the ribbon then increse the left value to find larger cuts else decrease the cut value.
 
 """
 class Solution:
