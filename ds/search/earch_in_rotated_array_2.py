@@ -1,4 +1,4 @@
-"""
+ """
 https://leetcode.com/problems/search-in-rotated-sorted-array-ii/description/
 
 There is an integer array nums sorted in non-decreasing order (not necessarily with distinct values).
@@ -9,7 +9,7 @@ Given the array nums after the rotation and an integer target, return true if ta
 
 You must decrease the overall operation steps as much as possible.
 
- 
+ Note: if mid is greater than num[left] then it is always present in 1st portion of bitonic stack else it is present in the second portion of bitonic stack.
 
 Example 1:
 
