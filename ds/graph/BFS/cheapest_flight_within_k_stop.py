@@ -46,6 +46,7 @@ class Solution:
         adj = defaultdict(list)
         for s, d, p in flights:
             adj[s].append((d, p))
+        # (cost,total stops, node) 
         pq = [(0, 0, src)]
         while pq:
             # alsways take min cost path
