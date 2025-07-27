@@ -1,5 +1,25 @@
 """
 https://leetcode.com/problems/unique-binary-search-trees/submissions/1268231700/
+
+Given an integer n, return the number of structurally unique BST's (binary search trees) which has exactly n nodes of unique values from 1 to n.
+
+ 
+
+Example 1:
+
+
+Input: n = 3
+Output: 5
+Example 2:
+
+Input: n = 1
+Output: 1
+ 
+
+Constraints:
+
+1 <= n <= 19
+
 Note: DP problem
 here value of nodes doesnot matter, it depends if you take a value as root how many elements are there in its left and its right.
 that will decide how many tree can be formed.
