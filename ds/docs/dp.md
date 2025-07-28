@@ -1,3 +1,10 @@
+# Dynamic Programming:
+Dynamic programming is a programming pardigm which deals with breaking the larger problem into smaller problem. and store the result of smaller problem and reuse the results if the same problem occure again.
+
+## how we will idnentify if the problem is needed DP approach or not ?
+1- if a big problem can be broken into smaller problem and the smaller problem is repeating 
+2-  find all possible combination.
+
 https://www.youtube.com/watch?v=mBNrRy2_hVs&t=42s
 0-1 napsack:
 ==============
