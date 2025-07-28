@@ -16,3 +16,11 @@ A maximum of one item can be selected of each kind, that is, the number of items
 We can't take a fraction of an item, that is, we either have to take the complete item or leave it.
 
 ```
+
+Amazon	Subset Sum / Partition Equal Subset	Leetcode #416
+Amazon	Target Sum (variation of subset sum)	Leetcode #494
+Google	Ones and Zeroes – 2D knapsack	Leetcode #474
+Meta	Combination Sum IV	Leetcode #377
+Google	Partition to K Equal Subsets	Leetcode #698
+Microsoft	Last Stone Weight II – DP + Knapsack logic	Leetcode #1049
+Apple	Maximum Profit in Job Scheduling	Leetcode #1235
