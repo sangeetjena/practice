@@ -7,6 +7,7 @@ Besides the root, each house has one and only one parent house. After a tour, th
 Given the root of the binary tree, return the maximum amount of money the thief can rob without alerting the police.
 
 Note: convert a layer of nodes to single value. then the tree will become a array.
+constraint is two direfclty linked houses can 't be theft, i.e after robbed parent we can't theft child. hence thief can robb one level (bfs).
 """
 
 # Definition for a binary tree node.
