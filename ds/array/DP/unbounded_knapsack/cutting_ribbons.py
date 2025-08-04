@@ -22,7 +22,9 @@ Explanation:
 - Cut the second ribbon to two ribbons, one of length 5 and one of length 2.
 - Keep the third ribbon as it is.
 Now you have 3 ribbons of length 5.
-Note: simple solution is to increment k value from 1 to max(ribbons) but to optimise lienear search use binary search
+
+Note: simple solution is to increment k value from 1 to max(ribbons) but to optimise lienear search use binary search. 
+it is not needed to cut all the ribbon. it should produce minimum, k ribbon after cut. 
 
 """
 
