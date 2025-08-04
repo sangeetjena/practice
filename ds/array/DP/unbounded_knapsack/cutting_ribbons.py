@@ -25,6 +25,7 @@ Now you have 3 ribbons of length 5.
 
 Note: simple solution is to increment k value from 1 to max(ribbons) but to optimise lienear search use binary search. 
 it is not needed to cut all the ribbon. it should produce minimum, k ribbon after cut. 
+( tihis is more a binary search problem)
 
 """
 
