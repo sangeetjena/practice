@@ -27,7 +27,7 @@ Note: Monotonic stack problem.
 
 ```
 
-```
+```python
 class Solution:
     def largestRectangleArea(self, heights: List[int]) -> int:
         stack  = []
