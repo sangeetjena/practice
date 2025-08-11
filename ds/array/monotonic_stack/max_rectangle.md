@@ -1,9 +1,33 @@
-"""
+```
 https://leetcode.com/problems/largest-rectangle-in-histogram/description/?envType=problem-list-v2&envId=monotonic-stack
+Given an array of integers heights representing the histogram's bar height where the width of each bar is 1, return the area of the largest rectangle in the histogram.
 
-Note:
+ 
 
-"""
+Example 1:
+
+
+Input: heights = [2,1,5,6,2,3]
+Output: 10
+Explanation: The above is a histogram where width of each bar is 1.
+The largest rectangle is shown in the red area, which has an area = 10 units.
+Example 2:
+
+
+Input: heights = [2,4]
+Output: 4
+ 
+
+Constraints:
+
+1 <= heights.length <= 105
+0 <= heights[i] <= 104
+
+Note: Monotonic stack problem.
+
+```
+
+```
 class Solution:
     def largestRectangleArea(self, heights: List[int]) -> int:
         stack  = []
@@ -25,6 +49,8 @@ class Solution:
             maxval = max( maxval , (len(heights)-stack[-1][1])*heights[stack[-1][0]])
             del stack[-1]
         return maxval
+
+```
                 
         
 
