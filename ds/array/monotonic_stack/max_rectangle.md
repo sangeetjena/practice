@@ -5,6 +5,7 @@ Given an array of integers heights representing the histogram's bar height where
  
 
 Example 1:
+<img width="572" height="287" alt="image" src="https://github.com/user-attachments/assets/de47a15f-d23b-4ead-a739-f8c2c5f79381" />
 
 
 Input: heights = [2,1,5,6,2,3]
@@ -12,6 +13,7 @@ Output: 10
 Explanation: The above is a histogram where width of each bar is 1.
 The largest rectangle is shown in the red area, which has an area = 10 units.
 Example 2:
+<img width="404" height="408" alt="image" src="https://github.com/user-attachments/assets/15f38d16-e5f0-4f5f-9e5e-3e81eeb29b93" />
 
 
 Input: heights = [2,4]
