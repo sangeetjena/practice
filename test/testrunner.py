@@ -1,2 +1,0 @@
-def prnting():
-    print("hllo")
