@@ -44,6 +44,7 @@ class Solution:
         for i in range(1, n + 1):
             for j in range(1, m + 1):
                 if s[i - 1] == t[j - 1]:
+                    # why no dp[i][j-1]: because we cant leave any element from 2nd word. so we can't leave any letter form 2nd word
                     dp[i][j] = dp[i - 1][j - 1] + dp[i - 1][j]
                 else:
                     dp[i][j] = dp[i - 1][j]
