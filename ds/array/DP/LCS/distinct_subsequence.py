@@ -1,5 +1,7 @@
 """
 https://leetcode.com/problems/distinct-subsequences/
+or:
+Count how many times A appears as subsequence in B
 https://www.youtube.com/watch?v=-RDzMJ33nx8
 
 Given two strings s and t, return the number of distinct subsequences of s which equals t.
