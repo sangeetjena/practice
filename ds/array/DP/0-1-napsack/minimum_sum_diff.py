@@ -71,3 +71,53 @@ class Solution:
                         diff = abs(left_ans_sum - right_ans_sum)
                         ans = min(ans, diff) 
         return ans
+
+===== or using dp pattern like subset sum quals to k.
+ # Note: for negetive number we can find the max negetive number and shift the numbers so that all number will become positive then subset sum equals to k will work as it is.
+ from typing import List
+
+class Solution:
+    def minimumDifference(self, nums: List[int]) -> int:
+        n = len(nums) // 2  # number of elements in each group
+        minnum = min(nums)
+        if minnum <0:
+            nums = [i - minnum for i in nums]
+
+        print(nums)
+
+        mid_sum = sum(nums) // 2
+        print(mid_sum,n)
+
+        # Return list of achievable subset sums <= target
+        def subset_sum(nums, target):
+            dp = [[0] * (target + 1) for _ in range(len(nums) + 1)]
+            for i in range(1, len(nums) + 1):
+                for j in range(1, target + 1):
+                    if nums[i - 1] <= j:
+                        dp[i][j] = max(dp[i - 1][j], nums[i - 1] + dp[i - 1][j - nums[i - 1]])
+                    else:
+                        dp[i][j] = dp[i - 1][j]
+            # Extract all achievable sums from last row
+            print(dp)
+            return sorted(set(dp[len(nums)][j] for j in range(target + 1)))
+
+        # Divide into two halves and get subset sums
+        left_sum = subset_sum(nums[:n], mid_sum)
+        right_sum = subset_sum(nums[n:], mid_sum)
+        print(left_sum, right_sum)
+
+        # Two-pointer approach to find best sum <= mid_sum
+        l, h = 0, len(right_sum) - 1
+        maxsm = 0
+        while l < len(left_sum) and h >= 0:
+            sm = left_sum[l] + right_sum[h]
+            if sm <= mid_sum:
+                maxsm = max(maxsm, sm)
+                l += 1
+            else:
+                h -= 1
+
+        total = sum(nums)
+        print(maxsm, total)
+        return abs(total - 2 * maxsm)
+
