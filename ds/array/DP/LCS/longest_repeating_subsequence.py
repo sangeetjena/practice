@@ -1,7 +1,17 @@
 """
 https://www.geeksforgeeks.org/longest-repeating-subsequence/
 
+Input: s= "abc"
+Output: 0
+Explanation: There is no repeating subsequence
+
+Input: s= "aab"
+Output: 1
+Explanation: The two subsequence are 'a'(0th index) and 'a'(1th index). Note that 'b' cannot be considered as part of subsequence as it would be at same index in both. 
+
+
 Note: same as LCS with extra condition [ arr[i] != arr[j] ]
+Clue: in a string while we are finding subsequence if we are eleminating same index position then we will find another sub sequence.
 """
 #User function Template for python3
 
