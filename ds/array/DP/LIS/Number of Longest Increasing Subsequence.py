@@ -20,7 +20,29 @@ Explanation: The length of the longest increasing subsequence is 1, and there ar
 
 
 
-Note:
+Note: same as LIS but when ever same length will come then add increment the count value to the count[i].
 
 
 """
+
+class Solution:
+    def findNumberOfLIS(self, nums: List[int]) -> int:
+        n = len(nums)
+        if n <= 1:
+            return n
+
+        lengths = [1] * n
+        counts = [1] * n
+
+        for i in range(1, n):
+            for j in range(i):
+                if nums[i] > nums[j]:
+                    if lengths[j] + 1 > lengths[i]:
+                        lengths[i] = lengths[j] + 1
+                        counts[i] = counts[j]
+                     # if same length found again then increment the count value.
+                    elif lengths[j] + 1 == lengths[i]:
+                        counts[i] += counts[j]
+        # add all count value for the max length.
+        max_length = max(lengths)
+        return sum(count for length, count in zip(lengths, counts) if length == max_length)
