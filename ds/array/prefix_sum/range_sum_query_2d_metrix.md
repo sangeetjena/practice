@@ -59,3 +59,4 @@ class NumMatrix:
         col2+=1
         return ps[row2][col2] - ps[row1-1][col2] - ps[row2][col1-1] + ps[row1-1][col1-1]
 ```
+<img width="616" height="612" alt="image" src="https://github.com/user-attachments/assets/94f2cfb0-a1a1-4a25-ab76-b8252ba59f04" />
