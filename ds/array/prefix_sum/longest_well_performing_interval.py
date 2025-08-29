@@ -21,7 +21,7 @@ Example 2:
 Input: hours = [6,6,6]
 Output: 0
 
-Note:
+Note: target is the sub array where there is more +ve value than -ve  (pre-process: make all >8 to +1 and all value <8 = -ve)
 1- if total is +ve that means from 0 index to ith index all overal more +ve elements are there than -ve to take index i
 2- if total sum is negetive search for less value than total
    why : from that smaller value it reached to the larger value at index position i becuase there more larger value cames than -ve ,
