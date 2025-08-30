@@ -28,19 +28,20 @@ Note: prefix sum problem but instee of searching storing the count, store the po
 class Solution:
     def findMaxLength(self, nums: List[int]) -> int:
         nums = [1 if i == 1  else -1 for i in nums]
-        prefixsum = {}
+        prefixsum = {0:-1}
         total_sum = 0
         max_len = 0
         for i in range(len(nums)):
             total_sum+=nums[i]
-            if total_sum == 0:
-                max_len = max(max_len, i+1)
             if total_sum in prefixsum.keys() :
                 max_len = max(max_len, i-prefixsum[total_sum])
             else:
                 prefixsum[total_sum] = i
-        print(prefixsum, max_len)
         return max_len
+
+
+            
+
 
 
             
