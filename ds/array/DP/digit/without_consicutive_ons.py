@@ -52,7 +52,8 @@ class Solution:
             if (i, prev_digit, tight) in dp:
                 return dp[(i, prev_digit, tight)]
             if i>= len(num):
-                # why return 1? because if we have reach to the end than one valid binary number we have found , because all the binary number that has consicutive number already would have eliminated
+                # why return 1 not count? because if we have reach to the end than one valid binary number we have found , because all the binary number that has consicutive number already would have eliminated
+                # in comparition to the no of ones, where when we get one 1, we record the count, not waiting to reach to the end digit but in this problem when we reach to the end digit we are finding one valid binary number so we are recording it.
                 return 1
             rng = int(num[i]) if tight else 1
             ans = temp = 0
