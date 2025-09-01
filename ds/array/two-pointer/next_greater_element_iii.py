@@ -26,12 +26,14 @@ class Solution:
         s = [str(n)[i] for i in range(len(str(n)))]
         print(s)
         ind = -1
+        # find the index position where we can replace the value to get the greater element.
         for i in reversed(range(1,len(s))):
             if s[i-1]<s[i]:
                 ind=i-1
                 break
         if ind==-1:
             return -1
+         # note don't just replace when find num[i-1] < num[i] , find then smallest element greter than num[i-1]
         for j in reversed(range(ind,len(s))):
             if s[j]>s[ind]:
                 s[j],s[ind] = s[ind], s[j]
