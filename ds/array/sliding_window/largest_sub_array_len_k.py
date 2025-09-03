@@ -20,7 +20,8 @@ Output: [5,2,3]
 Explanation: The subarrays of size 3 are: [1,4,5], [4,5,2], and [5,2,3].
 Of these, [5,2,3] is the largest.
 
-
+Note: use sliding window of size 3 , convert arr to string/concatenate then convert it to an integer, capture the max int -> then at last convert int to array.
+other way is bellow one.
 """
 class Solution:
     def largestSubarray(self, nums: List[int], k: int) -> List[int]:
