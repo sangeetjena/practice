@@ -24,7 +24,7 @@ The substring starting at 9 is "foobar". It is the concatenation of ["foo","bar"
 
 
 Note:
-This is similar to the permutation string, only difference is register the starting pointer whenever find a mathcing permutation.
+This is similar to the permutation string, only difference is register the starting pointer whenever find a mathcing permutation and need to match word insteed of char.
 
 """"
 
