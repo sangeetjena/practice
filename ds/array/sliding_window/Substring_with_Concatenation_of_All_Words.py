@@ -24,6 +24,57 @@ The substring starting at 9 is "foobar". It is the concatenation of ["foo","bar"
 
 
 Note:
+This is similar to the permutation string, only difference is register the starting pointer whenever find a mathcing permutation.
 
 """"
 
+import copy
+class Solution:
+    def findSubstring(self, s: str, words: List[str]) -> List[int]:
+        dct = {}
+        for word in words:
+            if word in dct.keys():
+                dct[word]+=1
+            else:
+                dct[word]=1
+        l = len(words[0])
+        st=0
+        ed = 0 
+        total = []
+        tmpdct = copy.deepcopy(dct)
+        while ed < len(s) and st< len(s):
+            wd = s[ed:ed+l]
+            # print(wd,st,ed,s, total)
+            # case for unmatch word or breaking sequence
+            if wd in tmpdct.keys():
+                tmpdct[wd]-=1
+            else:
+                tmpdct = copy.deepcopy(dct)
+                st = st+1
+                ed=st
+                continue
+            # if all match then increse total and increment start and remove one frequency of the starting char
+            if all(val == 0 for val in tmpdct.values()):
+                total.append(st)
+                # tmpdct[s[st:st+l]]+=1
+                # st+=l
+                tmpdct = copy.deepcopy(dct)
+                st = st+1
+                ed = st
+                continue
+            if any(val<0 for val in tmpdct.values()):
+                tmpdct = copy.deepcopy(dct)
+                st = st+1
+                ed = st
+                continue
+
+            # if any -ve char came remove char form begining untill -ve frequency removed from dct
+            # while any(val<0 for val in tmpdct.values()):
+            #     tmpdct[s[st:st+l]]+=1
+            #     st+=l
+            # print(tmpdct, dct)
+            ed+=l
+        return total
+            
+
+            
