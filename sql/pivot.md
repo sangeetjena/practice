@@ -1,5 +1,7 @@
-``` sql
 Convert Rows to Columns (Sales by Quarter)
+===========================================
+``` sql
+
 -- Given this sales data, pivot it to show quarters as columns
 -- Input table: sales (product, quarter, sales_amount)
 -- Expected output: product, Q1, Q2, Q3, Q4
@@ -27,6 +29,7 @@ PIVOT (
 ```
 
 Convert string charactor to rows 
+=================================
 ``` sql
 convert "sangeet" -> s
                      a
@@ -44,6 +47,7 @@ FROM chars;
 
 ```
 convert string to columns
+==========================
 ``` sql
 similar to able, 1st convert string to row, then unpivot it
 WITH RECURSIVE chars AS (
