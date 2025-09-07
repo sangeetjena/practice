@@ -110,6 +110,29 @@ FROM (
 PIVOT (
     MAX(ch) FOR pos IN ([1],[2],[3],[4],[5],[6],[7])
 ) AS p;
+```
 
+Pivot with Date Ranges
+======================
 
+``` sql
+-- Pivot monthly sales data by product for the last 12 months
+-- Handle dynamic date columns
+
+WITH monthly_sales AS (
+    SELECT 
+        product,
+        FORMAT(sale_date, 'yyyy-MM') as month_year,
+        sales_amount
+    FROM sales
+    WHERE sale_date >= DATEADD(MONTH, -12, GETDATE())
+)
+SELECT 
+    product,
+    SUM(CASE WHEN month_year = '2025-01' THEN sales_amount END) AS "2025-01",
+    SUM(CASE WHEN month_year = '2025-02' THEN sales_amount END) AS "2025-02",
+    -- ... continue for all 12 months
+    SUM(CASE WHEN month_year = '2025-12' THEN sales_amount END) AS "2025-12"
+FROM monthly_sales
+GROUP BY product;
 ```
