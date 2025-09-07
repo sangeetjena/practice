@@ -28,6 +28,31 @@ PIVOT (
 ) AS pivot_table;
 ```
 
+Unpivot Questions: Convert Columns Back to Rows
+===============================================
+
+``` sql
+-- Given a pivoted table, convert it back to normalized form
+-- Input: product, Q1, Q2, Q3, Q4
+-- Output: product, quarter, sales_amount
+
+-- Method 1: Using UNION ALL
+SELECT product, 'Q1' AS quarter, Q1 AS sales_amount FROM sales_pivot WHERE Q1 IS NOT NULL
+UNION ALL
+SELECT product, 'Q2' AS quarter, Q2 AS sales_amount FROM sales_pivot WHERE Q2 IS NOT NULL
+UNION ALL
+SELECT product, 'Q3' AS quarter, Q3 AS sales_amount FROM sales_pivot WHERE Q3 IS NOT NULL
+UNION ALL
+SELECT product, 'Q4' AS quarter, Q4 AS sales_amount FROM sales_pivot WHERE Q4 IS NOT NULL;
+
+-- Method 2: Using UNPIVOT operator (SQL Server)
+SELECT product, quarter, sales_amount
+FROM sales_pivot
+UNPIVOT (
+    sales_amount FOR quarter IN (Q1, Q2, Q3, Q4)
+) AS unpivot_table;
+```
+
 Convert string charactor to rows 
 =================================
 ``` sql
