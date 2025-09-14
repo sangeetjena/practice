@@ -7,6 +7,7 @@ Backtracking is a trial-and-error search technique.
 👉 If at some step you realize it won’t work, you go back (backtrack) and try a different option.
 
 Think of it like exploring a maze:
+Backtracking = try all possibilities (explore a search space like a tree), and backtrack when a choice fails.
 
 You move forward.
 
