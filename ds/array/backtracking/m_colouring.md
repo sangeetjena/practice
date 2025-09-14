@@ -13,7 +13,7 @@ Explanation: It is possible to color the given graph using 3 colors, for example
 <img width="257" height="225" alt="image" src="https://github.com/user-attachments/assets/95b415d1-fac7-441e-a522-33bad5881d85" />
 
 
-
+``` python
 def valid_col(arr, i):
     for y in range(len(arr)):
         if arr[i][y] == 0:
@@ -45,3 +45,5 @@ graph = [
     ]
 m_colouring(graph, 0, node_colour)
 print(node_colour)
+```
+
