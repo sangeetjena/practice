@@ -1,6 +1,9 @@
 """
 https://leetcode.com/problems/linked-list-cycle-ii/submissions/1283344582/
 https://www.youtube.com/watch?v=95ZfuoSAUPI
+
+
+NOte:take one slow and fast pointer where it will meet that is the start point of cycle
 """
 # Definition for singly-linked list.
 # class ListNode:
