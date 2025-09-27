@@ -41,6 +41,7 @@ class Solution:
                 max_len = max(max_len, i +1)
             # if total sum is negetive search for less value than total
             # why : from that smaller value it reached to the larger value at index position i becuase there more larger value cames than -ve that why the total at i position becomer larger than it total-1 value.
+            # why total-1: because i have converted all values to 1 or 0, so previous total will be same or one value less.
             elif total -1 in prefix_sum.keys():
                 max_len = max(max_len, i-prefix_sum[total-1])
             if total not in prefix_sum.keys():
