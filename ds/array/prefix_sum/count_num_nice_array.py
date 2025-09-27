@@ -25,6 +25,7 @@ Output: 16
  
 
 Note: exactly same as prefix sum, only one catch is to convert all value in the array to o or 1
+2- this also can be solved using sliding window.
 """
 
 class Solution:
