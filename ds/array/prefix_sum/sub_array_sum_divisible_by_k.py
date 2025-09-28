@@ -21,6 +21,8 @@ Output: 0
 
 Note: same as prefix sum but insteed of substracting k value take mod value.
 mod will give reminder, that means removing all the value divisible by k remain value (starting point of all divisible value)
+if we will take the mode value, the reminder is becoming the prefix array,so if alrady a prefix array exists and this condition is satisfying (totalsum - prefix)%k =0. 
+then we got one valid array.
 
 """
 class Solution:
