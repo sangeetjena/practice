@@ -16,6 +16,20 @@ Output: [0,2,3]
 Explanation: Building 1 (0-indexed) does not have an ocean view because building 2 is taller.
 
 """
+
+class Solution:
+    def findBuildings(self, heights: List[int]) -> List[int]:
+        dp = [0 for i in range(len(heights))]
+        dp[-1] = 0
+        stack = []
+        for i in range(len(heights)):
+            while len(stack)>0 and heights[stack[-1]]<= heights[i]:
+                dp[stack[-1]] = -1
+                stack.pop()
+            stack.append(i)
+        return [i for i in range(len(heights)) if dp[i]!=-1]
+
+========
 class Solution:
     def findBuildings(self, heights: List[int]) -> List[int]:
         dp = [-1 for i in range(len(heights))]
