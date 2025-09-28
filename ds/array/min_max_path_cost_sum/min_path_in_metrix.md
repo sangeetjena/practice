@@ -1,6 +1,14 @@
-"""
+```
 https://leetcode.com/problems/minimum-path-sum/description/
-"""
+
+Given a m x n grid filled with non-negative numbers, find a path from top left to bottom right, which minimizes the sum of all numbers along its path.
+
+Note: You can only move either down or right at any point in time.
+
+```
+<img width="595" height="455" alt="image" src="https://github.com/user-attachments/assets/cbcbce06-baf0-4601-88f0-5960f473cc36" />
+
+``` python
 class Solution:
     def minPathSum(self, grid: List[List[int]]) -> int:
         dummyarr = [[9999 for i in range(len(grid[0]))]]
@@ -13,3 +21,4 @@ class Solution:
                     continue
                 grid[i][j] = min(grid[i-1][j], grid[i][j-1])+grid[i][j]
         return grid[-1][-1]
+```
