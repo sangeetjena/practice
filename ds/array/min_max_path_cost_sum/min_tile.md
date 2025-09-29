@@ -19,14 +19,18 @@ class Solution:
                 if (i == j):
                     dp[i][j] = 1
                     continue
-                # using i, j we will be able to form different rectangle
-                # now we have to device that rectandle horizontally and vertically to see
-                # how many square would be neeed
+                #step1-  using i, j we will be able to form different rectangle
+                #step2- now we have to device that rectandle horizontally and vertically to see, how many square would be neeed
+
+                # why i or j//2 ? by makeing it half we will get symetric rectange.if we will calculate 1st part, second part we will get ealisy as it is symecrics, just add the second par. so if we will do dp[k][.] then it other symetric value would be dp[iorj -k][.] -> dp[k][.] + dp[iorj -k][.]
+                # also the second symetrics value also would be present in 1st part of the DP.
                 for k in range(1, i // 2 + 1):  # in python if do +1 in range it will reach i//2
+                                            # 1st part + 2nd part
                     dp[i][j] = min(dp[i][j], dp[k][j] + dp[i - k][j])  # horizontal cuts
                 # for k = 1 only vertical or horizontal cuts are possible
                 # but for greater k values both vertical and horizontal cuts are possible.
                 for k in range(1, j // 2 + 1):  # vertical cuts
+                                            # 1st part + 2nd part
                     dp[i][j] = min(dp[i][j], dp[i][k] + dp[i][j - k])
         return dp[m][n]
 
