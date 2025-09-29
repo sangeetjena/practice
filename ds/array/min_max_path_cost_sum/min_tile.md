@@ -1,8 +1,13 @@
-"""
+```
 https://leetcode.com/problems/tiling-a-rectangle-with-the-fewest-squares/description/
-"""
+
+Given a rectangle of size n x m, return the minimum number of integer-sided squares that tile the rectangle.
+```
+<img width="554" height="519" alt="image" src="https://github.com/user-attachments/assets/5ae0b02b-4920-444f-afb5-07d4c34413d6" />
+<img width="362" height="301" alt="image" src="https://github.com/user-attachments/assets/b87cfaa5-5c65-4243-b559-fce65a486f65" />
 
 
+``` python
 class Solution:
     def tilingRectangle(self, n: int, m: int) -> int:
         if (m * n == 143):
@@ -24,3 +29,4 @@ class Solution:
                     dp[i][j] = min(dp[i][j], dp[i][k] + dp[i][j - k])
         return dp[m][n]
 
+```
