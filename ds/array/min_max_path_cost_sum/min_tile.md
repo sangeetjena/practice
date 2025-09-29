@@ -7,7 +7,7 @@ Given a rectangle of size n x m, return the minimum number of integer-sided squa
 <img width="362" height="301" alt="image" src="https://github.com/user-attachments/assets/b87cfaa5-5c65-4243-b559-fce65a486f65" />
 
 
-``` python
+```python
 class Solution:
     def tilingRectangle(self, n: int, m: int) -> int:
         if (m * n == 143):
@@ -18,6 +18,7 @@ class Solution:
                 # when get perfect square the return 1
                 if (i == j):
                     dp[i][j] = 1
+                    continue
                 # using i, j we will be able to form different rectangle
                 # now we have to device that rectandle horizontally and vertically to see
                 # how many square would be neeed
