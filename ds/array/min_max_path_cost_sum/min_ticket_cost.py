@@ -45,6 +45,8 @@ class Solution:
                 diffdays = days[i] - cdays[j] + 1
                 x = [i for i in days if i < diffdays]
                 maxdays = 0
+                # if we will go back and find the date by substracting 1,7,15 we might or might not get the exact date. so we need to find the just previous date for that range.
+                # so simply i have taken max date of the previous date range.
                 if len(x) > 0:
                     maxdays = max(x)
                 dp[days[i]] = min(dp[days[i]], costs[j] + dp[maxdays])
