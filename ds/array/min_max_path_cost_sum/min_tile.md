@@ -21,7 +21,7 @@ class Solution:
                     continue
                 #step1 -  using i, j we will be able to form different rectangle
                 #step2 - now we have to device that rectandle horizontally and vertically to see, how many square would be neeed
-                #step3 - only calculate //2, second part is symetrics.
+                #step3 - only calculate //2, second part is symetrics. so no of squre we got in 1st part. in second part same no of square can be formed.
 
                 # why i or j//2 ? by makeing it half we will get symetric rectange.if we will calculate 1st part, second part we will get ealisy as it is symecrics, just add the second par. so if we will do dp[k][.] then it other symetric value would be dp[iorj -k][.] -> dp[k][.] + dp[iorj -k][.]
                 # also the second symetrics value also would be present in 1st part of the DP.
