@@ -21,10 +21,9 @@ class Solution:
                     continue
                 #step1 -  using i, j we will be able to form different rectangle
                 #step2 - now we have to device that rectandle horizontally and vertically to see, how many square would be neeed
-                #step3 - only calculate //2, second part is symetrics. so no of squre we got in 1st part. in second part same no of square can be formed.
+                #step3 - only calculate //2, second part is symetrics. so for half we already would have calculated total square for rectange. if we will continue further, we would be duplicating same step. so stop at //2
 
-                # why i or j//2 ? by makeing it half we will get symetric rectange.if we will calculate 1st part, second part we will get ealisy as it is symecrics, just add the second par. so if we will do dp[k][.] then it other symetric value would be dp[iorj -k][.] -> dp[k][.] + dp[iorj -k][.]
-                # also the second symetrics value also would be present in 1st part of the DP.
+                # if we will cut the at k position, then it will create two rectange and the total square = num square in (dp[k][.] ) + total squre in (dp[iorj -k][.])
                 for k in range(1, i // 2 + 1):  # in python if do +1 in range it will reach i//2
                                             # 1st part + 2nd part
                     dp[i][j] = min(dp[i][j], dp[k][j] + dp[i - k][j])  # horizontal cuts
