@@ -40,7 +40,7 @@ class Solution:
                 cnt, val = heapq.heappop(lst)
                 cnt+=1
             i+=1
-            
+            # if the task has some instances left / frequency left then add to the queue else no need.
             if cnt<0:
                 q.append((cnt,val, i ))
             # Note: have to push to the heap before n, sothat in next cycle it will come at n interval.
