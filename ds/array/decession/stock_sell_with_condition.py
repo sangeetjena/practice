@@ -34,13 +34,13 @@ class Solution:
             if buy:
                 # why dfs - prices[i], by putting buying price in -ve, we can add selling price in +ve so finally it will come as difference of selling_price - buying price.
                 buyprice = dfs(i+1, not buy) - prices[i]
-                cooldownprice = dfs(i+1, buy)
-                dp[(i,buy)] = max(buyprice, cooldownprice)
+                notbuy = dfs(i+1, buy)
+                dp[(i,buy)] = max(buyprice, notbuy)
             else:
                 # why dfs + prices[i], by putting buying price in +ve, finally it will come as difference of selling_price - buying price.
                 sellprice = dfs(i+2, not buy) + prices[i]
-                cooldownprice = dfs(i+1, buy) #buy is false as it is in else part.
-                dp[(i,buy)] = max(sellprice, cooldownprice)
+                notsell = dfs(i+1, buy) #buy is false as it is in else part.
+                dp[(i,buy)] = max(sellprice, notsell)
             return dp[(i,buy)]
         return dfs(0,True)
 
