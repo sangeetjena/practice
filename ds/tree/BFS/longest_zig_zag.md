@@ -42,7 +42,9 @@ class Solution:
 
             #check if left side node is available or not
             # increment value by one with other side (if left add right value +1) and make the other side 0
-            # why other side 0 ?  because if we will mode in the same direction that is not a valid mode so nullify that move. an any move after that will be considered as a fresh move from the begining.
+            # why other side 0 ?  at current node two condution possible 1- continue to the previous sequence , condition 2: taking current node as starting point.
+            #                     so if condition 1: then if we are moving left then it will be continuation to right level and vice versa
+            #                     for condition 2: current node with start with level 0. so make the other side of the direction we are moving as 0.
             # we are using max_len so for upto that point we already would have calculated the max mode.
             if root.left:
                 dfs(root.left, right+1, 0)
