@@ -1,4 +1,4 @@
-"""
+```
 https://leetcode.com/problems/invert-binary-tree/description/
 Given the root of a binary tree, invert the tree, and return its root.
 Example 1:
@@ -7,7 +7,11 @@ Output: [4,7,2,9,6,3,1]
 
 Note: same as bfs, only difference is while pushing to queue push right before left.
 
-"""
+```
+<img width="526" height="595" alt="image" src="https://github.com/user-attachments/assets/2c54853a-4019-47d3-a3a7-202b2aaaf99d" />
+
+
+```python
 # Definition for a binary tree node.
 # class TreeNode:
 #     def __init__(self, val=0, left=None, right=None):
@@ -31,6 +35,6 @@ class Solution:
                     queue.append(node.left)
                 node.left, node.right = node.right, node.left
         return root
-
+```
 
         
