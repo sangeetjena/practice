@@ -1,8 +1,16 @@
-"""
+```
 https://leetcode.com/problems/maximum-level-sum-of-a-binary-tree/
 
+Given the root of a binary tree, the level of its root is 1, the level of its children is 2, and so on.
+
+Return the smallest level x such that the sum of all the values of nodes at level x is maximal.
+
 Note: find sum in each level, from that find max sum 
-"""
+```
+<img width="584" height="464" alt="image" src="https://github.com/user-attachments/assets/60abf13c-2682-4bab-bd00-c4889389f84d" />
+
+
+```python
 
 # Definition for a binary tree node.
 # class TreeNode:
@@ -34,4 +42,4 @@ class Solution:
                 maxlevel = cnt
             cnt+=1
         return maxlevel
-        
+```   
