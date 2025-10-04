@@ -1,9 +1,14 @@
-"""
+```
 https://leetcode.com/problems/diagonal-traverse/
+
+Given an m x n matrix mat, return an array of all the elements of the array in a diagonal order.
 
 Note: simply use bfs and for odd scann reverse the array.
 
-"""
+```
+<img width="485" height="532" alt="image" src="https://github.com/user-attachments/assets/39fe23fc-c951-45de-8cf5-c56509ea5526" />
+
+```python
 from collections import deque
 class Solution:
     def findDiagonalOrder(self, mat: List[List[int]]) -> List[int]:
@@ -33,7 +38,7 @@ class Solution:
             cnt+=1
         print(out)
         return out
-                
+```
         
 
 
