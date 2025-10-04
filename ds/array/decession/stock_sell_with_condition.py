@@ -60,8 +60,8 @@ class Solution:
             # 2. Buy new stock. But we can not buy stock if we buy stock yesterday so we check our profit 
             #     without stok two days ago (dp[2][1]) then we buy the current stock( - prices[i]).
             # Finally we can take the maximum of the two choices.
-            keep_last_stock = dp[-1][0]
-            buy_new_stock = dp[-2][1] - prices[i]
+            keep_last_stock = dp[-1][0]   # if not buying keep previous buy price i.e [-1] and 0th index.
+            buy_new_stock = dp[-2][1] - prices[i] # if buying keep previous to previous (becayse if coolling period) selling price i.e [i-2] and 1st index.
             with_stock = max(keep_last_stock, buy_new_stock)
 
             # We also have two choices  to continue without having stock. 
@@ -70,8 +70,8 @@ class Solution:
             # we can take yesterdays stock and sell it( + prices[i])
             
             # Take maximum of the two choices
-            prev_empty = dp[-1][1]
-            sell_previous_stock = dp[-1][0] + prices[i] 
+            prev_empty = dp[-1][1]  # if not selling keep previous sell price i.e [-1] and 1th index.
+            sell_previous_stock = dp[-1][0] + prices[i] # if selling keep previous buying price i.e [-1] and 0th index.
             no_stock = max(prev_empty, sell_previous_stock)
             # Append current day's status with both states
             dp.append((with_stock, no_stock))
