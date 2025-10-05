@@ -1,7 +1,14 @@
-"""
+```
 https://leetcode.com/problems/binary-tree-paths/
 
-"""
+Given the root of a binary tree, return all root-to-leaf paths in any order.
+
+A leaf is a node with no children.
+```
+<img width="277" height="485" alt="image" src="https://github.com/user-attachments/assets/78451fef-1c7b-467f-b97e-89b474c54cf7" />
+
+```python
+
 # Definition for a binary tree node.
 # class TreeNode:
 #     def __init__(self, val=0, left=None, right=None):
@@ -31,4 +38,4 @@ class Solution:
                 dfs.append(node.right)
             visited.append(node)
         return all_path
-        
+```      
