@@ -1,4 +1,4 @@
-"""
+``
 https://leetcode.com/problems/find-duplicate-subtrees/description/
 https://www.youtube.com/watch?v=kn0Z5_qPPzY
 
@@ -15,7 +15,12 @@ Output: [[2,4],[4]]
 
 Note: in dfs find all sub tree serialization values and store it in hash map , then compare any sub stree seialize value matches or not.
 
-"""
+```
+<img width="562" height="763" alt="image" src="https://github.com/user-attachments/assets/bec5cec1-8bce-40f6-b237-bceabc8398cd" />
+<img width="443" height="404" alt="image" src="https://github.com/user-attachments/assets/8affcda8-080b-4c22-84cd-0aafd824720d" />
+
+
+```python
 # Definition for a binary tree node.
 # class TreeNode:
 #     def __init__(self, val=0, left=None, right=None):
@@ -40,4 +45,4 @@ class Solution:
         print(res)
         return res
 
-        
+```        
