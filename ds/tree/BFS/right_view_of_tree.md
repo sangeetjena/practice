@@ -1,8 +1,12 @@
-"""
+```
 https://leetcode.com/problems/binary-tree-right-side-view/
 
 Note: similar to the level order traversal, only difference is capture the last most element to extream right and preserve.
-"""
+```
+<img width="465" height="846" alt="image" src="https://github.com/user-attachments/assets/0555d97b-9dec-4f85-b49e-cb6879f72e56" />
+
+
+```python
 # Definition for a binary tree node.
 # class TreeNode:
 #     def __init__(self, val=0, left=None, right=None):
@@ -30,5 +34,5 @@ class Solution:
             # capturuing only the last element in the level.
             out.append(node.val)
         return out
-
+```
         
