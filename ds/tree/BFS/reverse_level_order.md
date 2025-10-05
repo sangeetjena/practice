@@ -1,8 +1,12 @@
-"""
+```
 https://leetcode.com/problems/binary-tree-level-order-traversal-ii/
 
 Note: similar to level order, but append the result at begining of result list.
-"""
+```
+<img width="382" height="589" alt="image" src="https://github.com/user-attachments/assets/0f29053d-f12c-4e7b-bc7c-b0e3c791c7ae" />
+
+
+```python
 # Definition for a binary tree node.
 # class TreeNode:
 #     def __init__(self, val=0, left=None, right=None):
@@ -28,5 +32,5 @@ class Solution:
                 curr_lst.append(node.val)
             res = [curr_lst] + res
         return res
-        
+```        
         
