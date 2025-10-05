@@ -1,4 +1,4 @@
-"""
+```
 https://leetcode.com/problems/minimum-depth-of-binary-tree/description/
 
 Given a binary tree, find its minimum depth.
@@ -7,7 +7,11 @@ The minimum depth is the number of nodes along the shortest path from the root n
 
 Note:Level order traversal to find the 1st leaf node.
 A leaf is a node with no children.
-"""
+```
+
+<img width="462" height="499" alt="image" src="https://github.com/user-attachments/assets/ffc30331-a5b4-45d8-90db-fb30f3127c73" />
+
+```python
 # Definition for a binary tree node.
 # class TreeNode:
 #     def __init__(self, val=0, left=None, right=None):
@@ -33,5 +37,5 @@ class Solution:
                     return level
             level+=1
         return level
-
+```
         
