@@ -1,4 +1,4 @@
-"""
+```
 https://leetcode.com/problems/find-leaves-of-binary-tree/description/?envType=company&envId=linkedin&favoriteSlug=linkedin-thirty-days
 
 Given the root of a binary tree, collect a tree's nodes as if you were doing this:
@@ -19,7 +19,10 @@ Explanation:
 # Note: print level in the reverse order. i.e from leaf to the root node.
 # the idea is to use dfs and assing level for the reverse traversal. in the dfs once we reached to the leaf node it level will be 0. and during back tracking its  parent nodes will become its child level +1.
 # then asssing elements to the list with the index as level value.
-"""
+```
+<img width="667" height="647" alt="image" src="https://github.com/user-attachments/assets/5b3be1d9-e293-49bd-9c5a-9450735874a2" />
+
+```python
 # Definition for a binary tree node.
 # class TreeNode:
 #     def __init__(self, val=0, left=None, right=None):
@@ -45,6 +48,6 @@ class Solution:
         # print(([finalresult[i] for i in sorted(finalresult.keys())]))
         return [finalresult[i] for i in sorted(finalresult.keys())]
 
-
+```
 
         
