@@ -1,9 +1,13 @@
-"""
+```
 https://leetcode.com/problems/binary-tree-zigzag-level-order-traversal/
 
 Given the root of a binary tree, return the zigzag level order traversal of its nodes' values. 
 (i.e., from left to right, then right to left for the next level and alternate between).
-"""
+```
+<img width="350" height="587" alt="image" src="https://github.com/user-attachments/assets/444d671c-e1d2-44c7-b2f9-e0e660b8b7ef" />
+
+
+```python
 # Definition for a binary tree node.
 # class TreeNode:
 #     def __init__(self, val=0, left=None, right=None):
@@ -34,5 +38,5 @@ class Solution:
             cnt+=1
             res.append(temp_lst)
         return res
-
+```
                 
