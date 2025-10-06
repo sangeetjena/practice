@@ -1,9 +1,12 @@
-"""
+```
 https://leetcode.com/problems/binary-tree-maximum-path-sum/
 
 Note: same as max diameter, only diff is return max sum to parent only positive no else return 0
 also max path possible along diameter, so find max sum along diameter of the tree.
-"""
+```
+<img width="740" height="742" alt="image" src="https://github.com/user-attachments/assets/176f96ed-4d02-429f-af67-3a8c0211f0fd" />
+
+```python
 # Definition for a binary tree node.
 # class TreeNode:
 #     def __init__(self, val=0, left=None, right=None):
@@ -17,7 +20,7 @@ class Solution:
         left = self.dfs(root.left,dp)
         right = self.dfs(root.right,dp)
         dp[0] = max(dp[0], root.val + left + right)
-        # same as max diameter, only diff is return max sum to parent only positive no else return 0
+        # same as max diameter, only diff is return max sum to parent only positive number else return 0
         return max(root.val + max(left , right), 0)
 
     def maxPathSum(self, root: Optional[TreeNode]) -> int:
@@ -25,3 +28,4 @@ class Solution:
         self.dfs(root, dp)
         return dp[0]
         
+```
