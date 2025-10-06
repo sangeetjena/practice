@@ -1,4 +1,4 @@
-"""
+```
 https://leetcode.com/problems/validate-binary-search-tree/
 https://www.youtube.com/watch?v=s6ATEkipzow
 
@@ -6,7 +6,10 @@ Note: in recursion when going to child define it left and right value.
       from root l=-ind and r = +inf. when going to left child only modify right value to parent node value
       and for right child update only left value to present node value.
 
-"""
+```
+<img width="679" height="705" alt="image" src="https://github.com/user-attachments/assets/cb5369bd-d26c-493e-9fea-a8f1c838489b" />
+
+```python
 # Definition for a binary tree node.
 # class TreeNode:
 #     def __init__(self, val=0, left=None, right=None):
@@ -26,4 +29,4 @@ class Solution:
             # if child going to right it boundary should be r = parent right  and left = prent val
             return valid(node.left, left, node.val) and valid(node.right, node.val, right)
         return valid(root, float("-inf"), float("inf"))
-                
+```                
