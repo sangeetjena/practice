@@ -1,6 +1,10 @@
 ```
 https://leetcode.com/problems/same-tree/solutions/4782659/beats-100-users-c-java-python-javascript-explained/
 
+Given the roots of two binary trees p and q, write a function to check if they are the same or not.
+
+Two binary trees are considered the same if they are structurally identical, and the nodes have the same value.
+
 ```
 <img width="640" height="844" alt="image" src="https://github.com/user-attachments/assets/5ac71a09-42c6-4843-b4dd-4f138cf6544b" />
 
