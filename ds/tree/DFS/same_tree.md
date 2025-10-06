@@ -1,8 +1,11 @@
-"""
+```
 https://leetcode.com/problems/same-tree/solutions/4782659/beats-100-users-c-java-python-javascript-explained/
 
-"""
+```
+<img width="640" height="844" alt="image" src="https://github.com/user-attachments/assets/5ac71a09-42c6-4843-b4dd-4f138cf6544b" />
 
+
+```python
 # Definition for a binary tree node.
 # class TreeNode:
 #     def __init__(self, val=0, left=None, right=None):
@@ -61,3 +64,4 @@ class Solution:
             visited.append(a)
             visited.append(b)
         return True
+```
