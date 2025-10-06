@@ -7,6 +7,7 @@ at the time of returning to the parent substract the child value from the prefix
 ```
 
 <img width="657" height="606" alt="image" src="https://github.com/user-attachments/assets/2611652b-1eff-485b-8f57-f1b02c30aa5a" />
+
 ```python
 # optimal solution using prefix sum:
 # Definition for a binary tree node.
