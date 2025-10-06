@@ -1,7 +1,13 @@
-"""
+```
 https://leetcode.com/problems/sum-root-to-leaf-numbers/description/
 
-"""
+```
+
+<img width="528" height="869" alt="image" src="https://github.com/user-attachments/assets/31566c08-2cdb-4192-8a60-cb2b90e5f19e" />
+
+
+```python
+    
 # Definition for a binary tree node.
 # class TreeNode:
 #     def __init__(self, val=0, left=None, right=None):
@@ -34,3 +40,4 @@ class Solution:
             visited.append(node)
         return total
         
+```
