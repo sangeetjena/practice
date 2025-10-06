@@ -1,10 +1,13 @@
-"""
+```
 https://leetcode.com/problems/path-sum-iii/description/
 
 Note: similar to prefix sum ( sub array sum to target)
 go down to the childs and keep adding to the total sum . and check if any prefix sum found.
 at the time of returning to the parent substract the child value from the prefix sum.
-"""
+```
+
+<img width="657" height="606" alt="image" src="https://github.com/user-attachments/assets/2611652b-1eff-485b-8f57-f1b02c30aa5a" />
+```python
 # optimal solution using prefix sum:
 # Definition for a binary tree node.
 # class TreeNode:
@@ -69,5 +72,5 @@ class Solution:
                 dfs.append(node.right)
             visited.append(node)
         return count
-
+```
 
