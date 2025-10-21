@@ -5,7 +5,7 @@ You have a graph of n nodes labeled from 0 to n - 1. You are given an integer n 
 
 Return true if the edges of the given graph make up a valid tree, and false otherwise.
 
-note: one single child will not be pointed by, 2 parent node
+note: for a valida tree, there should not be any cycle and all the node should have visited at the end of dfs traversal,
 
 ```
 <img width="543" height="749" alt="image" src="https://github.com/user-attachments/assets/098e2286-f6d6-4f26-8d69-43bb4c926b80" />
