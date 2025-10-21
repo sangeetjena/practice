@@ -8,7 +8,8 @@ Return true if the edges of the given graph make up a valid tree, and false othe
 note: one single child will not be pointed by, 2 parent node
 
 ```
-![Uploading image.png…]()
+<img width="543" height="749" alt="image" src="https://github.com/user-attachments/assets/098e2286-f6d6-4f26-8d69-43bb4c926b80" />
+
 
 ``` python
 from collections import defaultdict
