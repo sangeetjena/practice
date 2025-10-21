@@ -1,9 +1,16 @@
-"""
+```
 https://leetcode.com/problems/graph-valid-tree/description/
+
+You have a graph of n nodes labeled from 0 to n - 1. You are given an integer n and a list of edges where edges[i] = [ai, bi] indicates that there is an undirected edge between nodes ai and bi in the graph.
+
+Return true if the edges of the given graph make up a valid tree, and false otherwise.
 
 note: one single child will not be pointed by, 2 parent node
 
-"""
+```
+![Uploading image.png…]()
+
+``` python
 from collections import defaultdict
 class Solution:
     def validTree(self, n: int, edges: List[List[int]]) -> bool:
@@ -27,3 +34,4 @@ class Solution:
             if node not in visited:
                 visited.append(node)
         return True if len(visited) == n else False
+```
