@@ -36,6 +36,8 @@ class Solution:
                             x,y = dfs[-1]
                             curr_word.append(board[x][y])
                             print("".join(curr_word),word[:len(curr_word)] )
+                            # if the char we have taken will not contribute to form the word or if char is already visited then
+                            # remove it from the visited list and from the dfs
                             if "".join(curr_word) != word[:len(curr_word)] or (x,y) in visited:
                                 del dfs[-1]
                                 if (x,y) in visited:
