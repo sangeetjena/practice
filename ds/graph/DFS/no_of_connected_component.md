@@ -1,7 +1,14 @@
-"""
+```
 https://leetcode.com/problems/number-of-connected-components-in-an-undirected-graph/description/
 
-"""
+You have a graph of n nodes. You are given an integer n and an array edges where edges[i] = [ai, bi] indicates that there is an edge between ai and bi in the graph.
+
+Return the number of connected components in the graph.
+
+```
+<img width="442" height="656" alt="image" src="https://github.com/user-attachments/assets/fa95efd2-91e6-4d68-827a-dcb4af144973" />
+
+``` python
 
 from collections import defaultdict
 class Solution:
@@ -31,6 +38,6 @@ class Solution:
                             dfs.append(chld)
                 visited.append(nd)
         return count
-                
+```                
                 
         
