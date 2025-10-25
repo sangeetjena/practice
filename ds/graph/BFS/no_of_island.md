@@ -1,9 +1,17 @@
-"""
+```
 https://leetcode.com/problems/number-of-islands/description/
+
+Given an m x n 2D binary grid grid which represents a map of '1's (land) and '0's (water), return the number of islands.
+
+An island is surrounded by water and is formed by connecting adjacent lands horizontally or vertically. You may assume all four edges of the grid are all surrounded by water.
 
 Note: bfs is faster than dfs , as in dfs we need visted array taking more time.
 
-"""
+```
+<img width="297" height="383" alt="image" src="https://github.com/user-attachments/assets/502525e3-99a8-462b-89eb-bb394e6e8b5b" />
+
+
+``` python
 from collections import deque
 class Solution:
     def numIslands(self, grid: List[List[str]]) -> int:
@@ -28,5 +36,6 @@ class Solution:
                     if q<len(grid[0])-1 and grid[p][q+1]=='1':
                         queue.append((p, q+1))
         return count
+```
 
         
