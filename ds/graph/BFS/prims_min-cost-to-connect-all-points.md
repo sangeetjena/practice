@@ -21,24 +21,25 @@ class Solution:
     def minCostConnectPoints(self, points: List[List[int]]) -> int:
         # this is simple bfs graph traversal
         visited = []
-        bfs = [(0,points[0][0], points[0][1])]
-        heapq.heapify(bfs)
+        bfs = [(0,points[0])]
         total_sum = 0
         while bfs:
             # always pull the closest point 1st, which has less distance. 
-            dist, x,y = heapq.heappop(bfs)
-            if (x,y) in visited:
+            dist, curr_point = heapq.heappop(bfs)
+            if curr_point in visited:
                 continue
             total_sum += dist
             # check distance from the current point to the all the points and insert it in the heap.
             for p in points:
                 point = tuple(p)
-                if point == (x,y) or point in visited:
+                if point == curr_point or point in visited:
                     continue
-                heapq.heappush(bfs, (abs(x-point[0]) + abs(y-point[1]),point[0], point[1]))
-            visited.append((x,y))
+                # Note: this can be improved by putting only the distance which is smallest.
+                heapq.heappush(bfs, (abs(curr_point[0]-point[0]) + abs(curr_point[1]-point[1]),point))
+            visited.append(curr_point)
         return total_sum
             
+        
         
 
 
