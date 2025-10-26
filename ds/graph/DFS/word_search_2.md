@@ -21,6 +21,52 @@ Note: simple dfs , but while back tracking remove node from visited set
 ``` python
 
 class Solution:
+    def exist(self, board: List[List[str]], word: str) -> bool:
+        dfs = []
+        for i in range(len(board)):
+            for j in range(len(board[0])):
+                if board[i][j] == word[0]:
+                    dfs = [[i,j]]
+                    visited = set()
+                    newword = ""
+                    while dfs:
+                        x,y = dfs[-1]
+                        # check if the char is alrady visited then remove from dfs list and remove from visited to allow other combination to take this character.
+                        if (x,y) in visited:
+                            del dfs[-1]
+                            newword = newword[:len(newword)-1]
+                            if (x,y) in visited:
+                                visited.remove((x,y))
+                            continue
+                        newword+=board[x][y]
+                        # check new match the desired word then return 
+                        if newword == word:
+                            return True
+                        #check if the next charrector is matching the next charector in the word, then only add to dfs.
+                        if x>=0 and x<len(board)-1 and ((x+1,y) not in visited and  board[x+1][y] == word[len(newword)]):
+                            dfs.append([x+1,y])
+                        if x<=len(board) and x>0 and ( (x-1,y) not in visited and  board[x-1][y] == word[len(newword)]):
+                            dfs.append([x-1,y])
+                        if y>=0 and y<len(board[0])-1 and ( (x,y+1) not in visited and  board[x][y+1] == word[len(newword)]):
+                            dfs.append([x,y+1])
+                        if y<=len(board[0]) and y>0 and ( (x,y-1) not in visited and  board[x][y-1] == word[len(newword)]):
+                            dfs.append([x,y-1])
+                        visited.add((x,y))
+        return False
+
+    def findWords(self, board: List[List[str]], words: List[str]) -> List[str]:
+        result = []
+        for word in words:
+            if self.exist(board, word):
+                result.append(word)
+        return result
+
+```
+
+
+``` python
+
+class Solution:
     def findWords(self, board: List[List[str]], words: List[str]) -> List[str]:
         total_words = []
         # take one word at a time
