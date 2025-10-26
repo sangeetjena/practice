@@ -7,9 +7,16 @@ A critical connection is a connection that, if removed, will make some servers u
 
 Return all critical connections in the network in any order.
 
+https://www.youtube.com/watch?v=qrAub5z8FeA
+
+Note: as per tarjen algorithm, for all node capture (node, time), during dfs if child node is less than parrent, then that will be in cycle (other path exisits to reach to the child), then update the time of parent in back tracking.
+if in dfs back tracking, if parent has larger time than child then that is the critical path.
+
 ```
 
 <img width="544" height="464" alt="image" src="https://github.com/user-attachments/assets/9908c2f7-1bdb-40f0-8e49-818af3ec8e09" />
+
+<img width="631" height="871" alt="image" src="https://github.com/user-attachments/assets/ac526cf2-fcaf-48dd-9c40-cccd202653a9" />
 
 
 ``` python
