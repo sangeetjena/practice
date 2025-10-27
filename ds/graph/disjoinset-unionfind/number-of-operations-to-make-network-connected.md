@@ -8,7 +8,9 @@ You are given an initial computer network connections. You can extract certain c
 Return the minimum number of times you need to do this in order to make all the computers connected. If it is not possible, return -1.
 
 Note:
-solution1: find all disconnected graph then no of connection needed is = no of cluster -1
+solution1: find all disconnected graph then no of connection needed is = no of cluster -1. but this operation will take longer because if the node is there part of same set still we are doing parsing till we parse all the node of the cluster. ( we skipp when found in visited but still one extra operation we are using)
+
+sol2: discjoin set or union find.
 ```
 <img width="816" height="624" alt="image" src="https://github.com/user-attachments/assets/3c2cde22-ddfe-4b42-8fc4-87d687a35abb" />
 
