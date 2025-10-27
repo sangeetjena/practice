@@ -11,6 +11,7 @@ Note:
 solution1: find all disconnected graph then no of connection needed is = no of cluster -1. but this operation will take longer because if the node is there part of same set still we are doing parsing till we parse all the node of the cluster. ( we skipp when found in visited but still one extra operation we are using)
 
 sol2: discjoin set or union find.
+https://www.youtube.com/watch?v=eTaWFhPXPz4
 ```
 <img width="816" height="624" alt="image" src="https://github.com/user-attachments/assets/3c2cde22-ddfe-4b42-8fc4-87d687a35abb" />
 
