@@ -33,13 +33,16 @@ Note: this solution has issue with memory limit exceed exception
 """
 class Solution:
     def maxTaxiEarnings(self, n: int, rides: List[List[int]]) -> int:
-        dp = [[0 for i in range(n+1)] for _ in range(len(rides)+1)]
+        dp = [0 for i in range(n)]
         rides = sorted(rides)
-        for i in range(1,len(rides)+1):
-            for j in range(n+1):
-                wt = rides[i-1][1] - rides[i-1][0]
-                if (rides[i-1][1]) <= j:
-                    dp[i][j] = max( dp[i-1][j], rides[i-1][2] + wt +  dp[i-1][rides[i-1][0]])
-                else:
-                    dp[i][j] = dp[i-1][j]
-        return dp[-1][-1]
+        for ride in rides:
+            s,e,tip = ride     
+            # why -1 because we are starting dp index positon from 0.
+            dp[e-1] = max(dp[e-1], max(dp[e-1-1], e-s+tip+dp[s-1]))
+            #.            ^existing val, ^ not take ,^ if take then then (end-start)+tip +total money before current start trip
+            # update all the value from the end to it right side all the values
+            # to optimize it do binary search, search the 1st non zero value from 0: start position 
+            for i in range(e, n):
+                dp[i] = max(dp[i], dp[e-1])
+        print(dp)
+        return dp[-1]
