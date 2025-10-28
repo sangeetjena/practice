@@ -12,7 +12,10 @@ Return the answers to all queries. If a single answer cannot be determined, retu
 Note: The input is always valid. You may assume that evaluating the queries will not result in division by zero and 
 that there is no contradiction.
 
-Note: The variables that do not occur in the list of equations are undefined, so the answer cannot be determined for them.
+Note: simple dfs solution, from one edge if we can reach to other edges where the destination value is present or not.
+.if not able to find in one route, then in backtraking devide the value from the total and search for other route and multiply
+the value, till you reach the final node.
+The variables that do not occur in the list of equations are undefined, so the answer cannot be determined for them.
 
  
 
