@@ -112,6 +112,8 @@ class Solution:
         maxsm = 0
         while l < len(left_sum) and h >= 0:
             sm = left_sum[l] + right_sum[h]
+            # as left and right array is sorted, and i started smallest index(value) from left and bigest value from right.
+            # so if the sum has became bigger than half the sum, that means i have to reduce the value from bigger side else increase from smaller side.
             if sm <= mid_sum:
                 maxsm = max(maxsm, sm)
                 l += 1
