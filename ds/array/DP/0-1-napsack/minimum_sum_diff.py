@@ -80,6 +80,7 @@ class Solution:
     def minimumDifference(self, nums: List[int]) -> int:
         n = len(nums) // 2  # number of elements in each group
         minnum = min(nums)
+        # to handle negetive numbers.
         if minnum <0:
             nums = [i - minnum for i in nums]
 
