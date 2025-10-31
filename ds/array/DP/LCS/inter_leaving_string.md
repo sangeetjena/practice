@@ -13,6 +13,7 @@ The interleaving is s1 + t1 + s2 + t2 + s3 + t3 + ... or t1 + s1 + t2 + s2 + t3 
 Note: a + b is the concatenation of strings a and b.
 ```
 
+<img width="732" height="635" alt="image" src="https://github.com/user-attachments/assets/32e7ca40-9686-4b66-87fe-c48ea0920f4a" />
 
 ``` python
 class Solution:
