@@ -16,27 +16,22 @@ Input: nums1 = [0,0,0,0,0], nums2 = [0,0,0,0,0]
 Output: 5
 Explanation: The repeated subarray with maximum length is [0,0,0,0,0].
 
+Note:
+bruite force : take two pointer and take one position from num1 and check in num2 continue till find missmatch, then reset 1st pointer and start from 
+begining for 2nd array 
 
 
 """
 
 class Solution:
-	def findLength(self, nums1: List[int], nums2: List[int]) -> int:
-
-		result = 0
-
-		dp = [[0] * (len(nums2)+1) for _ in range(len(nums1)+1)] 
-
-		for i in range(len(nums1)):
-
-			for j in range(len(nums2)):
-
-				if nums1[i] == nums2[j]:
-
-					new_value = dp[i][j] + 1 
-
-					dp[i+1][j+1] = new_value
-
-					result = max(result, new_value)
-
-		return result
+    def findLength(self, nums1: List[int], nums2: List[int]) -> int:
+        dp = [[0 for i in range(len(nums1)+1)] for _ in range(len(nums2)+1)]
+        max_len = 0
+        for i in range(1,len(nums2)+1):
+            for j in range(1,len(nums1)+1):
+				# for longest sub array current value should match and its previous index value also should match.
+                if nums2[i-1] == nums1[j-1]:
+                    dp[i][j] = 1+dp[i-1][j-1]
+                    max_len = max(max_len, dp[i][j])
+        return max_len
+        
