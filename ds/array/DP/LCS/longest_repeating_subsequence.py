@@ -1,6 +1,12 @@
 """
 https://www.geeksforgeeks.org/longest-repeating-subsequence/
 
+https://www.youtube.com/watch?v=ZqG89Z-dKpI&t=23s
+
+Given a string s, the task is to find the length of the longest repeating subsequence, 
+such that the two subsequences don't have the same string character at the same position, \
+i.e. any ith character in the two subsequences shouldn't have the same index in the original string. 
+
 Input: s= "abc"
 Output: 0
 Explanation: There is no repeating subsequence
