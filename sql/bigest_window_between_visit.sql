@@ -29,7 +29,8 @@ Output:
 with visit as (
     select user_id, 
         visit_date,
-        lead(visit_date, 1, '2021-1-1')over(partition by user_id order by visit_date asc)as ld,             datediff(lead(visit_date, 1, '2021-1-1')over(partition by user_id order by visit_date asc), visit_date) as max_diff
+        lead(visit_date, 1, '2021-1-1')over(partition by user_id order by visit_date asc)as ld,             
+        datediff(lead(visit_date, 1, '2021-1-1')over(partition by user_id order by visit_date asc), visit_date) as max_diff
     from userVisits 
 ),
 rnk as (
