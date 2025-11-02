@@ -1,4 +1,28 @@
+Joins:
+============================
+```
+| A |
+|---|
+| 1 |
+| 2 |
+| 3 |
 
+### Table Y
+| B |
+|---|
+| 2 |
+| 3 |
+| 4 |
+
+| Join Type           | Description                                           | Rows Returned | Notes                 |
+| ------------------- | ----------------------------------------------------- | ------------- | --------------------- |
+| **INNER JOIN**      | Only rows with matching values in both tables         | 2             | Common join type      |
+| **LEFT JOIN**       | All rows from X + matches from Y                      | 3             | `OUTER` optional      |
+| **LEFT OUTER JOIN** | Same as LEFT JOIN                                     | 3             | Same result           |
+| **CROSS JOIN**      | Cartesian product of X and Y                          | 9             | No join condition     |
+| **FULL OUTER JOIN** | All rows from both tables, with NULLs for non-matches | 4             | Combines left + right |
+
+```
 analytical functions:
 ============================
 ```
