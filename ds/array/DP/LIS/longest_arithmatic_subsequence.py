@@ -35,6 +35,7 @@ class Solution:
             return n
 
         longest = 2
+        # dp = [{1:l1, 2:l1, 5:l4}, {1:l1,3:l2, 5:l3}, {diff1: len1. diff2: len2,....}, ....]
         dp = [{} for _ in range(n)]
 
         for i in range(n):
