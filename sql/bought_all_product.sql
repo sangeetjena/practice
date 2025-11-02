@@ -1,4 +1,4 @@
-"""
+```
 https://leetcode.com/problems/customers-who-bought-all-products/description/?envType=study-plan-v2&envId=top-sql-50
 
 Table: Customer
@@ -29,7 +29,8 @@ Write a solution to report the customer ids from the Customer table that bought 
 Return the result table in any order.
 
 The result format is in the following example.
-"""
+```
+``` sql
 # Write your MySQL query statement below
 
 with x as (select 
@@ -46,3 +47,4 @@ select x.customer_id
 from x join 
 y
 on(x.productcount = y.productcount)
+```
