@@ -25,7 +25,7 @@ Joins:
 ```
 analytical functions:
 ============================
-```
+``` sql
   ROWS BETWEEN lower_bound AND upper_bound
 
   UNBOUNDED PRECEDING – All rows before the current row.
@@ -34,7 +34,7 @@ analytical functions:
   n FOLLOWING – n rows after the current row.
   UNBOUNDED FOLLOWING – All rows after the current row.
 ```
-```
+``` sql
 
   SELECT *, AVG(amount) OVER (PARTITION BY salesperson ORDER BY sale_date ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING ) AS avg_future_sales
   FROM sales;
@@ -101,7 +101,7 @@ BirthTime)
 Recursive query:
 ===========================
 
-```
+``` sql
 wtih [RECURSIVE] cte as (
   select [ base query]
     union all
@@ -111,7 +111,7 @@ select from cte
 ```
 
 ##### ex: print numbers from 1 to 10:
-```
+``` sql
 with recursive cte as (
   select 1 as num
     union all
@@ -122,7 +122,7 @@ select * form cte
 ```
 
 ##### Ex: print employee in level (1,4,5)
-```
+``` sql
 with recursive cte as (
   select empid, "" as managername, empname, 1 as level
   from emp
@@ -142,7 +142,7 @@ select * from cte where level in (1,4,5)
 
 pivot & unpivot
 =========================
-```
+``` sql
 SELECT (ColumnNames) 
 FROM (TableName) 
 PIVOT
