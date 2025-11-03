@@ -26,10 +26,11 @@ class Solution:
         dp = [1 for i in range(n+1)]
         for i in range(2,len(dp)):
             for j in range(1,i):
-                # take all element and check for which combination we are getting the max values.
-                # when we are getting max value of i-j, we need to check what is the highest value we 
-                # will gett by taking all combinatin to for dp[i-j] value vs taking i-j as a whole.
-                # to form 2 => 1+1 and product is 1 vs if we will take 2 as a whole we will get larger value to form subsequent products.
+              # why 2nd max: because we need to check if we will take the remaining (substreaciton from main value) value as a whole  (i-j)
+              # or if we will break the remaining value (i.e multiplication of the values, if the remaining value will be broken further) dp[i-j].
+              # which one will be bigger that we have to take to maximize the value.
+              # ex: for 4 - we can brak it to 2+2 = 2*2 = 4 but if weill break it further -> 2+ (1+1) then multiplication will be 2 only 
+              # but if we would have taken 2 as a whole then multiplication value would have been more.
                 dp[i] = max(dp[i], j*max(dp[i-j], i-j))
                 print(i,j,dp[i-j])
         print(dp)
