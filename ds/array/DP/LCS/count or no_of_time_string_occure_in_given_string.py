@@ -3,7 +3,7 @@ https://www.geeksforgeeks.org/find-number-times-string-occurs-given-string/
 
 Input: string = “subsequence”pattern = “sue” Output: 7 subsequencesubsequencesubsequencesubsequencesubsequencesubsequencesubsequence
 
-Note: similar to lcs but to get count we need to sum digonal and just above location in the metrics.
+Note: same as distinct subsequence, here insteed of taking max, take +
 """
 
 # Function to count the number of times pattern `Y[0…n)`
