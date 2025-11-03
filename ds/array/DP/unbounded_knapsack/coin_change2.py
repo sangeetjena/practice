@@ -33,7 +33,7 @@ Output: 1
 
 
 Note: similar to coin 1 problem, but need to find no of all possible combination
-also need to take coins first and then amount.
+trick: for all possible combinatin, take coins first and then amount. and start 2nd loop from coin onward.
 """
 
 class Solution:
