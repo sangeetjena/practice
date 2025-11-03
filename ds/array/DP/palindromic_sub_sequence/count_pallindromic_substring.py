@@ -25,7 +25,6 @@ bruite force: at each i position expand search to left and righ side.
 case 1: even size pallindrom where l == r
 case 2: odd size pallindrom, where at middle there will be a common character and i-1 == i+1.
 
-DP: 
 """
 class Solution:
     def countSubstrings(self, s: str) -> int:
