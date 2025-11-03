@@ -18,7 +18,7 @@ Input: s = "aaa"
 Output: 6
 Explanation: Six palindromic strings: "a", "a", "a", "aa", "aa", "aaa".
 
-Note: 
+Note: ( it is pallindromic sub string not subsequence)
 bruite force: at each i position expand search to left and righ side.
 case 1: even size pallindrom where l == r
 case 2: odd size pallindrom, where at middle there will be a common character and i-1 == i+1.
