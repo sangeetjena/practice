@@ -17,6 +17,9 @@ Example 2:
 
 Input: nums = [-7,-3,2,3,11]
 Output: [4,9,9,49,121]
+
+Note: as the array is sorted, so the bigest -ve element will be at index 0 and bigest +ve num will be there at extream right.
+so if so if the square value of two pointer (l,r) will be bigger then place that will be the greatest element in the entire array and place it in the extream right in result array and move the pointer which was biggest.
 """
 
 class Solution:
