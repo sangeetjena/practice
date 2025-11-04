@@ -25,21 +25,31 @@ Output: 10
 """
 class Solution:
     def maxCoins(self, nums: List[int]) -> int:
-        n=len(nums)
-        nums.insert(0,1)
-        nums.append(1)
-        dp=[[0 for j in range(n+2)] for j in range(n+2)]
-        for i in range(n,0,-1): # index position of one element in the array 
-            for j in range(1,n+1): # shifting window
-                if i>j:
-                    continue
-                maxi=-maxsize
-                for k in range(i,j+1): # define window size
-                    coins=nums[i-1]*nums[k]*nums[j+1]+dp[i][k-1]+dp[k+1][j]
-                    maxi=max(maxi,coins)
-                dp[i][j]=maxi
-        return dp[1][n]
+        # Add 1 at both ends to handle edge balloons easily
+        nums = [1] + nums + [1]
 
+        n = len(nums)
 
-arr = [1, 2, 3, 4]
-print(burst_baloon(arr))
+        dp = [[0] * n for _ in range(n)]
+
+        # length = size of the subarray (number of balloons to burst)
+        for length in range(1, n - 1):
+            # left = starting index of the current interval
+            for left in range(1, n - length):
+                right = left + length - 1  # right = ending index of interval
+
+                # Now we try bursting each balloon 'k' last in this interval (left..right)
+                for k in range(left, right + 1):
+                    # dp[left][k-1] => coins from left side of k
+                    # dp[k+1][right] => coins from right side of k
+                    # nums[left-1]*nums[k]*nums[right+1] => coins from bursting k last
+                    dp[left][right] = max(
+                        dp[left][right],
+                        dp[left][k - 1] + dp[k + 1][right] + nums[left - 1] * nums[k] * nums[right + 1]
+                    )
+
+        # The final answer is dp[1][n-2], which represents bursting all real balloons
+        # (excluding the two artificial 1s at the ends)
+        print(dp)
+        return dp[1][n - 2]
+
