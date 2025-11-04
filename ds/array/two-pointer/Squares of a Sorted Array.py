@@ -1,6 +1,8 @@
 """
 https://leetcode.com/problems/squares-of-a-sorted-array/description/
 
+https://www.youtube.com/watch?v=FPCZsG_AkUg
+
 Given an integer array nums sorted in non-decreasing order, return an array of the squares of each number sorted in non-decreasing order.
 
  
