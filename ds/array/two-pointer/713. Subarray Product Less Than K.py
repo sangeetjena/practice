@@ -34,6 +34,10 @@ class Solution:
             product = product * nums[j]
             if product < k:
                 # formula : the total window we will add that many subarray it will form.
+                # note: why here we are not just use a counter and increment it ?
+                # that is because, for 1st when window = 1 , then number of subarray will be 1 -> 10
+                # then when we will increase the window to 2 the num of sub arrray will be [10,5] , but here just count will not help because in this subaarray, there are two sub array hidden, [10,5] and 5
+                # so every time we increase the window, we have to add the window size to total count.
                 count = count + (j - i + 1)
             elif product >= k:
                 while product >= k:
