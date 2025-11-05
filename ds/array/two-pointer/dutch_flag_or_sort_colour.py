@@ -31,7 +31,9 @@ Follow up: Could you come up with a one-pass algorithm using only constant extra
 
 Note:
 approach1: use a dictionary count each color frequency and insert the element back to array, all same colour in single sort then next ...
-
+approch 2: all the 0 should go to left side , all 1 should stay in middle and all 2 will go to right side.
+always check mid value if it is 0 or 2 , then move the element else increase the m value.
+alwas check for m position and decide.
 """
 
 
@@ -48,4 +50,27 @@ class Solution:
             nums[i:i+dct[key]] = [key]*dct[key]
             i+=dct[key]
         print(nums)
+
+
+===Soln 2:====
+
+
+class Solution:
+    def sortColors(self, nums: List[int]) -> None:
+        """
+        Do not return anything, modify nums in-place instead.
+        """
+        m=s = 0
+        e = len(nums)-1
+        while m<=e:
+            if nums[m] == 0:
+                nums[s], nums[m] = nums[m],nums[s]
+                m+=1
+                s+=1
+            elif nums[m] == 1:
+                m+=1
+                continue
+            else:
+                nums[e], nums[m] = nums[m],nums[e]
+                e-=1
 
