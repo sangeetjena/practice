@@ -29,6 +29,8 @@ nums[i] is either 0, 1, or 2.
 
 Follow up: Could you come up with a one-pass algorithm using only constant extra space?
 
+Note:
+approach1: use a dictionary count each color frequency and insert the element back to array, all same colour in single sort then next ...
 
 """
 
