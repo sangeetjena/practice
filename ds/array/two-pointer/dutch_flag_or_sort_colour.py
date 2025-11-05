@@ -33,7 +33,7 @@ Note:
 approach1: use a dictionary count each color frequency and insert the element back to array, all same colour in single sort then next ...
 approch 2: all the 0 should go to left side , all 1 should stay in middle and all 2 will go to right side.
 always check mid value if it is 0 or 2 , think m as traffic manager, if 0 will come it will send to start pointer, if 2 will come it will send it to end pointer.
-and start ponter side size will increase so m will give space for 0 value by moving to next position,
+and start ponter side size will increase so m will give space for 0 value by moving to next position (i.e m will inceemnt if values comes as 0 or 1)
 """
 
 
