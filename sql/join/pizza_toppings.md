@@ -27,7 +27,9 @@ select topping_name, ingredient_cost, rank()over(order by topping_name desc) as 
 from 
 pizza_toppings
 )
-, y as (select concat(a.topping_name,',', b.topping_name,',', c.topping_name)as pizza, (a.ingredient_cost +b.ingredient_cost +c.ingredient_cost) as total_cost
+, y as (
+select concat(a.topping_name,',', b.topping_name,',', c.topping_name)as pizza,
+ (a.ingredient_cost +b.ingredient_cost +c.ingredient_cost) as total_cost
 from 
 x a
 join x b
