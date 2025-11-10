@@ -19,7 +19,7 @@ Output: "acdb"
 Note: 
 # classic problem in monotonic stack: this also can be solved using lcs https://leetcode.com/problems/smallest-subsequence-of-distinct-characters/
         # simple rulse is : 1) if we get a char which is smaller than it previous vaue in the stack and it previous value 
-        has suplicate at greader index position in the string then stack[-1] value can be removed
+        has duplicate at greader index position in the string then stack[-1] value can be removed
         # rule 2: check if in the stack is the char already exist then no need to do anything.
         # rule 3: break mstack loop if last element not able to delete.
 """
