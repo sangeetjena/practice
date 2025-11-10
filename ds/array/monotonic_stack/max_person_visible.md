@@ -10,6 +10,8 @@ More formally, the ith person can see the jth person if i < j and min(heights[i]
 
 Return an array answer of length n where answer[i] is the number of people the ith person can see to their right in the queue.
 
+
+Note: for right side view, parse from right to left. pop the element if we got an bigger element.
 ```
 <img width="627" height="581" alt="image" src="https://github.com/user-attachments/assets/66631c0c-c8f6-49cd-bb9e-12b29880b33a" />
 
