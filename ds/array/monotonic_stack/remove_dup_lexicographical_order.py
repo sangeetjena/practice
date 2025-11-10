@@ -1,9 +1,25 @@
 """
 https://leetcode.com/problems/remove-duplicate-letters/description/?envType=problem-list-v2&envId=monotonic-stack
 
+Given a string s, remove duplicate letters so that every letter appears once and only once. 
+You must make sure your result is the smallest in lexicographical order among all possible results.
+
+ 
+
+Example 1:
+
+Input: s = "bcabc"
+Output: "abc"
+Example 2:
+
+Input: s = "cbacdcbc"
+Output: "acdb"
+ 
+
 Note: 
 # classic problem in monotonic stack: this also can be solved using lcs https://leetcode.com/problems/smallest-subsequence-of-distinct-characters/
-        # simple rulse is : 1) if we get a char which is smaller than it previous vaue in the stack and it previous value has suplicate at greader index position in the string then stack[-1] value can be removed
+        # simple rulse is : 1) if we get a char which is smaller than it previous vaue in the stack and it previous value 
+        has suplicate at greader index position in the string then stack[-1] value can be removed
         # rule 2: check if in the stack is the char already exist then no need to do anything.
         # rule 3: break mstack loop if last element not able to delete.
 """
