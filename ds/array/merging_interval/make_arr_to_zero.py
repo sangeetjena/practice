@@ -40,10 +40,15 @@ Select the subset of indices as [0, 1, 2] and decrement the values at these indi
 The array will become [3, 1, 0, 0], which is not a Zero Array.
 
 Solution:  https://www.youtube.com/watch?v=hOEg26zHlco
-Note: create difference set, same as curporate ticket booking.(add oposite weightabe at the end of index range)
+Note: 
+soln 1: (using prefix sum)
+      1- create difference set, same as curporate ticket booking.(add oposite weightabe at the end of index range)
       after increament value for a sub set all the difference in value of the subset will remain same, 
       so we can say for a subset what really change is starting element of the subset and end +1 element in the subset.
       2- after all the operation if cumilative difference eqal to the element , then the ele,ent can become 0.
+soln 2: using merge interval:
+    1- find common interval and add frequency as many intersection point came.
+    2- use a single loop substract the value from the array.
 """
 class Solution:
     def isZeroArray(self, nums: List[int], queries: List[List[int]]) -> bool:
