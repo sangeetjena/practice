@@ -1,7 +1,8 @@
 ```
 https://leetcode.com/problems/binary-tree-level-order-traversal/
 
-Given the root of a binary tree, return the level order traversal of its nodes' values. (i.e., from left to right, level by level).
+Given the root of a binary tree, return the level order traversal of its nodes' values. (i.e., from left to right,
+level by level).
 
 ```
 <img width="368" height="591" alt="image" src="https://github.com/user-attachments/assets/6b825621-fa33-4186-8729-61ccfd6c4576" />
