@@ -8,7 +8,7 @@ Assume you're given a table containing information about Wayfair user transactio
 The output should include the year in ascending order, product ID, current year's spend, previous year's spend and year-on-year growth percentage, rounded to 2 decimal places.
 
 ```
-<img width="821" height="925" alt="image" src="https://github.com/user-attachments/assets/19f65135-b928-4b80-9596-e2e39f48d0df" />
+<img width="836" height="920" alt="image" src="https://github.com/user-attachments/assets/a1354ae3-d773-459c-a68d-946a1a0fdb73" />
 
 
 ``` sql
