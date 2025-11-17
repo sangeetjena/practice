@@ -13,7 +13,10 @@ Example 1:
 Input: root = [1,2,3,4,null,2,4,null,null,4]
 Output: [[2,4],[4]]
 
-Note: in dfs find all sub tree serialization values and store it in hash map , then compare any sub stree seialize value matches or not.
+Note: in dfs find all sub tree serialization values and store it in hash map , then compare any sub stree
+seialize value matches or not.
+why this will work ? becasue dfs will start constructing the tree from child to the parent node. and
+we are capturing all substree we have constrcted from leaf node to the parent node.
 
 ```
 <img width="562" height="763" alt="image" src="https://github.com/user-attachments/assets/bec5cec1-8bce-40f6-b237-bceabc8398cd" />
