@@ -39,7 +39,8 @@ class Solution:
             s,e,tip = ride     
             # why -1 because we are starting dp index positon from 0.
             dp[e-1] = max(dp[e-1], max(dp[e-1-1], e-s+tip+dp[s-1]))
-            #.            ^existing val, ^ not take ,^ if take then then (end-start)+tip +total money before current start trip
+            #.            ^not take =existing val, 
+            #                           ^ take (prev end positon valur + current =  if take then then (end-start)+tip +total money before current start trip
             # update all the value from the end to it right side all the values
             # to optimize it do binary search, search the 1st non zero value from 0: start position 
             for i in range(e, n):
