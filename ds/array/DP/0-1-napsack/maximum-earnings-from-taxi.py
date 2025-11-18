@@ -39,8 +39,10 @@ class Solution:
             s,e,tip = ride     
             # why -1 because we are starting dp index positon from 0.
             dp[e-1] = max(dp[e-1], max(dp[e-1-1], e-s+tip+dp[s-1]))
-            #.            ^not take =existing val, 
-            #                           ^ take (prev end positon valur + current =  if take then then (end-start)+tip +total money before current start trip
+            #.            ^existing val, this is to handle the case where previous points already updated the end location with higher value. 
+            #             ex: (1,8,100),(2,6,1),(6,8,2), so here 1,8 updated with highest value but when 6,8 will com, then we will check if the 
+            #             end positon is already updated with higher value by other trips or not.
+            #                           ^prev_val(not take, ^ take (prev end positon value (starting postition) + current =  if take then then (end-start)+tip +total money before current start trip
             # update all the value from the end to it right side all the values
             # to optimize it do binary search, search the 1st non zero value from 0: start position 
             for i in range(e, n):
