@@ -41,6 +41,7 @@ def totalCost(mask, pos, n, cost):
     # if mask ex: 111 -> 7 , then (1 << n) - 1 means (1000 i.e 8) -> 8-1 = 7 (go to the next number -1 = current value i.e mask value.
     if mask == (1 << n) - 1:
         return cost[pos][0]
+        # why from pos to 0, becasue from the last point it has to return to the starting point.
 
     ans = sys.maxsize   
 
