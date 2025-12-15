@@ -3,7 +3,7 @@
 
 
 
-# Note: inner loop will run iteratively from i to N
+# Note: inner loop will run iteratively from i to N and compare between i and j index 
 
 def selection_sort(arr):
     print(arr)
