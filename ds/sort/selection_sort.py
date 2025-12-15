@@ -1,6 +1,10 @@
 # time complexity : O(n^2)
 # space complexity : inplace
 
+
+
+# Note: inner loop will run iteratively from i to N
+
 def selection_sort(arr):
     print(arr)
     complexity = 0
