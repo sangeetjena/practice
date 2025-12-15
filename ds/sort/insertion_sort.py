@@ -2,6 +2,9 @@
 # space complexity : O(n)
 # logic: swap data between j, j+!
 
+
+# Note: iteratively inner loop will run from i-1 to 0
+
 def insertion_sort(arr):
     print(arr)
     complexity = 0
