@@ -2,6 +2,9 @@
 # difference between insertion sort and bobble sort is
 # in insertion sort loop goes from (j to i-1)
 # where as in bobble sort loops froes from j to (n-i-1)
+
+
+# Note: iteratively inner loop will run 0 to n-1
 def bubble_sort(arr):
     for i in range(0, len(arr)):
         swap = False
