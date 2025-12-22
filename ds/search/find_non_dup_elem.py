@@ -36,7 +36,8 @@ class Solution:
         # return False
 
         # solution using binary search. idea is i will use binary search  i.e: mid = (l+r)/2 /then at the mid i will check 
-        # if the duplicate is ther in right side of the middle element or left side based on that i will create two group. as mentioned in teh description that we have exatly two duplicated then the set has all duplicate will have even length and the set has unique element will have odd lenght.
+        # if the duplicate is ther in right side of the middle element or left side based on that i will create two group. as mentioned in teh description that we have exatly two duplicated then the set has
+        # all duplicate will have even length and the set has unique element will have odd lenght.
         l ,r = 0, len(nums)-1
         while l<=r:
             mid = (l+r)//2
