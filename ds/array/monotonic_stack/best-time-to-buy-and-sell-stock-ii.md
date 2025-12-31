@@ -1,4 +1,4 @@
-'''
+```
 https://leetcode.com/problems/best-time-to-buy-and-sell-stock-ii/description/?envType=study-plan-v2&envId=top-interview-150
 
 
@@ -11,12 +11,12 @@ Find and return the maximum profit you can achieve.
 Note: monotonic stack pattern, only differnce is need to take min from all stack pop and add that to total profit calculation.
 
 
-'''
+```
 
 <img width="1440" height="439" alt="image" src="https://github.com/user-attachments/assets/8fca39c4-e416-428b-a478-fd1ccff8dcbc" />
 
 
-''' python
+``` python
 class Solution:
     def maxProfit(self, prices: List[int]) -> int:
         total_profit = 0
@@ -33,4 +33,4 @@ class Solution:
         return total_profit
         
 
-'''
+```
