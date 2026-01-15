@@ -37,8 +37,61 @@ minStack.top();    // return 0
 minStack.getMin(); // return -2
 
 Note:
+1- using math:
+   push = val = 2*val - min
+   pop = min = 2*min - val
+         val = val - min
 
     
+```
+
+
+``` python
+
+class MinStack:
+
+    def __init__(self):
+        self.stk = []
+        self.min = None
+
+    def push(self, val: int) -> None:
+        if not self.stk:
+            self.stk.append(val)
+            self.min = val
+        elif val < self.min:
+            # push encoded value
+            self.stk.append(2 * val - self.min)
+            self.min = val
+        else:
+            self.stk.append(val)
+
+    def pop(self) -> None:
+        if not self.stk:
+            return
+
+        val = self.stk.pop()
+
+        # if encoded value, restore previous min
+        if val < self.min:
+            self.min = 2 * self.min - val
+
+        if not self.stk:
+            self.min = None
+
+    def top(self) -> int:
+        if not self.stk:
+            return None
+
+        val = self.stk[-1]
+        # if current value is greter than min then stack will hold the correct value
+        # else stack will hold manupulated value and min will store the current value.
+        if val < self.min:
+            return self.min
+        return val
+
+    def getMin(self) -> int:
+        return self.min
+
 ```
 
 
