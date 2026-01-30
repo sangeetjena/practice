@@ -4,7 +4,8 @@
 |-----------|--------------------|--------------------------------|----------------------|
 | Current Date | `CURDATE()` | `CURRENT_DATE` | Not feasible |
 | Current Date & Time | `NOW()` | `CURRENT_TIMESTAMP` | Not feasible |
-| Convert String to Date | `STR_TO_DATE()` | `TO_DATE()`, `FROM_UNIXTIME(UNIX_TIMESTAMP())` | `SUBSTR`, `regexp` parse |
+| Convert String to Date | `STR_TO_DATE(str, '%Y-%m-%d')` | `TO_DATE(str, 'YYYY-MM-DD')`, `FROM_UNIXTIME(UNIX_TIMESTAMP())` | `SUBSTR`, `regexp` parse |
+| Convert Date to String | `DATE_FORMAT(date, '%d-%m-%Y')` | `TO_CHAR(date, 'DD-MM-YYYY')` | |
 | Extract Day, Month, Year | `DAY()`, `MONTH()`, `YEAR()` | `DAY()`, `MONTH()`, `YEAR()`, `WEEKOFYEAR()`, `QUARTER()` | `SUBSTR` on `'YYYY-MM-DD'` |
 | Add / Subtract Dates | `DATE_ADD()`, `DATE_SUB()` | `DATE_ADD()`, `DATE_SUB()`, `ADD_MONTHS()` | Integer math (rare) |
 | Last Day of Month | `LAST_DAY()` | `LAST_DAY()` | Compose with date functions |
