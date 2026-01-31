@@ -49,7 +49,7 @@ class Solution:
         return (root.val + left[1] + right[1], max(left[0], left[1]) + max(right[0], right[1]))
         #.     ^ root + left side without root + right side without root ( if i am taking root then i can take all the below value except its immediate chield)
         #                                        ^ max left (with root , without root) + maxright (with root, without root). if i am not taking root, then i am free to take left side with root or withour root value.
-
+        #(including root , excluding root)
 
 
 ```
