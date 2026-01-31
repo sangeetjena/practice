@@ -38,8 +38,10 @@ class Solution:
         for i in range(2, len(s)+1):
             onedigit = s[i-1]
             twodigit = s[i-2:i]
+            # single 0 value is not valid so avoid, 0 can only for a valid decode value with two digit number.
             if int(onedigit) != 0:
                 dp[i] += dp[i-1]
+            # also two digit number can't be 01, 0 should come after a number so it should be >10 and <=26
             if 10<=int(twodigit)<=26:
                 dp[i]+=dp[i-2]
         print(dp)
