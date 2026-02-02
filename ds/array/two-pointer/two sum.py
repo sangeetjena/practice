@@ -40,3 +40,19 @@ class Solution:
 # sort the list and keep one pointer at end and one at begining
 # if sum is less then move the left else right 
 # break the loop if element found 
+
+class Solution:
+    def twoSum(self, nums: List[int], target: int) -> List[int]:
+        nums = sorted([(nums[i],i) for i in range(len(nums))])
+        i,j = 0, len(nums)-1
+        while i<j:
+            if target == nums[i][0] + nums[j][0]:
+                return [nums[i][1],nums[j][1]]
+            if target > (nums[i][0] + nums[j][0]):
+                i+=1
+            else:
+                j-=1
+        return [0,0]
+        
+        
+        
