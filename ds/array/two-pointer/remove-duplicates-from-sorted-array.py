@@ -40,6 +40,22 @@ It does not matter what you leave beyond the returned k (hence they are undersco
 Note: # keep two pointer 
 # j pointer increment till get the the 1st non duplicate element and keep i pointer on last swap location
 """
+class Solution:
+    def removeDuplicates(self, nums: List[int]) -> int:
+        i,j = 1,1
+        while j<len(nums):
+            # insert element if j and i values are different.
+            if nums[i] != nums[j]:
+                nums[i] = nums[j]
+            # increment i value if elements are not duplicate
+            if nums[i]!= nums[i-1]:
+                i+=1
+            # constantly increment the j value
+            j+=1
+        return i
+
+=====================================
+
 
 class Solution:
     def removeDuplicates(self, nums: List[int]) -> int:
