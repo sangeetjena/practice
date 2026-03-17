@@ -11,6 +11,9 @@ Return the minimum cost to make all points connected. All points are connected i
 
 
 Note: MST
+from one node, calculate cost to connect all node and select the minimum from then.
+spanning tree = edges < nodes
+mst =  select the edges which is minimum
 ```
 <img width="632" height="814" alt="image" src="https://github.com/user-attachments/assets/9e2264c0-c710-42b7-828f-5fc562dd5329" />
 
