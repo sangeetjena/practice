@@ -1,6 +1,8 @@
 ```
 https://leetcode.com/problems/graph-valid-tree/description/
-You have a graph of n nodes labeled from 0 to n - 1. You are given an integer n and a list of edges where edges[i] = [ai, bi] indicates that there is an undirected edge between nodes ai and bi in the graph.
+You have a graph of n nodes labeled from 0 to n - 1. You are given an integer n and a list of
+edges where edges[i] = [ai, bi] indicates that there is an undirected edge between nodes ai
+and bi in the graph.
 
 Return true if the edges of the given graph make up a valid tree, and false otherwise.
 
@@ -9,7 +11,8 @@ Note:
 1- create adjacenty map
 2- check edges = n-1
 3- add dfs ( node and parent)
-4- check if child nodes in visited list then cycle detected and retrun false, if child node is parent avoid it and continue.
+4- check if child nodes in visited list then cycle detected and retrun false, if child node is
+parent avoid it and continue.
 5- if no of disconnected graph is >1 return false
 
 
@@ -56,6 +59,10 @@ class Solution:
         if cnt >1:
             return False
         return True
+
+```
+
+```
         
 ==========BFS ============
 from collections import deque
