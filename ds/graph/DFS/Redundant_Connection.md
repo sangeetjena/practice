@@ -20,7 +20,7 @@ Note:
 ``` python
 class Solution:
     def findRedundantConnection(self, edges: List[List[int]]) -> List[int]:
-        unionset = [i for i in range(len(edges))]
+        unionset = [i for i in range(len(edges)+1)]
         extraedges = []
         def find(node):
             # sind super parent and set all the child with its supream parent.
@@ -33,16 +33,19 @@ class Solution:
             p2 = find(node2)
             # check if two node parents are same or not.
             if p1 == p2:
-                extraedges.append([node1+1,node2+1])
+                extraedges.append([node1,node2])
             else:
                 # if parent are differnt then create a link and set relation with super parent.
                 unionset[p1] = node2
-            print(f'for {node1} {node2} parents are {p1} {p2} {unionset}')
+            # print(f'for {node1} {node2} parents are {p1} {p2} {unionset}')
         # just did node -1, as unionset i have created from index 0 and above added one to regenerate node value.
         for edge in edges:
-            unionfind(edge[0]-1, edge[1]-1)
+            unionfind(edge[0], edge[1])
         # need only last element.
         return extraedges[-1]
+
+
+
 
 
 
