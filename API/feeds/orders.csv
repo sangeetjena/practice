@@ -1,0 +1,14 @@
+id,customer_id,product,quantity,unit_price,status
+ORD-1001,CUS-01,Mechanical Keyboard,2,89.50,paid
+ORD-1002,CUS-02,4K Monitor,1,399.00,shipped
+ORD-1003,CUS-01,USB-C Dock,3,129.99,created
+ORD-1004,CUS-03,Webcam,2,74.50,cancelled
+ORD-1005,CUS-04,Ergonomic Mouse,4,59.25,paid
+ORD-1006,CUS-05,Laptop Stand,2,45.00,shipped
+ORD-1007,CUS-02,Noise-cancelling Headset,1,249.00,paid
+ORD-1008,CUS-06,USB-C Cable,8,12.50,created
+ORD-1009,CUS-07,Desk Lamp,2,39.95,paid
+ORD-1010,CUS-08,Portable SSD,3,109.00,shipped
+ORD-1011,CUS-09,Microphone,1,179.00,created
+ORD-1012,CUS-10,4K Monitor,2,399.00,paid
+

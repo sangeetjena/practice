@@ -1,0 +1,15 @@
+services:
+  api:
+    build: .
+    image: api-interview-lab:local
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: local-docker
+      DATABASE_PATH: /app/data/orders.db
+    volumes:
+      - api-data:/app/data
+
+volumes:
+  api-data:
+
