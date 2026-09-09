@@ -9,8 +9,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from api_interview_lab.data.repository import OrderRepository
 from api_interview_lab.patterns.pydantic_pattern import OrderPage, OrderPayload
 from api_interview_lab.server.dependencies import get_repository
+from api_interview_lab.server.security import require_api_token
 
-router = APIRouter(prefix="/orders", tags=["orders"])
+router = APIRouter(
+    prefix="/orders",
+    tags=["orders"],
+    dependencies=[Depends(require_api_token)],
+)
 
 
 @router.get("", response_model=OrderPage)

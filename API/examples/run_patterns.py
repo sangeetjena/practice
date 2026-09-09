@@ -1,35 +1,42 @@
 from __future__ import annotations
 
 import asyncio
-from pathlib import Path
+import os
 
+from api_interview_lab.client import BearerTokenAuth, SyncOrderClient
 from api_interview_lab.client.async_client import AsyncOrderClient
-from api_interview_lab.patterns.dataclass_pattern import OrderRecord
-from api_interview_lab.patterns.pandas_pattern import load_orders_frame, revenue_by_product
-from api_interview_lab.patterns.pydantic_pattern import OrderPayload
+from api_interview_lab.patterns import (
+    extract_with_dataclasses,
+    extract_with_pandas,
+    extract_with_pydantic,
+    extract_with_typed_dict,
+)
+from api_interview_lab.patterns.pandas_pattern import revenue_by_product
+
+BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
+TOKEN = os.getenv("API_TOKEN")
+
+
+def auth() -> BearerTokenAuth | None:
+    return BearerTokenAuth(TOKEN) if TOKEN else None
 
 
 async def demonstrate_asyncio() -> None:
-    async with AsyncOrderClient("http://localhost:8000") as client:
+    async with AsyncOrderClient(BASE_URL, auth=auth(), trust_env=False) as client:
         print("Pages in completion order:")
         async for page in client.stream_pages(page_size=3):
             print(f"  page={page.page}, items={len(page.items)}")
 
 
 def main() -> None:
-    raw = {"id": "ORD-X", "product": "Keyboard", "quantity": "2", "unit_price": "75"}
-    print("Dataclass:", OrderRecord.from_dict(raw))
-
-    validated = OrderPayload.model_validate(
-        raw | {"customer_id": "CUS-X", "status": "created"}
-    )
-    print("Pydantic:", validated.model_dump())
-
-    frame = load_orders_frame(Path("feeds/orders.csv"))
-    print("pandas:\n", revenue_by_product(frame).head())
+    with SyncOrderClient(BASE_URL, auth=auth(), trust_env=False) as client:
+        print("TypedDict:", extract_with_typed_dict(client)[:1])
+        print("Dataclass:", extract_with_dataclasses(client)[:1])
+        print("Pydantic:", extract_with_pydantic(client)[:1])
+        frame = extract_with_pandas(client)
+        print("pandas aggregation:\n", revenue_by_product(frame).head())
     asyncio.run(demonstrate_asyncio())
 
 
 if __name__ == "__main__":
     main()
-

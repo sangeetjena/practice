@@ -38,3 +38,21 @@ AuthN/AuthZ, idempotency, cursor pagination, rate limiting, caching, distributed
 structured logs, metrics/SLOs, circuit breaking, schema migrations, external database, secret
 management, autoscaling, ingress/TLS, and CI/CD security scanning.
 
+## Client extraction choices
+
+| Need | Choice |
+|---|---|
+| Raw JSON with editor/static-checker help | `TypedDict` |
+| Lightweight trusted internal object | dataclass |
+| Validate untrusted API JSON | Pydantic |
+| Aggregate bounded tabular results | pandas |
+| Concurrent page or endpoint retrieval | `httpx.AsyncClient` + asyncio |
+
+Keep HTTP concerns in one client: base URL, default/custom headers, auth strategy, deadlines,
+status handling, pagination, concurrency limits, and lifecycle. Transform its response afterward.
+
+## Operations answer
+
+Expose separate liveness and dependency-aware readiness probes. Emit RED metrics (request rate,
+errors, duration) to Prometheus, structured logs to stdout, request/trace IDs across calls, and
+OpenTelemetry traces through a Collector. Alert on SLO symptoms rather than isolated CPU spikes.

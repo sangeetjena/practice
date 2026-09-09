@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: api-interview-lab
+  namespace: api-interview
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: api-interview-lab
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s

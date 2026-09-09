@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "api-interview-lab"
-version = "0.1.0"
+version = "0.2.0"
 description = "Runnable Python API patterns for interview preparation"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -13,6 +13,7 @@ dependencies = [
   "httpx>=0.27,<1",
   "pandas>=2.2,<3",
   "pydantic>=2.9,<3",
+  "prometheus-client>=0.21,<1",
   "strawberry-graphql[fastapi]>=0.246,<1",
   "uvicorn[standard]>=0.30,<1",
 ]
@@ -35,4 +36,3 @@ asyncio_mode = "auto"
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-

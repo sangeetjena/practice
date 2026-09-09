@@ -1,5 +1,8 @@
 from fastapi.testclient import TestClient
 
+from api_interview_lab.config import Settings, get_settings
+from api_interview_lab.server.main import app
+
 
 def test_list_orders(client: TestClient) -> None:
     response = client.get("/api/v1/orders", params={"page": 2, "page_size": 2})
@@ -24,3 +27,21 @@ def test_create_order(client: TestClient) -> None:
     assert response.status_code == 201
     assert response.json()["revenue"] == 300
 
+
+def test_orders_require_bearer_token_when_configured(client: TestClient) -> None:
+    app.dependency_overrides[get_settings] = lambda: Settings(api_token="secret")
+    try:
+        assert client.get("/api/v1/orders").status_code == 401
+        response = client.get(
+            "/api/v1/orders", headers={"Authorization": "Bearer secret"}
+        )
+        assert response.status_code == 200
+    finally:
+        app.dependency_overrides.pop(get_settings, None)
+
+
+def test_health_and_metrics_are_public(client: TestClient) -> None:
+    assert client.get("/health/live").status_code == 200
+    metrics = client.get("/metrics")
+    assert metrics.status_code == 200
+    assert "api_http_requests_total" in metrics.text

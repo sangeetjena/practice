@@ -10,14 +10,14 @@ their trade-offs can be discussed with concrete code.
 
 ```mermaid
 flowchart TD
-    C[Sync or async clients] --> R[REST /api/v1/orders]
+    C[Authenticated sync or async clients] --> R[REST /api/v1/orders]
     G[GraphQL client] --> Q[GraphQL /graphql]
     R --> D[Repository protocol]
     Q --> D
     D --> S[(SQLite)]
-    F[CSV/JSON feeds] --> L[Feed loader]
+    F[Local seed feeds] --> L[Feed loader]
     L --> S
-    P[pandas analytics] --> F
+    R --> P[TypedDict, dataclass, Pydantic, pandas]
 ```
 
 ### Dependency direction
@@ -25,8 +25,8 @@ flowchart TD
 - `domain`: dependency-free business representation.
 - `data`: repository abstraction and SQLite adapter.
 - `server`: REST/GraphQL transport; depends on domain/data.
-- `client`: sync and async consumers; validates remote responses.
-- `patterns`: isolated comparison examples.
+- `client`: default headers, pluggable auth, sync/async HTTP, pagination, and typed methods.
+- `patterns`: alternative representations of JSON extracted through the shared client.
 - `feeds` and `scripts`: deterministic local simulation.
 - `tests`: unit tests for boundaries and integration tests for transports.
 
@@ -49,10 +49,17 @@ CSV row → Pydantic validation/coercion → domain object → idempotency check
 For production, use bulk writes, checkpoints, schema/dead-letter handling, metrics, and a real
 transactional database or streaming platform.
 
+### Client extraction
+
+`SyncOrderClient` → authenticated paginated REST requests → raw JSON dictionaries → choose a
+`TypedDict`, dataclass, Pydantic, or pandas representation. CSV/JSON files are only deterministic
+server seed inputs and are not used by the extraction-pattern examples.
+
 ## Pattern comparison
 
 | Tool | Best fit | Strength | Main caution |
 |---|---|---|---|
+| TypedDict | Statically typed raw JSON | Zero runtime overhead | No runtime validation |
 | dataclass | Trusted internal domain data | Standard library, typed, lightweight | No runtime validation |
 | Pydantic | API/config boundaries | Validation, parsing, schema, serialization | Extra work and dependency |
 | pandas | Bounded batch exploration | Concise vectorized transformations | Memory-bound; blocks event loop |
@@ -83,12 +90,19 @@ Current samples use:
   `503` readiness failure, and `500` sanitized unexpected errors.
 - Offset pagination for clarity. At scale, prefer cursor/keyset pagination to avoid growing scan
   cost and inconsistent pages during concurrent writes.
+- Optional Bearer-token authentication when `API_TOKEN` is configured. Health and Prometheus
+  metrics remain public for cluster probes/scraping; network policy should restrict them.
 
 ## Docker and Kubernetes notes
 
 The Dockerfile is multi-stage and runs as a non-root user. Kubernetes demonstrates rolling
-updates, two replicas, probes, ConfigMap configuration, resource budgets, and a ClusterIP
-service.
+updates, two replicas, startup/readiness/liveness probes, ConfigMap and Secret configuration,
+resource budgets, an HPA, a PodDisruptionBudget, and a ClusterIP service.
+
+The app emits Prometheus request count/in-flight/latency metrics at `/metrics`, JSON logs to
+stdout, and an `X-Request-ID`. The optional ServiceMonitor requires the Prometheus Operator.
+Production tracing should use OpenTelemetry and a Collector rather than vendor-specific calls
+inside business logic.
 
 SQLite is deliberately a local-only compromise: replicas do not share database state and local
 files are ephemeral. In a production answer, use PostgreSQL/MySQL or another managed external
@@ -105,6 +119,7 @@ NetworkPolicy, centralized telemetry, and migrations run separately from applica
 6. How would you replace SQLite without changing routers/resolvers?
 7. What makes readiness different from liveness?
 8. How would you add authentication and tenant-level authorization?
+9. Why are liveness, readiness, application metrics, logs, and traces different signals?
 
 ## Extension map
 
@@ -112,6 +127,6 @@ NetworkPolicy, centralized telemetry, and migrations run separately from applica
 - Add a REST endpoint: router → Pydantic contract → repository method → integration tests.
 - Add a GraphQL field: type/schema resolver → repository method → GraphQL integration test.
 - Add a feed format: parser → Pydantic validation → domain conversion → loader tests.
+- Add an extraction representation: implement `OrderSource` consumer → tests → comparison docs.
 - Add production async DB access: introduce an async repository protocol and driver rather than
   disguising blocking SQLite calls inside async endpoint functions.
-
