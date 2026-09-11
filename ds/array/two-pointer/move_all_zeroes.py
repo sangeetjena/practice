@@ -16,6 +16,7 @@ Example 2:
 Input: nums = [0]
 Output: [0]
 
+Note: use 2 pointer, ith pointer keep it in 0 and increament only if you find a non zero element.
 """
 class Solution:
     def moveZeroes(self, nums: List[int]) -> None:
