@@ -17,6 +17,8 @@ Example 2:
 Input: n = 21
 Output: -1
 
+Note: this problem can easily solved in monotonic stak also
+
 """
 class Solution:
     def nextGreaterElement(self, n: int) -> int:
