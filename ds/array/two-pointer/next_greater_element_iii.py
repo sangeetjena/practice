@@ -20,7 +20,7 @@ Output: -1
 """
 class Solution:
     def nextGreaterElement(self, n: int) -> int:
-        # to find the closest greater element, we need to look from left to write of a number
+        # to find the closest greater element, we need to look from left to right of a number
         # and swap a number in higher index position with a number in the lower index position which is greater than present value and sort rest of the elemnet position from lower to hightest.
         # ex: 14[2]321 -> 14[3]122
         s = [str(n)[i] for i in range(len(str(n)))]
