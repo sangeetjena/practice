@@ -1,9 +1,0 @@
-{
-  "decision": "edit",
-  "reviewer": "on-call-engineer",
-  "confirmed_root_cause": "Customer-service delay exhausted the orders dependency deadline.",
-  "resolution": "Removed the injected delay and verified orders p95 latency returned below 500ms.",
-  "notes": "The slow customer child span and the same trace ID in both services confirmed the path.",
-  "resolved": true,
-  "attributes": {"action": "configuration rollback"}
-}

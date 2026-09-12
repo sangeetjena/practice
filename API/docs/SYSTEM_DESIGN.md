@@ -197,3 +197,6 @@ Official references:
 - https://kubernetes.io/docs/concepts/services-networking/service/
 - https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/
 - https://fastapi.tiangolo.com/advanced/behind-a-proxy/
+
+
+ObserveAgent now lives in the sibling `practice/ObserveAgent` directory with its own pyproject and tests. The current implementation uses ChromaDB, configurable OpenAI-compatible embedding/Responses adapters, LangGraph with persistent local checkpoints, approval-gated tools and one diagnostic reflection pass. Read `ObserveAgent/docs/CONFIGURATION.md` from the repository root. SQLite retains source archives and audit records.

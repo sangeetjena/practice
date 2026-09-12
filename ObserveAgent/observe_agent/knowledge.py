@@ -26,6 +26,9 @@ TOKEN_RE = re.compile(r"[A-Za-z0-9_.:-]+")
 
 
 class EmbeddingProvider(Protocol):
+    @property
+    def profile(self) -> str: ...
+
     def embed(self, text: str) -> list[float]: ...
 
 
@@ -50,6 +53,47 @@ class HashEmbedding:
             vector[bucket] += sign * (1 + math.log(count))
         norm = math.sqrt(sum(value * value for value in vector)) or 1
         return [value / norm for value in vector]
+
+    @property
+    def profile(self) -> str:
+        return f"hash:{self.dimensions}"
+
+
+class OpenAIEmbedding:
+    """OpenAI or OpenAI-compatible embedding adapter selected entirely by configuration."""
+
+    def __init__(
+        self,
+        model: str,
+        api_key: str,
+        *,
+        base_url: str | None = None,
+        dimensions: int | None = None,
+        client: Any | None = None,
+    ) -> None:
+        if not api_key:
+            raise ValueError("an embedding API key is required")
+        if client is None:
+            from openai import OpenAI
+
+            client = OpenAI(api_key=api_key, base_url=base_url)
+        self.client = client
+        self.model = model
+        self.dimensions = dimensions
+        provider = base_url.rstrip("/") if base_url else "openai"
+        provider_hash = hashlib.sha256(provider.encode()).hexdigest()[:8]
+        self._profile = f"openai:{provider_hash}:{model}:{dimensions or 'default'}"
+
+    @property
+    def profile(self) -> str:
+        return self._profile
+
+    def embed(self, text: str) -> list[float]:
+        kwargs: dict[str, Any] = {"model": self.model, "input": text}
+        if self.dimensions is not None:
+            kwargs["dimensions"] = self.dimensions
+        response = self.client.embeddings.create(**kwargs)
+        return list(response.data[0].embedding)
 
 
 class MarkdownChunker:
@@ -77,12 +121,17 @@ class MarkdownChunker:
 
         chunks: list[tuple[str, dict[str, Any]]] = []
         for section, body_lines in sections:
-            paragraphs = [item.strip() for item in "\n".join(body_lines).split("\n\n") if item.strip()]
+            paragraphs = [
+                item.strip() for item in "\n".join(body_lines).split("\n\n") if item.strip()
+            ]
             current = f"# {section}\n"
             part = 1
             for paragraph in paragraphs:
                 addition = paragraph + "\n\n"
-                if len(current) + len(addition) > self.max_chars and len(current.strip()) > len(section) + 2:
+                if (
+                    len(current) + len(addition) > self.max_chars
+                    and len(current.strip()) > len(section) + 2
+                ):
                     chunks.append((current.strip(), {"section": section, "part": part}))
                     part += 1
                     current = f"# {section}\n{addition}"
@@ -117,6 +166,7 @@ class SQLiteKnowledgeStore:
                     source_id TEXT NOT NULL,
                     content TEXT NOT NULL,
                     embedding TEXT NOT NULL,
+                    embedding_profile TEXT NOT NULL DEFAULT 'hash:128',
                     metadata TEXT NOT NULL,
                     version INTEGER NOT NULL,
                     created_at TEXT NOT NULL,
@@ -145,8 +195,27 @@ class SQLiteKnowledgeStore:
                     payload TEXT NOT NULL,
                     created_at TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS action_proposals (
+                    id TEXT PRIMARY KEY,
+                    incident_id TEXT NOT NULL,
+                    payload TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS action_results (
+                    action_id TEXT PRIMARY KEY,
+                    payload TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                );
                 """
             )
+            columns = {
+                row["name"] for row in connection.execute("PRAGMA table_info(knowledge_chunks)")
+            }
+            if "embedding_profile" not in columns:
+                connection.execute(
+                    "ALTER TABLE knowledge_chunks ADD COLUMN embedding_profile TEXT "
+                    "NOT NULL DEFAULT 'hash:128'"
+                )
 
     def ingest(
         self,
@@ -180,20 +249,23 @@ class SQLiteKnowledgeStore:
                     content=content,
                     metadata=combined_metadata,
                     embedding=self.embedder.embed(content),
+                    embedding_profile=self.embedder.profile,
                     version=version,
                     created_at=now,
                 )
                 connection.execute(
                     """
                     INSERT INTO knowledge_chunks
-                        (id, source_id, content, embedding, metadata, version, created_at, active)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+                        (id, source_id, content, embedding, embedding_profile, metadata,
+                         version, created_at, active)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
                     """,
                     (
                         chunk.id,
                         chunk.source_id,
                         chunk.content,
                         json.dumps(chunk.embedding),
+                        chunk.embedding_profile,
                         json.dumps(chunk.metadata, sort_keys=True),
                         chunk.version,
                         chunk.created_at.isoformat(),
@@ -222,7 +294,8 @@ class SQLiteKnowledgeStore:
         query_tokens = set(_tokens(query))
         with self._connect() as connection:
             rows = connection.execute(
-                "SELECT * FROM knowledge_chunks WHERE active = 1"
+                "SELECT * FROM knowledge_chunks WHERE active = 1 AND embedding_profile = ?",
+                (self.embedder.profile,),
             ).fetchall()
         hits: list[SearchHit] = []
         for row in rows:
@@ -236,7 +309,9 @@ class SQLiteKnowledgeStore:
             if metadata.get("review_status", "approved") != "approved":
                 continue
             content_tokens = set(_tokens(row["content"]))
-            lexical = len(query_tokens & content_tokens) / max(1, len(query_tokens | content_tokens))
+            lexical = len(query_tokens & content_tokens) / max(
+                1, len(query_tokens | content_tokens)
+            )
             cosine = _dot(query_embedding, json.loads(row["embedding"]))
             authority = 0.05 if metadata.get("source_type") == "runbook" else 0.0
             score = 0.65 * cosine + 0.30 * lexical + authority
@@ -301,6 +376,47 @@ class SQLiteKnowledgeStore:
             connection.execute(
                 "INSERT INTO feedback(incident_id, payload, created_at) VALUES (?, ?, ?)",
                 (incident_id, feedback.model_dump_json(), utc_now().isoformat()),
+            )
+
+    def reindex(self) -> int:
+        """Re-embed active chunks with the configured profile after changing models."""
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT id, content FROM knowledge_chunks WHERE active = 1"
+            ).fetchall()
+            for row in rows:
+                connection.execute(
+                    "UPDATE knowledge_chunks SET embedding = ?, embedding_profile = ? WHERE id = ?",
+                    (
+                        json.dumps(self.embedder.embed(row["content"])),
+                        self.embedder.profile,
+                        row["id"],
+                    ),
+                )
+        return len(rows)
+
+    def save_action_proposal(self, action) -> None:
+        with self._connect() as connection:
+            connection.execute(
+                "INSERT OR REPLACE INTO action_proposals(id, incident_id, payload, created_at) "
+                "VALUES (?, ?, ?, ?)",
+                (action.id, action.incident_id, action.model_dump_json(), utc_now().isoformat()),
+            )
+
+    def get_action_result(self, action_id: str):
+        from .models import ActionResult
+
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT payload FROM action_results WHERE action_id = ?", (action_id,)
+            ).fetchone()
+        return ActionResult.model_validate_json(row["payload"]) if row else None
+
+    def save_action_result(self, result) -> None:
+        with self._connect() as connection:
+            connection.execute(
+                "INSERT OR IGNORE INTO action_results(action_id, payload, created_at) VALUES (?, ?, ?)",
+                (result.action_id, result.model_dump_json(), utc_now().isoformat()),
             )
 
 

@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 
 from fastapi.testclient import TestClient
+
 from observe_agent.agent import ReflexionAgent
 from observe_agent.api import create_app
 from observe_agent.features import IncidentFeatureExtractor
@@ -42,6 +43,7 @@ def test_create_read_report_and_apply_feedback(tmp_path):
         )
 
     assert created.status_code == 200
+    assert created.json()["status"] == "completed"
     assert fetched.json()["incident_id"] == "inc-api"
     assert feedback.json()["knowledge_updated"] is True
 
@@ -71,4 +73,4 @@ def test_alertmanager_webhook_triggers_only_firing_alerts(tmp_path):
 
     assert response.status_code == 200
     assert len(response.json()) == 1
-    assert response.json()[0]["summary"].endswith("Orders are slow")
+    assert response.json()[0]["report"]["summary"].endswith("Orders are slow")

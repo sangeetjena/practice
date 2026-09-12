@@ -150,3 +150,6 @@ load benchmark. Explain the next production change only after confirming the req
 
 Likely follow-up: “If one tenant creates a traffic spike, which controls protect the gateway,
 application pool, database, worker queue and telemetry pipeline independently?”
+
+
+ObserveAgent now lives in the sibling `practice/ObserveAgent` directory with its own pyproject and tests. The current implementation uses ChromaDB, configurable OpenAI-compatible embedding/Responses adapters, LangGraph with persistent local checkpoints, approval-gated tools and one diagnostic reflection pass. Read `ObserveAgent/docs/CONFIGURATION.md` from the repository root. SQLite retains source archives and audit records.
