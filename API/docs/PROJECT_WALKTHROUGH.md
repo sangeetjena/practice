@@ -14,6 +14,9 @@ flowchart TD
     O --> J[Jaeger]
     O --> P[Prometheus]
     P --> G[Grafana]
+    P --> AM[Alertmanager]
+    AM --> OA[ObserveAgent]
+    OA --> K[(Versioned knowledge)]
     W[Import worker] --> S
 ```
 
@@ -36,6 +39,7 @@ common ingestion point for metrics and traces. Logs stay on stdout and carry the
 | Discovery | Catalog + live OpenAPI + readiness | `scripts/discover.py` | Declared discovery is not eBPF/network discovery |
 | Governance | Executable contract rules in CI | `scripts/governance.py` | A catalog records metadata; CI/runtime policy enforces rules |
 | Deployment | Containers, probes, resources, replicas and HPA | `deploy/platform/k8s/` | HPA creates pods; Service/LB only routes to them |
+| ObserveAgent | Alert-triggered feature ETL, hybrid RAG, triage and feedback | `ObserveAgent/README.md` | Advisory and local-first; production needs durable orchestration and model evaluation |
 
 ## 3. Flow A — paginated tenant read
 
@@ -104,6 +108,11 @@ flowchart LR
 The Collector keeps application code vendor-neutral and centralizes batching, filtering, sampling
 and backend routing. It is also a shared component that needs independent scaling and monitoring.
 Production often uses per-node agents plus gateway collectors.
+
+Prometheus sends firing rule results to Alertmanager, which groups alerts and posts them to
+ObserveAgent. ObserveAgent queries Prometheus rather than receiving raw time series in the webhook.
+It stores only a compact reproducible incident feature snapshot. See
+`ObserveAgent/docs/ARCHITECTURE.md` for the investigation and reviewed-learning flow.
 
 ## 8. Discovery, troubleshooting and governance
 

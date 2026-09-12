@@ -10,3 +10,4 @@ data/*.db
 .env
 
 *.db
+ObserveAgent/*.db

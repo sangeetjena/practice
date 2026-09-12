@@ -96,6 +96,20 @@ services:
       - ./deploy/platform/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./deploy/platform/alerts.yml:/etc/prometheus/alerts.yml:ro
     ports: ['127.0.0.1:9090:9090']
+  observe-agent:
+    build: {context: ., dockerfile: ObserveAgent/Dockerfile}
+    image: observe-agent:local
+    environment:
+      OBSERVE_DB_PATH: /data/observe-agent.db
+      PROMETHEUS_URL: http://prometheus:9090
+    volumes: [observe-data:/data]
+    ports: ['127.0.0.1:8090:8090']
+    depends_on: [prometheus]
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    command: ['--config.file=/etc/alertmanager.yml']
+    volumes: ['./deploy/platform/alertmanager.yml:/etc/alertmanager.yml:ro']
+    depends_on: [observe-agent]
   grafana:
     image: grafana/grafana:11.6.0
     environment:
@@ -107,3 +121,4 @@ services:
     ports: ['127.0.0.1:3000:3000']
 volumes:
   pg-data:
+  observe-data:

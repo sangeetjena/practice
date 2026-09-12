@@ -68,6 +68,9 @@ flowchart TD
     T --> J[Jaeger]
     T --> M[Prometheus]
     G[Grafana] --> M
+    M --> A[Alertmanager]
+    A --> OA[ObserveAgent]
+    OA --> KB[(Runbooks and reviewed resolutions)]
 ```
 
 Local Compose exposes only Nginx and localhost-bound monitoring UIs. A production deployment adds
@@ -178,6 +181,15 @@ Deliberate limitations: shared lab DB/credentials, static catalog, basic DB-back
 ephemeral telemetry storage, no public TLS provisioning, no full OAuth provider, no eBPF discovery,
 no tenant quota backend and no claimed throughput benchmark. The production evolution is explicit
 so you can defend each trade-off in an interview.
+
+## 12. Agentic observability extension
+
+The `ObserveAgent` directory implements the advisory incident loop described in the interview
+design. Prometheus and Alertmanager remain deterministic detection systems. The agent activates
+after incident creation, extracts reproducible metric features, retrieves approved operational
+knowledge, ranks testable hypotheses, and stores the report. Reviewed resolution feedback becomes
+versioned tenant/service-scoped knowledge; it does not silently retrain a model or overwrite an
+approved runbook. Read `ObserveAgent/docs/ARCHITECTURE.md` and `ObserveAgent/docs/DEBUGGING.md`.
 
 Official references:
 - https://opentelemetry.io/docs/languages/python/
