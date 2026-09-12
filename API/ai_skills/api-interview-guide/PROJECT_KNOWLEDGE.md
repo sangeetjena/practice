@@ -130,3 +130,25 @@ NetworkPolicy, centralized telemetry, and migrations run separately from applica
 - Add an extraction representation: implement `OrderSource` consumer → tests → comparison docs.
 - Add production async DB access: introduce an async repository protocol and driver rather than
   disguising blocking SQLite calls inside async endpoint functions.
+
+## September 2026 redesign: default three-service platform
+
+The default README/Compose now use `api_interview_lab.platform`, with orders/customers/products
+in one commerce domain. Each has cursor-paginated tenant-specific samples. The previous package's
+client/domain/pattern/server examples remain available via docs/LEGACY.md and
+`docker compose -f docker-compose.legacy.yml up --build`.
+
+Platform modules: config (explicit secrets), auth (API key/Basic/JWT Principal + scopes), store
+(SQLAlchemy tenant/kind records, atomic idempotency and job state), app (three service factory,
+OpenAPI/error mapping), telemetry (Prometheus + OTel), client (async pooling/retry/pagination),
+worker (durable DB claims/leases and idempotent imports). Reads use tenant-scoped keyset pagination.
+Sample data is initialized once before replicas, not on every pod start. Shared PostgreSQL is a
+lab compromise; SQLite is for isolated tests only. Do not claim separate database-role isolation.
+
+Use `python scripts/bootstrap.py`, Compose, `pytest`, `ruff check .`,
+`python scripts/governance.py`, and `python scripts/smoke.py` after the stack starts. Secrets are
+local/ignored. The default HTTP entrypoint is localhost:8080 with /orders, /customers, /products
+prefixes. See docs/SYSTEM_DESIGN.md, docs/DEPLOYMENT.md and docs/DAY1_LAB.md for current walkthroughs.
+Existing SKILL.md's sales-order requirement is preserved across the original extraction patterns;
+the user explicitly requested the three-service extension, so related customer/product entities
+are intentional. Never describe this demo as a full production observability or agentic platform.
