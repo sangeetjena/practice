@@ -1,0 +1,10 @@
+{
+  "daily-orders-etl": {
+    "tenant_id": "acme",
+    "repository": "example/data-pipelines",
+    "configuration_path": "deploy/spark-conf.json",
+    "base": "master",
+    "owner": "data-platform",
+    "max_executor_memory_gib": 16
+  }
+}

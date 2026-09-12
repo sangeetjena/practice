@@ -40,7 +40,8 @@ def test_incident_triage_and_human_resolution_improve_tenant_knowledge(tmp_path)
     values = [100, 80, 0.08, 0.01, 0.9, 0.2]
     agent = ReflexionAgent(IncidentFeatureExtractor(SequenceMetrics(values)), store)
 
-    report = agent.handle_incident(build_incident())
+    workflow = agent.handle_incident(build_incident())
+    report = workflow.report
     chunks = agent.apply_feedback(
         report.incident_id,
         IncidentFeedback(
@@ -64,9 +65,7 @@ def test_incident_triage_and_human_resolution_improve_tenant_knowledge(tmp_path)
 
 def test_rejected_feedback_is_audited_but_not_indexed(tmp_path):
     store = SQLiteKnowledgeStore(tmp_path / "agent.db")
-    agent = ReflexionAgent(
-        IncidentFeatureExtractor(SequenceMetrics([1, 1, 0, 0, 0.1, 0.1])), store
-    )
+    agent = ReflexionAgent(IncidentFeatureExtractor(SequenceMetrics([1, 1, 0, 0, 0.1, 0.1])), store)
     agent.handle_incident(build_incident())
 
     chunks = agent.apply_feedback(

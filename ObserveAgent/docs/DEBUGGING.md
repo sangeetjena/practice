@@ -1,3 +1,6 @@
+Use [CONFIGURATION.md](CONFIGURATION.md) for ChromaDB, model and LangGraph settings.
+Run Compose commands from `practice/API`; Python agent commands from `practice/ObserveAgent`.
+
 # ObserveAgent debugging guide
 
 Use this sequence so each failure is isolated before moving to the next layer.
@@ -23,13 +26,13 @@ Then inspect:
 docker compose logs --tail=100 alertmanager observe-agent
 ```
 
-For isolation, bypass alerting and POST `ObserveAgent/data/sample-incident.json` directly. If manual
+For isolation, bypass alerting and POST `data/sample-incident.json` directly. If manual
 creation works, the failure is before ObserveAgent. If it fails, check request validation and service
 identifier format in the JSON response.
 
 ## 3. Reproduce feature extraction
 
-Every `MetricFeature` in the returned report is derived from an exact query stored by the extractor.
+Every stored `MetricFeature` is derived from an exact query stored by the extractor.
 Copy the query into Prometheus and evaluate it at the incident timestamp and baseline timestamp.
 
 Common failures:
@@ -55,10 +58,9 @@ is never returned usually has incompatible `tenant_scope`, `service`, or `review
 
 ## 5. Debug retrieval
 
-Use the same incident tenant and service when calling `SQLiteKnowledgeStore.search`. Inspect chunk
-scores, source IDs, and metadata. Exact error codes benefit from lexical overlap; broad symptoms rely
-more on the embedding. Hash collisions are possible in the lab—use a real embedding model and a
-reranker for production quality.
+Use the same incident tenant and service when calling `ChromaKnowledgeStore.search`. Inspect chunk
+scores, source IDs, metadata and the embedding profile. Hash collisions are possible in offline mode;
+select a semantic embedding model for meaningful language similarity. Reindex after changing models.
 
 Never fix a retrieval miss by removing tenant filters. Correct the source metadata or access policy.
 

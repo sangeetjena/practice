@@ -23,6 +23,7 @@ def main() -> None:
     feedback = subparsers.add_parser("feedback", help="Apply reviewed incident feedback JSON")
     feedback.add_argument("incident_id")
     feedback.add_argument("path", type=Path)
+    subparsers.add_parser("reindex", help="Re-embed active knowledge with configured model")
     args = parser.parse_args()
 
     agent = build_agent(Settings())
@@ -42,9 +43,11 @@ def main() -> None:
     elif args.command == "incident":
         payload = Incident.model_validate_json(args.path.read_text(encoding="utf-8"))
         print(agent.handle_incident(payload).model_dump_json(indent=2))
-    else:
+    elif args.command == "feedback":
         payload = IncidentFeedback.model_validate_json(args.path.read_text(encoding="utf-8"))
         print(json.dumps({"chunks": agent.apply_feedback(args.incident_id, payload)}, indent=2))
+    else:
+        print(json.dumps({"reindexed_chunks": agent.knowledge.reindex()}, indent=2))
 
 
 if __name__ == "__main__":

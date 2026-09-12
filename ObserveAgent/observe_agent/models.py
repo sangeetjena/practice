@@ -30,6 +30,10 @@ class Incident(BaseModel):
     started_at: datetime = Field(default_factory=utc_now)
     labels: dict[str, str] = Field(default_factory=dict)
     annotations: dict[str, str] = Field(default_factory=dict)
+    action_context: dict[str, str] = Field(
+        default_factory=dict,
+        description="Operator-supplied action targets; never inferred credentials.",
+    )
 
 
 class MetricFeature(BaseModel):
@@ -56,6 +60,7 @@ class KnowledgeChunk(BaseModel):
     content: str
     metadata: dict[str, Any]
     embedding: list[float]
+    embedding_profile: str
     version: int = 1
     created_at: datetime = Field(default_factory=utc_now)
 
@@ -86,6 +91,61 @@ class TriageReport(BaseModel):
     unknowns: list[str]
     citations: list[str]
     knowledge_hits: int
+
+
+class ActionType(StrEnum):
+    HTTP_GET = "http_get"
+    GITHUB_PULL_REQUEST = "github_pull_request"
+    EMAIL = "email"
+
+
+class ActionMode(StrEnum):
+    DRY_RUN = "dry_run"
+    EXECUTE = "execute"
+
+
+class ActionStatus(StrEnum):
+    PROPOSED = "proposed"
+    DRY_RUN = "dry_run"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+    REJECTED = "rejected"
+
+
+class ActionRequest(BaseModel):
+    id: str = Field(min_length=1, max_length=200)
+    incident_id: str = Field(min_length=1, max_length=200)
+    action_type: ActionType
+    description: str = Field(min_length=1, max_length=1_000)
+    parameters: dict[str, str]
+    risk: str = Field(default="medium", pattern=r"^(low|medium|high)$")
+
+
+class ActionResult(BaseModel):
+    action_id: str
+    status: ActionStatus
+    message: str
+    output: dict[str, Any] = Field(default_factory=dict)
+    executed_at: datetime = Field(default_factory=utc_now)
+
+
+class ActionDecision(BaseModel):
+    approved: bool
+    reviewer: str = Field(min_length=1, max_length=200)
+    action_ids: list[str] = Field(default_factory=list)
+
+
+class WorkflowStatus(StrEnum):
+    AWAITING_APPROVAL = "awaiting_approval"
+    COMPLETED = "completed"
+
+
+class WorkflowResponse(BaseModel):
+    incident_id: str
+    status: WorkflowStatus
+    report: TriageReport
+    proposed_actions: list[ActionRequest] = Field(default_factory=list)
+    action_results: list[ActionResult] = Field(default_factory=list)
 
 
 class FeedbackDecision(StrEnum):

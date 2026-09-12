@@ -1,4 +1,4 @@
-from observe_agent.knowledge import MarkdownChunker, SQLiteKnowledgeStore
+from observe_agent.knowledge import HashEmbedding, MarkdownChunker, SQLiteKnowledgeStore
 
 
 def test_markdown_chunker_preserves_semantic_section():
@@ -50,3 +50,21 @@ def test_new_source_version_deactivates_old_chunks(tmp_path):
 
     assert len(hits) == 1
     assert "new procedure" in hits[0].content
+
+
+def test_embedding_profile_change_requires_explicit_reindex(tmp_path):
+    path = tmp_path / "knowledge.db"
+    metadata = {
+        "source_type": "runbook",
+        "review_status": "approved",
+        "tenant_scope": "global",
+        "service": "orders",
+    }
+    SQLiteKnowledgeStore(path, HashEmbedding(64)).ingest(
+        "runbook", "# Resolution\nIncrease the connection pool.", metadata
+    )
+    changed = SQLiteKnowledgeStore(path, HashEmbedding(96))
+
+    assert changed.search("connection pool", tenant_id="acme", service="orders") == []
+    assert changed.reindex() == 1
+    assert changed.search("connection pool", tenant_id="acme", service="orders")

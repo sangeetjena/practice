@@ -172,12 +172,15 @@ see the Day 1 lab for the request body and crash-recovery exercise.
 
 ## Agentic incident triage extension
 
-[`ObserveAgent`](ObserveAgent/README.md) consumes firing Prometheus alerts through Alertmanager,
+[`ObserveAgent`](../ObserveAgent/README.md) consumes firing Prometheus alerts through Alertmanager,
 extracts current/baseline/delta metric features, retrieves approved runbooks and reviewed prior
-resolutions from a tenant-aware hybrid vector store, and returns evidence-backed hypotheses. Human
+resolutions from tenant-filtered ChromaDB, and returns evidence-backed hypotheses. Human
 feedback is always audited; only reviewed, resolved accept/edit feedback becomes versioned knowledge.
 
 The extension deliberately keeps metrics in Prometheus, traces in Jaeger, and logs on stdout. It
 does not pretend that Prometheus stores all three signals. Start with the
-[`ObserveAgent architecture`](ObserveAgent/docs/ARCHITECTURE.md), then run the
-[`debugging guide`](ObserveAgent/docs/DEBUGGING.md) to follow one incident end to end.
+[`ObserveAgent configuration and architecture`](../ObserveAgent/docs/CONFIGURATION.md), then run the
+[`debugging guide`](../ObserveAgent/docs/DEBUGGING.md) to follow one incident end to end.
+
+
+ObserveAgent now lives in the sibling `practice/ObserveAgent` directory with its own pyproject and tests. The current implementation uses ChromaDB, configurable OpenAI-compatible embedding/Responses adapters, LangGraph with persistent local checkpoints, approval-gated tools and one diagnostic reflection pass. Read `ObserveAgent/docs/CONFIGURATION.md` from the repository root. SQLite retains source archives and audit records.

@@ -16,7 +16,7 @@ feed:
 	python scripts/load_feed.py
 
 observe-agent:
-	PYTHONPATH=src:ObserveAgent python -m observe_agent.api
+	cd ../ObserveAgent && python -m observe_agent.api
 
 docker-build:
 	docker build -t api-interview-lab:local .

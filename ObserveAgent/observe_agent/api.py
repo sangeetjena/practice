@@ -3,22 +3,35 @@
 from __future__ import annotations
 
 import hashlib
+import sqlite3
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
+from langgraph.checkpoint.sqlite import SqliteSaver
 
+from .actions import ActionExecutor, ActionPlanner
 from .agent import ReflexionAgent
 from .config import Settings
 from .features import IncidentFeatureExtractor
-from .knowledge import SQLiteKnowledgeStore
-from .models import AlertmanagerWebhook, Incident, IncidentFeedback, TriageReport
+from .models import (
+    ActionDecision,
+    AlertmanagerWebhook,
+    Incident,
+    IncidentFeedback,
+    TriageReport,
+    WorkflowResponse,
+)
+from .providers import build_embedder, build_reasoner
 from .telemetry import PrometheusMetricSource
+from .vector_store import ChromaKnowledgeStore
 
 
 def build_agent(settings: Settings) -> ReflexionAgent:
     settings.validate()
-    store = SQLiteKnowledgeStore(settings.database_path)
+    store = ChromaKnowledgeStore(
+        settings.database_path, build_embedder(settings), str(settings.database_path) + ".chroma"
+    )
     runbook = Path(__file__).resolve().parent.parent / "data" / "runbooks" / "commerce-latency.md"
     if runbook.exists() and not store.has_active_source("runbook:commerce-latency"):
         store.ingest(
@@ -36,7 +49,13 @@ def build_agent(settings: Settings) -> ReflexionAgent:
     return ReflexionAgent(
         IncidentFeatureExtractor(metrics, settings.baseline_offset_minutes),
         store,
+        reasoner=build_reasoner(settings),
         knowledge_limit=settings.knowledge_limit,
+        action_planner=ActionPlanner(settings),
+        action_executor=ActionExecutor(settings, store),
+        checkpointer=SqliteSaver(
+            sqlite3.connect(str(settings.database_path) + ".checkpoints", check_same_thread=False)
+        ),
     )
 
 
@@ -59,9 +78,25 @@ def create_app(agent: ReflexionAgent | None = None, settings: Settings | None = 
     def live() -> dict[str, str]:
         return {"status": "live"}
 
-    @app.post("/v1/incidents", response_model=TriageReport, tags=["incidents"])
-    def create_incident(incident: Incident) -> TriageReport:
-        return app.state.agent.handle_incident(incident)
+    @app.post("/v1/incidents", response_model=WorkflowResponse, tags=["incidents"])
+    def create_incident(incident: Incident) -> WorkflowResponse:
+        try:
+            return app.state.agent.handle_incident(incident)
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+
+    @app.post(
+        "/v1/incidents/{incident_id}/actions/decision",
+        response_model=WorkflowResponse,
+        tags=["actions"],
+    )
+    def decide_actions(incident_id: str, decision: ActionDecision) -> WorkflowResponse:
+        try:
+            return app.state.agent.decide_actions(incident_id, decision)
+        except KeyError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
 
     @app.get("/v1/incidents/{incident_id}/report", response_model=TriageReport, tags=["incidents"])
     def get_report(incident_id: str) -> TriageReport:
@@ -78,9 +113,9 @@ def create_app(agent: ReflexionAgent | None = None, settings: Settings | None = 
             raise HTTPException(status_code=404, detail=str(error)) from error
         return {"recorded": True, "knowledge_updated": bool(chunk_ids), "chunk_ids": chunk_ids}
 
-    @app.post("/v1/alerts", response_model=list[TriageReport], tags=["alerts"])
-    def alertmanager_webhook(webhook: AlertmanagerWebhook) -> list[TriageReport]:
-        reports: list[TriageReport] = []
+    @app.post("/v1/alerts", response_model=list[WorkflowResponse], tags=["alerts"])
+    def alertmanager_webhook(webhook: AlertmanagerWebhook) -> list[WorkflowResponse]:
+        reports: list[WorkflowResponse] = []
         for alert in webhook.alerts:
             if alert.status != "firing":
                 continue
@@ -100,6 +135,11 @@ def create_app(agent: ReflexionAgent | None = None, settings: Settings | None = 
                 started_at=alert.startsAt,
                 labels=alert.labels,
                 annotations=alert.annotations,
+                action_context={
+                    key.removeprefix("action_"): value
+                    for key, value in alert.annotations.items()
+                    if key.startswith("action_")
+                },
             )
             reports.append(app.state.agent.handle_incident(incident))
         return reports

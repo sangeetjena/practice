@@ -24,9 +24,7 @@ class IncidentFeatureExtractor:
     def extract(self, incident: Incident) -> IncidentFeatures:
         service = incident.service
         expressions = {
-            "request_rate_rps": (
-                f'sum(rate(api_requests_total{{service="{service}"}}[5m]))'
-            ),
+            "request_rate_rps": (f'sum(rate(api_requests_total{{service="{service}"}}[5m]))'),
             "error_rate_ratio": (
                 f'sum(rate(api_requests_total{{service="{service}",status=~"5.."}}[5m])) '
                 f'/ clamp_min(sum(rate(api_requests_total{{service="{service}"}}[5m])), 0.001)'

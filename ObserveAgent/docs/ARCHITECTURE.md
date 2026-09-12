@@ -1,3 +1,5 @@
+Read [CONFIGURATION.md](CONFIGURATION.md) for runnable commands and the current graph.
+
 # ObserveAgent architecture — step-by-step
 
 ## 1. End-to-end mental model
@@ -53,10 +55,10 @@ on paragraph boundaries. Each chunk keeps section and part metadata.
 `HashEmbedding` is deterministic feature hashing. It makes the lab offline and repeatable but does
 not understand meaning like a production embedding model. Replace it through `EmbeddingProvider`.
 
-`SQLiteKnowledgeStore` persists chunk text, embedding, metadata, version, and active state. Search
-combines cosine similarity, exact-token overlap, and a small runbook-authority boost. It filters
-tenant scope, service, and `review_status=approved` before ranking. This is a local vector-store
-adapter; production can use pgvector, OpenSearch, or a managed vector database with the same rules.
+`ChromaKnowledgeStore` is the serving vector store. It queries a persistent Chroma collection by
+cosine distance, filtering tenant scope, service and approved status. SQLite archives source versions
+and active IDs to prevent obsolete chunks returning after partial index updates. The older SQLite
+hybrid search remains an offline test adapter. Use `reindex` after embedding profile changes.
 
 ## 5. Sources and knowledge authority
 
@@ -77,6 +79,8 @@ expiry workflows. Access control is a storage/retrieval responsibility, not a pr
 4. Retrieve approved tenant/service-compatible chunks.
 5. Ask the reasoner for facts, at most three hypotheses, verifications, actions, unknowns, and citations.
 6. Persist the report for audit and later feedback.
+7. Plan configured tools, pause via LangGraph interrupt for review, execute selected allowed tools,
+   and re-run diagnosis once when a diagnostic response supplies additional evidence.
 
 The included `RuleBasedReasoner` is intentionally transparent. A model-backed reasoner should use
 strict structured output and read-only tools, cite chunk IDs, distinguish fact from hypothesis,
@@ -108,5 +112,6 @@ temporal train/test splitting, shadow evaluation, canary deployment, and rollbac
 - The webhook is synchronous. Production needs a durable queue, idempotent workers, leases, and DLQ.
 - Hash embeddings are local and explainable but weak semantically. Production embeddings add cost,
   latency, privacy, versioning, and reindexing concerns.
-- Automatic remediation is not implemented. Add it only per runbook with approval, least privilege,
-  idempotency, blast-radius limits, rollback, audit, and recovery verification.
+- Configured API, email and PR tools are implemented with dry-run defaults and human approval.
+  The Spark subworkflow prepares a bounded JSON memory change and draft PR; see
+  [SPARK_WORKFLOW.md](SPARK_WORKFLOW.md). Automatic deployment and recovery verification are absent.
