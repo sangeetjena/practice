@@ -1,15 +1,109 @@
+# Default: three services; use docker-compose.legacy.yml for original extraction examples.
+x-app: &app
+  build: {context: ., dockerfile: Dockerfile.platform}
+  image: api-platform:local
+  env_file: .env
+  restart: unless-stopped
+  healthcheck:
+    test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready')"]
+    interval: 10s
+    timeout: 3s
+    retries: 10
+x-env: &env
+  OTEL_ENABLED: 'true'
+  OTEL_TRACES_SAMPLER: always_on
+  OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://otel:4318/v1/traces
+  OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://otel:4318/v1/metrics
+  CUSTOMERS_URL: http://customers:8000
 services:
-  api:
-    build: .
-    image: api-interview-lab:local
-    ports:
-      - "8000:8000"
+  postgres:
+    image: postgres:17-alpine
     environment:
-      APP_ENV: local-docker
-      DATABASE_PATH: /app/data/orders.db
-      API_TOKEN: ${API_TOKEN:-interview-demo-token}
+      POSTGRES_USER: lab
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run python scripts/bootstrap.py}
+      POSTGRES_DB: lab
+    volumes: [pg-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U lab]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  seed:
+    <<: *app
+    restart: 'no'
+    environment:
+      DATABASE_URL: postgresql+psycopg://lab:${POSTGRES_PASSWORD}@postgres/lab
+    command: [sh, -c, 'for name in orders customers products; do SERVICE_NAME=$$name python -m api_interview_lab.platform.seed || exit 1; done']
+    depends_on:
+      postgres: {condition: service_healthy}
+  orders:
+    <<: *app
+    environment:
+      <<: *env
+      SERVICE_NAME: orders
+      ROOT_PATH: /orders
+      DATABASE_URL: postgresql+psycopg://lab:${POSTGRES_PASSWORD}@postgres/lab
+    depends_on:
+      seed: {condition: service_completed_successfully}
+  customers:
+    <<: *app
+    environment:
+      <<: *env
+      SERVICE_NAME: customers
+      ROOT_PATH: /customers
+      DATABASE_URL: postgresql+psycopg://lab:${POSTGRES_PASSWORD}@postgres/lab
+      FAULT_DELAY_MS: ${CUSTOMERS_DELAY_MS:-0}
+      FAULT_FAIL: ${CUSTOMERS_FAIL:-false}
+    depends_on:
+      seed: {condition: service_completed_successfully}
+  products:
+    <<: *app
+    environment:
+      <<: *env
+      SERVICE_NAME: products
+      ROOT_PATH: /products
+      DATABASE_URL: postgresql+psycopg://lab:${POSTGRES_PASSWORD}@postgres/lab
+    depends_on:
+      seed: {condition: service_completed_successfully}
+  worker:
+    <<: *app
+    environment:
+      SERVICE_NAME: orders
+      DATABASE_URL: postgresql+psycopg://lab:${POSTGRES_PASSWORD}@postgres/lab
+    command: [python, -m, api_interview_lab.platform.worker]
+    healthcheck: {disable: true}
+    depends_on:
+      seed: {condition: service_completed_successfully}
+  gateway:
+    image: nginx:1.28-alpine
+    ports: ['127.0.0.1:8080:8080']
+    volumes: ['./deploy/platform/nginx.conf:/etc/nginx/nginx.conf:ro']
+    depends_on:
+      orders: {condition: service_healthy}
+      customers: {condition: service_healthy}
+      products: {condition: service_healthy}
+  otel:
+    image: otel/opentelemetry-collector-contrib:0.120.0
+    command: ['--config=/etc/otel.yaml']
+    volumes: ['./deploy/platform/otel.yaml:/etc/otel.yaml:ro']
+  jaeger:
+    image: jaegertracing/all-in-one:1.65.0
+    environment: {COLLECTOR_OTLP_ENABLED: 'true'}
+    ports: ['127.0.0.1:16686:16686']
+  prometheus:
+    image: prom/prometheus:v3.2.1
     volumes:
-      - api-data:/app/data
-
+      - ./deploy/platform/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./deploy/platform/alerts.yml:/etc/prometheus/alerts.yml:ro
+    ports: ['127.0.0.1:9090:9090']
+  grafana:
+    image: grafana/grafana:11.6.0
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./deploy/platform/grafana.yml:/etc/grafana/provisioning/datasources/default.yml:ro
+      - ./deploy/platform/dashboards.yml:/etc/grafana/provisioning/dashboards/default.yml:ro
+      - ./deploy/platform/dashboard.json:/var/lib/grafana/dashboards/commerce.json:ro
+    ports: ['127.0.0.1:3000:3000']
 volumes:
-  api-data:
+  pg-data:

@@ -1,51 +1,43 @@
 apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: prometheus
-  namespace: api-platform
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: prometheus
-  namespace: api-platform
-rules:
-- apiGroups:
-  - ''
-  resources:
-  - pods
-  verbs:
-  - get
-  - list
-  - watch
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: prometheus
-  namespace: api-platform
-subjects:
-- kind: ServiceAccount
-  name: prometheus
-  namespace: api-platform
-roleRef:
-  kind: Role
-  name: prometheus
-  apiGroup: rbac.authorization.k8s.io
----
-apiVersion: v1
 kind: ConfigMap
 metadata:
   name: otel-config
   namespace: api-platform
 data:
-  config.yaml: "receivers:\n  otlp:\n    protocols:\n      http:\n        endpoint:\
-    \ 0.0.0.0:4318\nprocessors:\n  memory_limiter:\n    check_interval: 1s\n    limit_mib:\
-    \ 128\n  batch:\n    timeout: 1s\n    send_batch_size: 512\nexporters:\n  otlphttp:\n\
-    \    endpoint: http://jaeger:4318\n    sending_queue:\n      queue_size: 1000\n\
-    \    retry_on_failure:\n      enabled: true\n      max_elapsed_time: 30s\nservice:\n\
-    \  pipelines:\n    traces:\n      receivers: [otlp]\n      processors: [memory_limiter,\
-    \ batch]\n      exporters: [otlphttp]\n"
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          http:
+            endpoint: 0.0.0.0:4318
+    processors:
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 128
+      batch:
+        timeout: 1s
+        send_batch_size: 512
+    exporters:
+      otlphttp:
+        endpoint: http://jaeger:4318
+        sending_queue:
+          queue_size: 1000
+        retry_on_failure:
+          enabled: true
+          max_elapsed_time: 30s
+      prometheus:
+        endpoint: 0.0.0.0:8889
+        enable_open_metrics: true
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [otlphttp]
+        metrics:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [prometheus]
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -68,6 +60,8 @@ spec:
         ports:
         - containerPort: 4318
           name: http
+        - containerPort: 8889
+          name: metrics
         resources:
           requests:
             cpu: 100m
@@ -100,6 +94,9 @@ spec:
   - name: http
     port: 4318
     targetPort: 4318
+  - name: metrics
+    port: 8889
+    targetPort: 8889
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -159,22 +156,37 @@ metadata:
   name: prometheus-config
   namespace: api-platform
 data:
-  prometheus.yml: "global:\n  scrape_interval: 10s\nrule_files:\n- /etc/prometheus/alerts.yml\n\
-    scrape_configs:\n- job_name: commerce\n  kubernetes_sd_configs:\n  - namespaces:\n\
-    \      names:\n      - api-platform\n    role: pod\n  relabel_configs:\n  - action:\
-    \ keep\n    regex: orders|customers|products\n    source_labels:\n    - __meta_kubernetes_pod_label_app\n\
-    \  - action: keep\n    regex: http\n    source_labels:\n    - __meta_kubernetes_pod_container_port_name\n"
-  alerts.yml: "groups:\n  - name: commerce\n    rules:\n      - alert: ServiceUnavailable\n\
-    \        expr: up{job=\"commerce\"} == 0\n        for: 1m\n        labels: {severity:\
-    \ critical}\n        annotations:\n          summary: Service scrape is failing;\
-    \ check process and connectivity\n      - alert: HighErrorRate\n        expr:\
-    \ sum by(service) (rate(api_requests_total{status=~\"5..\"}[5m])) / clamp_min(sum\
-    \ by(service) (rate(api_requests_total[5m])), 0.001) > 0.05\n        for: 2m\n\
-    \        labels: {severity: warning}\n        annotations:\n          summary:\
-    \ More than 5 percent server errors\n      - alert: HighLatency\n        expr:\
-    \ histogram_quantile(0.95, sum by(service, le) (rate(api_request_duration_seconds_bucket[5m])))\
-    \ > 0.5\n        for: 2m\n        labels: {severity: warning}\n        annotations:\n\
-    \          summary: p95 exceeds 500ms\n"
+  prometheus.yml: |
+    global:
+      scrape_interval: 10s
+    rule_files:
+      - /etc/prometheus/alerts.yml
+    scrape_configs:
+      - job_name: otel
+        static_configs:
+          - targets: [otel:8889]
+  alerts.yml: |
+    groups:
+      - name: commerce
+        rules:
+          - alert: TelemetryPipelineUnavailable
+            expr: up{job="otel"} == 0
+            for: 1m
+            labels: {severity: critical}
+            annotations:
+              summary: Prometheus cannot scrape the OpenTelemetry Collector
+          - alert: HighErrorRate
+            expr: sum by(service) (rate(api_requests_total{status=~"5.."}[5m])) / clamp_min(sum by(service) (rate(api_requests_total[5m])), 0.001) > 0.05
+            for: 2m
+            labels: {severity: warning}
+            annotations:
+              summary: More than 5 percent server errors
+          - alert: HighLatency
+            expr: histogram_quantile(0.95, sum by(service, le) (rate(api_request_duration_seconds_bucket[5m]))) > 0.5
+            for: 2m
+            labels: {severity: warning}
+            annotations:
+              summary: p95 exceeds 500ms
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -213,7 +225,6 @@ spec:
       - name: config
         configMap:
           name: prometheus-config
-      serviceAccountName: prometheus
 ---
 apiVersion: v1
 kind: Service

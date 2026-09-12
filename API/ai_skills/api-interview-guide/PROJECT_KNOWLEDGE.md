@@ -140,7 +140,7 @@ client/domain/pattern/server examples remain available via docs/LEGACY.md and
 
 Platform modules: config (explicit secrets), auth (API key/Basic/JWT Principal + scopes), store
 (SQLAlchemy tenant/kind records, atomic idempotency and job state), app (three service factory,
-OpenAPI/error mapping), telemetry (Prometheus + OTel), client (async pooling/retry/pagination),
+OpenAPI/error mapping), telemetry (OTel metrics/traces + correlated logs), client (async pooling/retry/pagination),
 worker (durable DB claims/leases and idempotent imports). Reads use tenant-scoped keyset pagination.
 Sample data is initialized once before replicas, not on every pod start. Shared PostgreSQL is a
 lab compromise; SQLite is for isolated tests only. Do not claim separate database-role isolation.
@@ -152,3 +152,14 @@ prefixes. See docs/SYSTEM_DESIGN.md, docs/DEPLOYMENT.md and docs/DAY1_LAB.md for
 Existing SKILL.md's sales-order requirement is preserved across the original extraction patterns;
 the user explicitly requested the three-service extension, so related customer/product entities
 are intentional. Never describe this demo as a full production observability or agentic platform.
+
+The default platform emits custom RED metrics and auto-instrumented spans over OTLP/HTTP to one
+OpenTelemetry Collector. The Collector exposes Prometheus-format metrics on port 8889 and exports
+traces to Jaeger. Prometheus scrapes only the Collector, not app pods. `/metrics` is intentionally
+absent from the platform services (the legacy app still has its original endpoint). JSON logs go
+to stdout with trace/request IDs; production Kubernetes would collect them with a node log agent.
+Telemetry failure must not block API traffic, and OTLP buffers are bounded/best-effort.
+
+For a human-oriented component and request-flow explanation, read `docs/PROJECT_WALKTHROUGH.md`.
+For design requirements and trade-offs, read `docs/SYSTEM_DESIGN.md`; for deployment and load
+balancing, read `docs/DEPLOYMENT.md`.

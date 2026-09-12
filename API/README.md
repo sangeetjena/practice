@@ -53,8 +53,9 @@ runs per container so Prometheus metrics remain process-correct. Scale container
 | products | `/products/api/v1/products?limit=5` | `/products/api/v1/products/{id}` | Product samples and prices |
 
 Gateway strips the first service prefix. Direct service URLs start at `/api/v1/...`.
-Every service also has `/docs`, `/openapi.json`, `/health/live`, `/health/ready`, and internal
-`/metrics`. ROOT_PATH makes generated Swagger URLs work behind the gateway.
+Every service also has `/docs`, `/openapi.json`, `/health/live`, and `/health/ready`. Metrics are
+pushed with OTLP to the Collector; application `/metrics` endpoints are intentionally absent.
+ROOT_PATH makes generated Swagger URLs work behind the gateway.
 
 List returns `items` and `next_cursor`; pass the cursor unchanged on the next request. Limit is
 1–100; cursor is signed and bound to tenant and service. Keyset ordering is by ID, not creation
@@ -124,14 +125,15 @@ docker compose logs --tail=50 orders customers
 ```
 
 Logs contain normalized route, status, duration, request ID, and trace ID; no credentials or
-payloads. OpenTelemetry exports through a bounded batch processor and Collector to Jaeger.
-Prometheus scrapes every discovered replica. Grafana provisions RED panels. Alert expressions
+payloads. OpenTelemetry exports traces and RED metrics through bounded SDK processors to one
+Collector. The Collector sends traces to Jaeger and exposes aggregated Prometheus-format metrics;
+Prometheus scrapes that endpoint. Grafana provisions RED panels. Alert expressions
 are evaluated in Prometheus; an external Alertmanager and notification routes are **not** wired.
 Jaeger and monitoring storage are ephemeral lab defaults. Prometheus rules require sustained
 traffic/window duration; one request will not immediately create a meaningful p95 chart.
 
-Try `docker compose stop otel`: API traffic still works; trace export can fail/drop after bounded
-buffers fill. Restart with `docker compose start otel`. Collection is best-effort, not an
+Try `docker compose stop otel`: API traffic still works; metric/trace export can fail or drop after
+bounded buffers fill. Restart with `docker compose start otel`. Collection is best-effort, not an
 exactly-once audit system. No raw packet/eBPF discovery is implemented: the discovery script
 combines a trusted declared catalog, live OpenAPI and readiness. Metrics show observed routes.
 
@@ -154,11 +156,12 @@ not highly available. For Kubernetes, see [deployment instructions](docs/DEPLOYM
 - `platform/app.py`: HTTP contracts, error mapping, scope checks, downstream call.
 - `platform/auth.py`: API key, Basic and JWT strategies yielding one Principal.
 - `platform/store.py`: tenant-scoped SQL and atomic idempotency.
-- `platform/telemetry.py`: RED metrics, JSON logs and OpenTelemetry instrumentation.
+- `platform/telemetry.py`: OTLP RED metrics/traces and trace-correlated JSON logs.
 - `platform/client.py`: pooled async transport, bounded retries/concurrency and pagination.
 - `scripts/discover.py`, `scripts/governance.py`: discovery and executable API rules.
 - `deploy/platform/`: gateway, Collector, Prometheus, Grafana and Kubernetes examples.
 - [Full system design](docs/SYSTEM_DESIGN.md): requirements → estimation → HLD → trade-offs.
+- [Project walkthrough](docs/PROJECT_WALKTHROUGH.md): components and request flows before interview.
 - [Day 1 exercises](docs/DAY1_LAB.md): hands-on itinerary and acceptance checks.
 
 Use `python scripts/governance.py` and `pytest` as release gates. The included GitHub Actions

@@ -18,9 +18,16 @@ exporters:
     retry_on_failure:
       enabled: true
       max_elapsed_time: 30s
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    enable_open_metrics: true
 service:
   pipelines:
     traces:
       receivers: [otlp]
       processors: [memory_limiter, batch]
       exporters: [otlphttp]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [prometheus]

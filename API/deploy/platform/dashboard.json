@@ -71,7 +71,7 @@
     {
       "id": 4,
       "type": "timeseries",
-      "title": "Scrape availability",
+      "title": "Collector scrape availability",
       "gridPos": {
         "x": 12,
         "y": 8,
@@ -84,8 +84,8 @@
       },
       "targets": [
         {
-          "expr": "up{job=\"commerce\"}",
-          "legendFormat": "{{service}} {{instance}}"
+          "expr": "up{job=\"otel\"}",
+          "legendFormat": "OpenTelemetry Collector"
         }
       ]
     }
