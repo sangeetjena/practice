@@ -40,6 +40,7 @@ restarts. Existing users should back up an old `.env` and generate the new forma
 | http://localhost:16686 | Jaeger distributed traces; select `orders` service |
 | http://localhost:9090 | Prometheus queries and alert-rule state |
 | http://localhost:3000 | Grafana: user `admin`; password is local `.env` POSTGRES_PASSWORD |
+| http://localhost:8090/docs | ObserveAgent incident, Alertmanager webhook, report and feedback APIs |
 
 Ports bind to localhost. Backend/database/collector ports are not published. One Uvicorn worker
 runs per container so Prometheus metrics remain process-correct. Scale containers, not workers.
@@ -168,3 +169,15 @@ Use `python scripts/governance.py` and `pytest` as release gates. The included G
 workflow runs lint/tests/governance, boots Compose, and runs the live smoke script on API PRs.
 The worker also supports POST `/orders/api/v1/import-jobs` and GET `/orders/api/v1/jobs/{job_id}`;
 see the Day 1 lab for the request body and crash-recovery exercise.
+
+## Agentic incident triage extension
+
+[`ObserveAgent`](ObserveAgent/README.md) consumes firing Prometheus alerts through Alertmanager,
+extracts current/baseline/delta metric features, retrieves approved runbooks and reviewed prior
+resolutions from a tenant-aware hybrid vector store, and returns evidence-backed hypotheses. Human
+feedback is always audited; only reviewed, resolved accept/edit feedback becomes versioned knowledge.
+
+The extension deliberately keeps metrics in Prometheus, traces in Jaeger, and logs on stdout. It
+does not pretend that Prometheus stores all three signals. Start with the
+[`ObserveAgent architecture`](ObserveAgent/docs/ARCHITECTURE.md), then run the
+[`debugging guide`](ObserveAgent/docs/DEBUGGING.md) to follow one incident end to end.
