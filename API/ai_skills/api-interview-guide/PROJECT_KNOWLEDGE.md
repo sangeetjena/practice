@@ -163,3 +163,20 @@ Telemetry failure must not block API traffic, and OTLP buffers are bounded/best-
 For a human-oriented component and request-flow explanation, read `docs/PROJECT_WALKTHROUGH.md`.
 For design requirements and trade-offs, read `docs/SYSTEM_DESIGN.md`; for deployment and load
 balancing, read `docs/DEPLOYMENT.md`.
+
+## ObserveAgent extension
+
+`ObserveAgent/observe_agent` is a separate incident-triage teaching subsystem. Alertmanager posts
+firing alerts to `/v1/alerts`; manual incidents use `/v1/incidents`. Feature ETL queries Prometheus
+for request rate, 5xx ratio and p95 latency at incident/baseline times and persists the exact query
+with each compact feature. Prometheus contains metrics only: traces remain in Jaeger and logs remain
+on stdout until separate adapters are added.
+
+`MarkdownChunker` splits runbooks/resolutions by headings; `HashEmbedding` provides deterministic
+offline test vectors; `SQLiteKnowledgeStore` combines cosine and lexical scores after tenant,
+service and review-status filtering. These are lab choices, not production scale recommendations.
+`ReflexionAgent` persists an incident, extracts features, retrieves knowledge, runs the replaceable
+reasoner and saves its report. Feedback is always audited. Only resolved accept/edit feedback with
+a confirmed root cause and resolution becomes a new approved, versioned, tenant-scoped source.
+Rejected or incomplete feedback is not retrievable knowledge. Automatic remediation and online
+self-training are intentionally absent. See `ObserveAgent/README.md`, architecture and debugging docs.
