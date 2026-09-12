@@ -1,0 +1,230 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+  namespace: api-platform
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: prometheus
+  namespace: api-platform
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: prometheus
+  namespace: api-platform
+subjects:
+- kind: ServiceAccount
+  name: prometheus
+  namespace: api-platform
+roleRef:
+  kind: Role
+  name: prometheus
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-config
+  namespace: api-platform
+data:
+  config.yaml: "receivers:\n  otlp:\n    protocols:\n      http:\n        endpoint:\
+    \ 0.0.0.0:4318\nprocessors:\n  memory_limiter:\n    check_interval: 1s\n    limit_mib:\
+    \ 128\n  batch:\n    timeout: 1s\n    send_batch_size: 512\nexporters:\n  otlphttp:\n\
+    \    endpoint: http://jaeger:4318\n    sending_queue:\n      queue_size: 1000\n\
+    \    retry_on_failure:\n      enabled: true\n      max_elapsed_time: 30s\nservice:\n\
+    \  pipelines:\n    traces:\n      receivers: [otlp]\n      processors: [memory_limiter,\
+    \ batch]\n      exporters: [otlphttp]\n"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel
+  namespace: api-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otel
+  template:
+    metadata:
+      labels:
+        app: otel
+    spec:
+      containers:
+      - name: otel
+        image: otel/opentelemetry-collector-contrib:0.120.0
+        ports:
+        - containerPort: 4318
+          name: http
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        volumeMounts:
+        - name: config
+          mountPath: /etc/otel
+          readOnly: true
+        args:
+        - --config=/etc/otel/config.yaml
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: config
+        configMap:
+          name: otel-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel
+  namespace: api-platform
+spec:
+  type: ClusterIP
+  selector:
+    app: otel
+  ports:
+  - name: http
+    port: 4318
+    targetPort: 4318
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger
+  namespace: api-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jaeger
+  template:
+    metadata:
+      labels:
+        app: jaeger
+    spec:
+      containers:
+      - name: jaeger
+        image: jaegertracing/all-in-one:1.65.0
+        ports:
+        - containerPort: 16686
+          name: http
+        - containerPort: 4318
+          name: otlp
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        env:
+        - name: COLLECTOR_OTLP_ENABLED
+          value: 'true'
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger
+  namespace: api-platform
+spec:
+  type: ClusterIP
+  selector:
+    app: jaeger
+  ports:
+  - name: http
+    port: 16686
+    targetPort: 16686
+  - name: otlp
+    port: 4318
+    targetPort: 4318
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: api-platform
+data:
+  prometheus.yml: "global:\n  scrape_interval: 10s\nrule_files:\n- /etc/prometheus/alerts.yml\n\
+    scrape_configs:\n- job_name: commerce\n  kubernetes_sd_configs:\n  - namespaces:\n\
+    \      names:\n      - api-platform\n    role: pod\n  relabel_configs:\n  - action:\
+    \ keep\n    regex: orders|customers|products\n    source_labels:\n    - __meta_kubernetes_pod_label_app\n\
+    \  - action: keep\n    regex: http\n    source_labels:\n    - __meta_kubernetes_pod_container_port_name\n"
+  alerts.yml: "groups:\n  - name: commerce\n    rules:\n      - alert: ServiceUnavailable\n\
+    \        expr: up{job=\"commerce\"} == 0\n        for: 1m\n        labels: {severity:\
+    \ critical}\n        annotations:\n          summary: Service scrape is failing;\
+    \ check process and connectivity\n      - alert: HighErrorRate\n        expr:\
+    \ sum by(service) (rate(api_requests_total{status=~\"5..\"}[5m])) / clamp_min(sum\
+    \ by(service) (rate(api_requests_total[5m])), 0.001) > 0.05\n        for: 2m\n\
+    \        labels: {severity: warning}\n        annotations:\n          summary:\
+    \ More than 5 percent server errors\n      - alert: HighLatency\n        expr:\
+    \ histogram_quantile(0.95, sum by(service, le) (rate(api_request_duration_seconds_bucket[5m])))\
+    \ > 0.5\n        for: 2m\n        labels: {severity: warning}\n        annotations:\n\
+    \          summary: p95 exceeds 500ms\n"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: api-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+      - name: prometheus
+        image: prom/prometheus:v3.2.1
+        ports:
+        - containerPort: 9090
+          name: http
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        volumeMounts:
+        - name: config
+          mountPath: /etc/prometheus
+          readOnly: true
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: config
+        configMap:
+          name: prometheus-config
+      serviceAccountName: prometheus
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: api-platform
+spec:
+  type: ClusterIP
+  selector:
+    app: prometheus
+  ports:
+  - name: http
+    port: 9090
+    targetPort: 9090
