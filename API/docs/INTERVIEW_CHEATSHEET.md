@@ -55,4 +55,4 @@ status handling, pagination, concurrency limits, and lifecycle. Transform its re
 
 Expose separate liveness and dependency-aware readiness probes. Emit RED metrics (request rate,
 errors, duration) to Prometheus, structured logs to stdout, request/trace IDs across calls, and
-OpenTelemetry traces through a Collector. Alert on SLO symptoms rather than isolated CPU spikes.
+OpenTelemetry metrics and traces through a Collector. Alert on SLO symptoms rather than isolated CPU spikes.

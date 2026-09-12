@@ -1,172 +1,170 @@
-# API Interview Lab
+# Commerce API Platform — Day 1 interview lab
 
-A small, runnable Python project for revising API design, client-side data extraction,
-validation, concurrency, service deployment, and observability before an interview. Every
-example uses the same sales-order API so you can compare approaches instead of learning
-unrelated toy programs.
+Three small independently runnable services: **orders, customers, products**. Each serves 15
+paginated sample records per tenant (`acme`, `globex`). Follow a request from an Nginx load
+balancer through authentication, tenant-scoped SQL, metrics, logs, and a distributed trace.
 
-## Architecture and naming
+This is a working learning lab, not a complete production platform. The original REST/GraphQL
+and extraction examples remain available in [the legacy guide](docs/LEGACY.md).
 
-```text
-API/
-├── src/api_interview_lab/
-│   ├── client/       # HTTP transport, default headers, auth, sync/async pagination
-│   ├── domain/       # Pure business concepts; no HTTP, database, or framework code
-│   ├── patterns/     # Different ways to represent API responses
-│   ├── data/         # Repository contract and SQLite implementation
-│   └── server/       # FastAPI REST/GraphQL, security, health, and metrics
-├── examples/         # Runnable API-client demonstrations
-├── feeds/            # Seed data for the local simulation server only
-├── tests/            # Unit and transport-level integration tests
-├── deploy/           # Kubernetes and Prometheus Operator examples
-└── ai_skills/        # Project knowledge for an AI coding assistant
-```
+## Start on Windows / Docker Desktop
 
-`domain` means the core business vocabulary and rules. Here, `Order`, `OrderStatus`, and the
-`revenue` calculation belong to the domain. They should remain usable if FastAPI is replaced
-with Flask, SQLite with PostgreSQL, or REST with Kafka. Pydantic classes are transport models:
-they validate untrusted JSON at the API boundary. Keeping these separate prevents framework and
-wire-format details from leaking into business logic.
+Run from the `API` directory in PowerShell. Docker Desktop must be running with Linux containers.
 
-## Quick start
-
-```bash
-cd API
+```powershell
 python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
+.\.venv\Scripts\Activate.ps1
 python -m pip install -e '.[dev]'
-python scripts/load_feed.py
-uvicorn api_interview_lab.server.main:app --reload
-```
-
-Open REST/OpenAPI at <http://localhost:8000/docs>, GraphQL at
-<http://localhost:8000/graphql>, and health probes at `/health/live` and `/health/ready`.
-Then, in another terminal:
-
-```bash
-python examples/run_patterns.py
+python scripts/bootstrap.py
+docker compose up --build -d
+$env:DEMO_API_KEY = python scripts/credentials.py
+curl.exe -H "X-API-Key: $env:DEMO_API_KEY" "http://localhost:8080/orders/api/v1/orders?limit=5"
+python examples/platform_patterns.py
+python scripts/discover.py
 pytest
 ruff check .
+python scripts/governance.py
 ```
 
-The CSV/JSON files only seed the local server. All examples in `patterns/` extract data from
-`GET /api/v1/orders` through `SyncOrderClient`.
+Bash differences: activate with `source .venv/bin/activate`, set the key with
+`export DEMO_API_KEY=$(python scripts/credentials.py)`, and use `curl` instead of `curl.exe`.
+The bootstrap command refuses to overwrite an existing `.env`; preserve its secrets between
+restarts. Existing users should back up an old `.env` and generate the new format once.
 
-## Client, headers, and authentication
+| Local URL | Purpose |
+|---|---|
+| http://localhost:8080/orders/docs | Orders Swagger UI; click **Authorize**, select one method |
+| http://localhost:8080/customers/docs | Customers API documentation |
+| http://localhost:8080/products/docs | Products API documentation |
+| http://localhost:8080/orders/api/v1/catalog | Authenticated API catalog |
+| http://localhost:16686 | Jaeger distributed traces; select `orders` service |
+| http://localhost:9090 | Prometheus queries and alert-rule state |
+| http://localhost:3000 | Grafana: user `admin`; password is local `.env` POSTGRES_PASSWORD |
 
-The client always supplies `Accept`, `Content-Type`, and `User-Agent`. Caller headers override
-defaults, and authentication headers have final precedence.
+Ports bind to localhost. Backend/database/collector ports are not published. One Uvicorn worker
+runs per container so Prometheus metrics remain process-correct. Scale containers, not workers.
 
-```python
-from api_interview_lab.client import BearerTokenAuth, SyncOrderClient
+## Services and API contracts
 
-with SyncOrderClient(
-    "http://localhost:8000",
-    auth=BearerTokenAuth("interview-demo-token"),
-    headers={"X-Correlation-Source": "interview-practice"},
-    timeout=5.0,
-) as client:
-    raw_json = client.fetch_all_raw(page_size=50)
-    validated_page = client.list_orders(page=1, page_size=10)
-```
-
-Available examples are `BearerTokenAuth`, `ApiKeyAuth`, and `BasicAuth`. The sample server
-enforces Bearer authentication only when `API_TOKEN` is configured. In production, prefer an
-identity provider using OAuth 2.0/OIDC, short-lived signed tokens, authorization scopes, TLS,
-and a secret manager; never commit tokens.
-
-## API extraction patterns
-
-| Pattern | Function | What it returns | Use it when |
+| Service | List | Detail | Extra capability |
 |---|---|---|---|
-| Raw JSON + `TypedDict` | `extract_with_typed_dict` | `list[OrderDict]` | Static hints without runtime validation |
-| Dataclass | `extract_with_dataclasses` | `list[OrderRecord]` | Trusted input and lightweight objects |
-| Pydantic | `extract_with_pydantic` | `list[OrderPayload]` | Remote JSON needs runtime validation |
-| pandas | `extract_with_pandas` | `DataFrame` | Bounded responses need local analytics |
-| asyncio | `AsyncOrderClient` | objects or streamed pages | Independent network calls should overlap |
+| orders | `/orders/api/v1/orders?limit=5` | `/orders/api/v1/orders/{id}` | Idempotent POST; `/{id}/customer` traces a downstream call |
+| customers | `/customers/api/v1/customers?limit=5` | `/customers/api/v1/customers/{id}` | Configurable delay/503 for failure exercises |
+| products | `/products/api/v1/products?limit=5` | `/products/api/v1/products/{id}` | Product samples and prices |
 
-Other useful choices to mention in interviews include `msgspec` for fast typed JSON,
-`attrs` for declarative classes, `polars` for multi-threaded local analytics, and `pyarrow` for
-columnar memory/Parquet. Spark, Flink, or Beam fit distributed/streaming workloads. These are
-alternatives, not dependencies here—the project stays intentionally small. Network retrieval
-still belongs in the client; the modeling library should not make HTTP calls itself.
+Gateway strips the first service prefix. Direct service URLs start at `/api/v1/...`.
+Every service also has `/docs`, `/openapi.json`, `/health/live`, and `/health/ready`. Metrics are
+pushed with OTLP to the Collector; application `/metrics` endpoints are intentionally absent.
+ROOT_PATH makes generated Swagger URLs work behind the gateway.
 
-## REST and GraphQL
+List returns `items` and `next_cursor`; pass the cursor unchanged on the next request. Limit is
+1–100; cursor is signed and bound to tenant and service. Keyset ordering is by ID, not creation
+time. It avoids offset scans, but **does not promise a snapshot across concurrent inserts**.
 
-```bash
-curl -H 'Authorization: Bearer interview-demo-token' \
-  'http://localhost:8000/api/v1/orders?page=1&page_size=5'
-curl http://localhost:8000/health/ready
-curl http://localhost:8000/metrics
+## Authentication and tenants
+
+Use exactly one method per request:
+
+```powershell
+# API key
+$env:DEMO_API_KEY = python scripts/credentials.py --tenant acme
+curl.exe -H "X-API-Key: $env:DEMO_API_KEY" http://localhost:8080/orders/api/v1/orders
+# Basic (local learning; use TLS outside localhost)
+$password = python scripts/credentials.py --tenant acme --kind password
+curl.exe -u "acme:$password" http://localhost:8080/customers/api/v1/customers
+# Signed short-lived JWT; local issuer helper only
+$token = python scripts/mint_token.py --tenant globex
+curl.exe -H "Authorization: Bearer $token" http://localhost:8080/products/api/v1/products
 ```
 
-```graphql
-query {
-  orders(limit: 3) { id product revenue status }
-}
+Tenant comes from the credential mapping or verified JWT claim, never `X-Tenant-ID` or body
+input. Reads require `read`; order creation requires `write`. Invalid credentials are 401,
+insufficient scopes 403, missing/other-tenant records 404. JWT checks algorithm, signature,
+issuer, audience, required claims, and expiry. Idempotency keys and SQL primary keys are scoped
+by tenant. The two sample tenants intentionally reuse IDs to demonstrate filtering.
+
+The lab's Basic/API-key mapping contains plaintext secrets in ignored local configuration.
+JWT uses a shared HMAC key, not a full OAuth/OIDC provider. Production: use IdP/JWKS asymmetric
+verification, workload identity, scoped downstream delegation, secret rotation and hashed
+API-key storage. Shared HMAC means every holder can mint tokens; do not use this trust model
+across independent production organizations. Identity forwarding is only to a fixed trusted
+customer-service URL. Internal HTTP clients explicitly ignore ambient proxy variables.
+
+## Create and retry an order
+
+In Swagger select POST `/api/v1/orders`, provide `Idempotency-Key: interview-1`, then:
+
+```json
+{"name":"Interview order","customer_id":"customers-001","product_id":"products-001","quantity":2,"unit_price":10}
 ```
 
-REST is a strong default for resource-oriented APIs with HTTP caching and conventional tooling.
-GraphQL is useful when clients need different nested response shapes, but requires query-cost
-limits, field-level authorization, caching decisions, and protection from N+1 queries.
+Repeat the same request/key: same resource and 201 result. Change quantity using the same key:
+409. Concurrent requests across replicas share PostgreSQL's uniqueness constraint and atomic
+transaction. Keys persist in this demo; production needs retention and published retry windows.
+The create example validates reference formats but does not perform referential validation
+against other services or implement real checkout/payment workflows. Monetary floats are demo
+values; real billing needs decimal/minor-unit arithmetic.
 
-## Docker and Kubernetes deployment
+## Monitoring and troubleshooting exercise
 
-Local container:
-
-```bash
-API_TOKEN=interview-demo-token docker compose up --build
+```powershell
+curl.exe -H "X-API-Key: $env:DEMO_API_KEY" http://localhost:8080/orders/api/v1/orders/orders-001/customer
+$env:CUSTOMERS_DELAY_MS = '1000'
+docker compose up -d customers
+# Repeat the request; find the slow child span in Jaeger.
+$env:CUSTOMERS_DELAY_MS = '3000'
+docker compose up -d customers
+# Orders now returns 504 after its 2s dependency timeout.
+$env:CUSTOMERS_DELAY_MS = '0'
+$env:CUSTOMERS_FAIL = 'true'
+docker compose up -d customers
+# Customer returns 503; orders translates dependency failure to 502.
+$env:CUSTOMERS_FAIL = 'false'
+docker compose up -d customers
+docker compose logs --tail=50 orders customers
 ```
 
-Cluster deployment (replace the image and secret for your registry/environment):
+Logs contain normalized route, status, duration, request ID, and trace ID; no credentials or
+payloads. OpenTelemetry exports traces and RED metrics through bounded SDK processors to one
+Collector. The Collector sends traces to Jaeger and exposes aggregated Prometheus-format metrics;
+Prometheus scrapes that endpoint. Grafana provisions RED panels. Alert expressions
+are evaluated in Prometheus; an external Alertmanager and notification routes are **not** wired.
+Jaeger and monitoring storage are ephemeral lab defaults. Prometheus rules require sustained
+traffic/window duration; one request will not immediately create a meaningful p95 chart.
 
-```bash
-docker build -t REGISTRY/api-interview-lab:0.2.0 .
-docker push REGISTRY/api-interview-lab:0.2.0
-kubectl create namespace api-interview
-kubectl -n api-interview create secret generic api-interview-lab-secrets \
-  --from-literal=API_TOKEN='replace-me'
-kubectl apply -f deploy/k8s/
-kubectl -n api-interview set image deployment/api-interview-lab \
-  api=REGISTRY/api-interview-lab:0.2.0
-kubectl -n api-interview port-forward service/api-interview-lab 8000:80
+Try `docker compose stop otel`: API traffic still works; metric/trace export can fail or drop after
+bounded buffers fill. Restart with `docker compose start otel`. Collection is best-effort, not an
+exactly-once audit system. No raw packet/eBPF discovery is implemented: the discovery script
+combines a trusted declared catalog, live OpenAPI and readiness. Metrics show observed routes.
+
+## Scale and deploy
+
+```powershell
+docker compose up -d --scale orders=3 --scale customers=2
 ```
 
-The manifests demonstrate rolling updates, two replicas, startup/readiness/liveness probes,
-CPU/memory budgets, a HorizontalPodAutoscaler, a PodDisruptionBudget, non-root execution, a
-ConfigMap, and a Secret reference. HPA requires Metrics Server.
+Nginx uses Docker DNS with a 10-second refresh to resolve current replicas. Gateway throttling
+is **per IP and per gateway replica**, not a distributed tenant quota. Fixed host ports are only
+on the gateway/monitoring UIs so app replicas do not conflict.
 
-SQLite is only for local simulation. Multiple pods cannot safely share its local file. A real
-deployment should use managed PostgreSQL/MySQL, migrations as a separate job, immutable image
-tags, Ingress/Gateway with TLS, NetworkPolicy, and an external secret manager.
+For a Linux VM, use the same Compose stack, persistent PostgreSQL backups, and a managed TLS
+proxy/load balancer in front of the private gateway. Keep dashboards private. A single VM is
+not highly available. For Kubernetes, see [deployment instructions](docs/DEPLOYMENT.md).
 
-## Observability
+## Project map and study sequence
 
-The service exposes:
+- `platform/app.py`: HTTP contracts, error mapping, scope checks, downstream call.
+- `platform/auth.py`: API key, Basic and JWT strategies yielding one Principal.
+- `platform/store.py`: tenant-scoped SQL and atomic idempotency.
+- `platform/telemetry.py`: OTLP RED metrics/traces and trace-correlated JSON logs.
+- `platform/client.py`: pooled async transport, bounded retries/concurrency and pagination.
+- `scripts/discover.py`, `scripts/governance.py`: discovery and executable API rules.
+- `deploy/platform/`: gateway, Collector, Prometheus, Grafana and Kubernetes examples.
+- [Full system design](docs/SYSTEM_DESIGN.md): requirements → estimation → HLD → trade-offs.
+- [Project walkthrough](docs/PROJECT_WALKTHROUGH.md): components and request flows before interview.
+- [Day 1 exercises](docs/DAY1_LAB.md): hands-on itinerary and acceptance checks.
 
-- `/health/live`: process health; Kubernetes restarts it on repeated failure.
-- `/health/ready`: database dependency health; unhealthy pods leave Service endpoints.
-- `/metrics`: Prometheus counters, in-flight requests, and latency histograms.
-- `X-Request-ID`: accepted/generated on each request and returned to the caller.
-- JSON logs on stdout for collection by Fluent Bit, Vector, or another agent.
-
-If the Prometheus Operator is installed, apply
-`deploy/observability/servicemonitor.yaml`. Build Grafana panels and alerts around request rate,
-5xx rate, p95/p99 latency, saturation, readiness, and pod restarts. In production, add
-OpenTelemetry SDK/Collector instrumentation and export traces to Jaeger, Tempo, Datadog, or
-another backend; propagate trace context to downstream services.
-
-## Reliability discussion points
-
-- Use connect/read/write/pool deadlines; retry only transient and idempotent operations with
-  exponential backoff plus jitter.
-- Limit concurrency and rate, honor `Retry-After`, and use circuit breaking for sustained
-  downstream failure.
-- Define whether batch extraction fails fast, returns partial results, or dead-letters failures.
-- Prefer cursor/keyset pagination at scale; offset pagination can skip/duplicate records during
-  concurrent writes and becomes expensive at large offsets.
-- Use idempotency keys for retryable creates and conditional requests/ETags for concurrency.
-
-For rapid revision, see [`docs/INTERVIEW_CHEATSHEET.md`](docs/INTERVIEW_CHEATSHEET.md). For design
-decisions, see
-[`ai_skills/api-interview-guide/PROJECT_KNOWLEDGE.md`](ai_skills/api-interview-guide/PROJECT_KNOWLEDGE.md).
+Use `python scripts/governance.py` and `pytest` as release gates. The included GitHub Actions
+workflow runs lint/tests/governance, boots Compose, and runs the live smoke script on API PRs.
+The worker also supports POST `/orders/api/v1/import-jobs` and GET `/orders/api/v1/jobs/{job_id}`;
+see the Day 1 lab for the request body and crash-recovery exercise.

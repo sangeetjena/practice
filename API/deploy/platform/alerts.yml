@@ -1,0 +1,21 @@
+groups:
+  - name: commerce
+    rules:
+      - alert: TelemetryPipelineUnavailable
+        expr: up{job="otel"} == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations:
+          summary: Prometheus cannot scrape the OpenTelemetry Collector
+      - alert: HighErrorRate
+        expr: sum by(service) (rate(api_requests_total{status=~"5.."}[5m])) / clamp_min(sum by(service) (rate(api_requests_total[5m])), 0.001) > 0.05
+        for: 2m
+        labels: {severity: warning}
+        annotations:
+          summary: More than 5 percent server errors
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, sum by(service, le) (rate(api_request_duration_seconds_bucket[5m]))) > 0.5
+        for: 2m
+        labels: {severity: warning}
+        annotations:
+          summary: p95 exceeds 500ms

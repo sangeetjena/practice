@@ -1,0 +1,241 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-config
+  namespace: api-platform
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          http:
+            endpoint: 0.0.0.0:4318
+    processors:
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 128
+      batch:
+        timeout: 1s
+        send_batch_size: 512
+    exporters:
+      otlphttp:
+        endpoint: http://jaeger:4318
+        sending_queue:
+          queue_size: 1000
+        retry_on_failure:
+          enabled: true
+          max_elapsed_time: 30s
+      prometheus:
+        endpoint: 0.0.0.0:8889
+        enable_open_metrics: true
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [otlphttp]
+        metrics:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [prometheus]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel
+  namespace: api-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otel
+  template:
+    metadata:
+      labels:
+        app: otel
+    spec:
+      containers:
+      - name: otel
+        image: otel/opentelemetry-collector-contrib:0.120.0
+        ports:
+        - containerPort: 4318
+          name: http
+        - containerPort: 8889
+          name: metrics
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        volumeMounts:
+        - name: config
+          mountPath: /etc/otel
+          readOnly: true
+        args:
+        - --config=/etc/otel/config.yaml
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: config
+        configMap:
+          name: otel-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel
+  namespace: api-platform
+spec:
+  type: ClusterIP
+  selector:
+    app: otel
+  ports:
+  - name: http
+    port: 4318
+    targetPort: 4318
+  - name: metrics
+    port: 8889
+    targetPort: 8889
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger
+  namespace: api-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jaeger
+  template:
+    metadata:
+      labels:
+        app: jaeger
+    spec:
+      containers:
+      - name: jaeger
+        image: jaegertracing/all-in-one:1.65.0
+        ports:
+        - containerPort: 16686
+          name: http
+        - containerPort: 4318
+          name: otlp
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        env:
+        - name: COLLECTOR_OTLP_ENABLED
+          value: 'true'
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger
+  namespace: api-platform
+spec:
+  type: ClusterIP
+  selector:
+    app: jaeger
+  ports:
+  - name: http
+    port: 16686
+    targetPort: 16686
+  - name: otlp
+    port: 4318
+    targetPort: 4318
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: api-platform
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 10s
+    rule_files:
+      - /etc/prometheus/alerts.yml
+    scrape_configs:
+      - job_name: otel
+        static_configs:
+          - targets: [otel:8889]
+  alerts.yml: |
+    groups:
+      - name: commerce
+        rules:
+          - alert: TelemetryPipelineUnavailable
+            expr: up{job="otel"} == 0
+            for: 1m
+            labels: {severity: critical}
+            annotations:
+              summary: Prometheus cannot scrape the OpenTelemetry Collector
+          - alert: HighErrorRate
+            expr: sum by(service) (rate(api_requests_total{status=~"5.."}[5m])) / clamp_min(sum by(service) (rate(api_requests_total[5m])), 0.001) > 0.05
+            for: 2m
+            labels: {severity: warning}
+            annotations:
+              summary: More than 5 percent server errors
+          - alert: HighLatency
+            expr: histogram_quantile(0.95, sum by(service, le) (rate(api_request_duration_seconds_bucket[5m]))) > 0.5
+            for: 2m
+            labels: {severity: warning}
+            annotations:
+              summary: p95 exceeds 500ms
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: api-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+      - name: prometheus
+        image: prom/prometheus:v3.2.1
+        ports:
+        - containerPort: 9090
+          name: http
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        volumeMounts:
+        - name: config
+          mountPath: /etc/prometheus
+          readOnly: true
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: config
+        configMap:
+          name: prometheus-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: api-platform
+spec:
+  type: ClusterIP
+  selector:
+    app: prometheus
+  ports:
+  - name: http
+    port: 9090
+    targetPort: 9090

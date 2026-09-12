@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: platform-seed
+  namespace: api-platform
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: seed
+        image: api-platform:local
+        envFrom:
+        - secretRef:
+            name: platform-secrets
+        command:
+        - sh
+        - -c
+        - for name in orders customers products; do SERVICE_NAME=$name python -m api_interview_lab.platform.seed
+          || exit 1; done
