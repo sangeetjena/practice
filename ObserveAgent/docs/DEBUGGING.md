@@ -1,3 +1,5 @@
+This guide covers the synchronous local lab. For cloud API/worker debugging see
+[Cloud runtime](CLOUD_RUNTIME.md) and [Module guide](MODULE_GUIDE.md).
 Use [CONFIGURATION.md](CONFIGURATION.md) for ChromaDB, model and LangGraph settings.
 Run Compose commands from `practice/API`; Python agent commands from `practice/ObserveAgent`.
 

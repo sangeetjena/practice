@@ -1,4 +1,6 @@
-Read [CONFIGURATION.md](CONFIGURATION.md) for runnable commands and the current graph.
+This page describes the synchronous local lab. Read [Cloud runtime](CLOUD_RUNTIME.md)
+for the asynchronous tenant API, shared PostgreSQL checkpoints, outbox and remote Chroma.
+Read [CONFIGURATION.md](CONFIGURATION.md) for model settings and the shared graph.
 
 # ObserveAgent architecture — step-by-step
 

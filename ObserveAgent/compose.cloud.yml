@@ -1,0 +1,37 @@
+# Local asynchronous cloud-architecture exercise: use admin drain in place of Pub/Sub.
+# Example: docker compose --env-file .env.cloud -f compose.cloud.yml up -d --build
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: observer
+      POSTGRES_USER: observer
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U observer -d observer"]
+      interval: 3s
+      retries: 20
+    volumes: [cloud-postgres:/var/lib/postgresql/data]
+  chroma:
+    image: chromadb/chroma:1.5.9
+    environment: {IS_PERSISTENT: 'TRUE', PERSIST_DIRECTORY: /data}
+    volumes: [cloud-chroma:/data]
+  migrate:
+    build: {context: ., dockerfile: Dockerfile.cloud}
+    image: observe-agent-cloud:local
+    env_file: [.env.cloud]
+    command: [python, -m, observe_agent.cloud.admin, migrate]
+    depends_on:
+      postgres: {condition: service_healthy}
+  api:
+    image: observe-agent-cloud:local
+    env_file: [.env.cloud]
+    environment: {APP_ROLE: api}
+    ports: ['127.0.0.1:8091:8090']
+    extra_hosts: ['host.docker.internal:host-gateway']
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      chroma: {condition: service_started}
+volumes:
+  cloud-postgres:
+  cloud-chroma:

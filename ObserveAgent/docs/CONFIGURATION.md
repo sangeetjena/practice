@@ -1,5 +1,9 @@
 # Models, RAG, workflow and debugging
 
+These commands describe the synchronous local lab. For the authenticated, asynchronous
+deployment use [Cloud runtime](CLOUD_RUNTIME.md) and [Google Cloud](GOOGLE_CLOUD.md).
+Both profiles reuse the embedding providers, reasoner and LangGraph workflow described here.
+
 ObserveAgent lives at `practice/ObserveAgent`, alongside `practice/API`.
 It is independently installable. From ObserveAgent run `python -m pip install -e ".[dev]"`.
 

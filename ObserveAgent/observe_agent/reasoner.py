@@ -133,7 +133,7 @@ class OpenAIReasoner:
         if client is None:
             from openai import OpenAI
 
-            client = OpenAI(api_key=api_key, base_url=base_url)
+            client = OpenAI(api_key=api_key, base_url=base_url, timeout=30, max_retries=0)
         self.client = client
         self.model = model
         self.max_output_tokens = max_output_tokens
