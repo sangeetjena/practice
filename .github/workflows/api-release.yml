@@ -1,0 +1,162 @@
+name: API Bazel build and production release
+
+on:
+  pull_request:
+    paths: ['API/**', 'ObserveAgent/**', 'MODULE.bazel*', '.bazel*', '.github/workflows/api-*.yml']
+  push:
+    branches: [master]
+    paths: ['API/**', 'ObserveAgent/**', 'MODULE.bazel*', '.bazel*', '.github/workflows/api-*.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compatibility-checks:
+    uses: ./.github/workflows/api-platform.yml
+
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PYTHON_BASE: ${{ vars.API_PYTHON_BASE || 'python:3.12-slim' }}
+      API_IMAGE: api-platform:ci
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: bazel-contrib/setup-bazel@4fd964a13a440a8aeb0be47350db2fc640f19ca8 # 0.15.0
+        with:
+          bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}
+          repository-cache: true
+      - name: Require a pinned base for a production release
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+        run: |
+          python - <<'PY'
+          import os, re
+          value = os.environ['PYTHON_BASE']
+          if not re.fullmatch(r'.+@sha256:[0-9a-f]{64}', value):
+              raise SystemExit('Set repository variable API_PYTHON_BASE to a Python 3.12 image digest')
+          PY
+      - run: bazel test //API:deployment_tests
+      - name: Build wheel, run lint/tests/governance, build runtime image
+        run: bazel run //API:image
+      - name: Start the tested image and exercise APIs and worker
+        run: python API/tools/release.py deploy --skip-build
+      - name: Record installed dependencies
+        run: |
+          docker run --rm --entrypoint cat "$API_IMAGE" /build-info/requirements-resolved.txt > API/dist/requirements-resolved.txt
+      - name: Save exactly the tested image
+        run: docker save "$API_IMAGE" -o API/dist/image.tar
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: api-tested-image
+          path: API/dist/
+          retention-days: 7
+          if-no-files-found: error
+      - name: Diagnose a failed local integration test
+        if: failure()
+        run: |
+          if test -f API/.env; then
+            docker compose --project-name api-release --env-file API/.env -f API/deploy/release/compose.yaml logs --tail=100
+          fi
+      - name: Stop the isolated test stack
+        if: always()
+        run: |
+          if test -f API/.env; then
+            python API/tools/release.py stop
+          fi
+
+  publish:
+    needs: [build, compatibility-checks]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.push.outputs.image }}
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: api-tested-image
+          path: dist
+      - name: Load and publish tested image by commit SHA
+        id: push
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          docker load -i dist/image.tar
+          printf '%s' "$REGISTRY_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          repository="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/api-platform"
+          docker tag api-platform:ci "$repository:$GITHUB_SHA"
+          docker push "$repository:$GITHUB_SHA"
+          image=$(docker image inspect "$repository:$GITHUB_SHA" --format '{{index .RepoDigests 0}}')
+          [[ "$image" == "$repository@sha256:"* ]]
+          printf 'image=%s\n' "$image" >> "$GITHUB_OUTPUT"
+          printf 'Published `%s`\n' "$image" >> "$GITHUB_STEP_SUMMARY"
+      - if: always()
+        run: docker logout ghcr.io
+
+  deploy-production:
+    needs: publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: production
+    concurrency:
+      group: api-production
+      cancel-in-progress: false
+    env:
+      API_IMAGE: ${{ needs.publish.outputs.image }}
+      API_KUBE_CONTEXT: ${{ vars.API_KUBE_CONTEXT }}
+      API_NAMESPACE: ${{ vars.API_NAMESPACE }}
+      API_SECRET: ${{ vars.API_SECRET || 'platform-secrets' }}
+      API_PULL_SECRET: ${{ vars.API_PULL_SECRET }}
+      API_URL: ${{ vars.API_URL }}
+      API_OTEL_ENDPOINT: ${{ vars.API_OTEL_ENDPOINT }}
+      API_CLUSTER_DNS: ${{ vars.API_CLUSTER_DNS }}
+      API_GATEWAY_IMAGE: ${{ vars.API_GATEWAY_IMAGE }}
+      API_SMOKE_KEY: ${{ secrets.API_SMOKE_KEY }}
+      KUBECONFIG: ${{ runner.temp }}/api-kubeconfig
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Validate deployment configuration and release freshness
+        env:
+          KUBECTL_VERSION: ${{ vars.API_KUBECTL_VERSION }}
+        run: |
+          test -n "$KUBECTL_VERSION" || { echo 'Set API_KUBECTL_VERSION for your cluster'; exit 1; }
+          git fetch origin master
+          test "$(git rev-parse origin/master)" = "$GITHUB_SHA" || { echo 'Superseded release; refusing to deploy an older commit'; exit 1; }
+          python API/tools/release.py render --environment production > /dev/null
+      - uses: azure/setup-kubectl@776406bce94f63e41d621b960d78ee25c8b76ede # v4
+        with:
+          version: ${{ vars.API_KUBECTL_VERSION }}
+      - name: Configure cluster credentials
+        env:
+          CONFIG_DATA: ${{ secrets.API_KUBECONFIG_B64 }}
+        run: |
+          python - <<'PY'
+          import base64, os
+          from pathlib import Path
+          value = os.environ.get('CONFIG_DATA')
+          if not value:
+              raise SystemExit('Configure production secret API_KUBECONFIG_B64')
+          path = Path(os.environ['KUBECONFIG'])
+          path.write_bytes(base64.b64decode(value, validate=True))
+          path.chmod(0o600)
+          PY
+      - name: Deploy published digest and verify production
+        run: python API/tools/release.py deploy --environment production
+      - name: Preserve rollout evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: api-production-rollout
+          path: |
+            API/dist/production-manifest.json
+            API/dist/previous-images.json
+          if-no-files-found: ignore
+      - name: Remove temporary credentials
+        if: always()
+        run: rm -f "$KUBECONFIG"

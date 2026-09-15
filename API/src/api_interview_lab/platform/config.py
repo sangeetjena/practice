@@ -22,6 +22,13 @@ class Settings:
     telemetry: bool = field(default_factory=lambda: os.getenv("OTEL_ENABLED", "false") == "true")
 
     def validate(self):
+        if os.getenv("APP_ENV") == "production":
+            if not self.database_url.startswith("postgresql+psycopg://"):
+                raise ValueError("Production requires PostgreSQL; SQLite is local/test only")
+            if self.fault_fail or self.fault_delay_ms:
+                raise ValueError("Fault injection must be disabled in production")
+            if not self.credentials:
+                raise ValueError("Production requires provisioned credentials")
         if self.service not in {"orders", "customers", "products"}:
             raise ValueError("SERVICE_NAME must be orders, customers, or products")
         if min(len(self.jwt_secret), len(self.cursor_secret)) < 32:

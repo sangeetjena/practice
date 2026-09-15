@@ -1,5 +1,10 @@
 # Server, Kubernetes, scaling and load balancing
 
+For the standardized Bazel local build and CI production release, use
+[BUILD_RELEASE_RUNBOOK.md](BUILD_RELEASE_RUNBOOK.md). The commands below describe the original
+learning-lab deployment. Its sample seed/monitoring manifests are not used by the new production
+release path.
+
 ## 1. Single server
 
 Start with README's Compose flow. It runs three separately deployable processes but deliberately
