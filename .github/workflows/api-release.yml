@@ -118,7 +118,6 @@ jobs:
       API_CLUSTER_DNS: ${{ vars.API_CLUSTER_DNS }}
       API_GATEWAY_IMAGE: ${{ vars.API_GATEWAY_IMAGE }}
       API_SMOKE_KEY: ${{ secrets.API_SMOKE_KEY }}
-      KUBECONFIG: ${{ runner.temp }}/api-kubeconfig
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Validate deployment configuration and release freshness
@@ -142,9 +141,11 @@ jobs:
           value = os.environ.get('CONFIG_DATA')
           if not value:
               raise SystemExit('Configure production secret API_KUBECONFIG_B64')
-          path = Path(os.environ['KUBECONFIG'])
+          path = Path(os.environ['RUNNER_TEMP']) / 'api-kubeconfig'
           path.write_bytes(base64.b64decode(value, validate=True))
           path.chmod(0o600)
+          with open(os.environ['GITHUB_ENV'], 'a') as env:
+              env.write(f'KUBECONFIG={path}\n')
           PY
       - name: Deploy published digest and verify production
         run: python API/tools/release.py deploy --environment production
@@ -159,4 +160,4 @@ jobs:
           if-no-files-found: ignore
       - name: Remove temporary credentials
         if: always()
-        run: rm -f "$KUBECONFIG"
+        run: rm -f "$RUNNER_TEMP/api-kubeconfig"
