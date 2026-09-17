@@ -1,2 +1,5 @@
 resource/*
 venv/*
+# Bazel output symlinks and local caches
+/bazel-*
+

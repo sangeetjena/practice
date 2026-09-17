@@ -1,0 +1,52 @@
+load("@rules_python//python:py_binary.bzl", "py_binary")
+load("@rules_python//python:py_test.bzl", "py_test")
+load("@build_deps//:requirements.bzl", "requirement")
+load(":build_rules.bzl", "release_archive")
+
+py_binary(
+    name = "archive_builder",
+    srcs = ["tools/archive_builder.py"],
+    main = "tools/archive_builder.py",
+    deps = [requirement("hatchling")],
+)
+
+release_archive(
+    name = "wheel",
+    mode = "wheel",
+    srcs = glob(["src/**/*.py"]) + ["pyproject.toml", "README.md"],
+    builder = ":archive_builder",
+)
+
+release_archive(
+    name = "release",
+    mode = "context",
+    srcs = glob([
+        "src/**/*.py", "tests/**/*.py", "scripts/*.py", "tools/*.py",
+        "feeds/*", "deploy/release/*",
+    ]) + [":wheel", "pyproject.toml", "README.md", "Dockerfile.release"],
+    builder = ":archive_builder",
+)
+
+py_test(
+    name = "deployment_tests",
+    srcs = ["tools/test_release.py", "tools/release.py", "tools/archive_builder.py"],
+    main = "tools/test_release.py",
+)
+
+py_binary(
+    name = "deploy",
+    srcs = ["tools/release.py"],
+    main = "tools/release.py",
+    data = [":release"],
+    args = ["--bundle", "$(rlocationpath :release)", "deploy"],
+    deps = ["@rules_python//python/runfiles"],
+)
+
+py_binary(
+    name = "image",
+    srcs = ["tools/release.py"],
+    main = "tools/release.py",
+    data = [":release"],
+    args = ["--bundle", "$(rlocationpath :release)", "build"],
+    deps = ["@rules_python//python/runfiles"],
+)

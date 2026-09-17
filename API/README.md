@@ -1,5 +1,24 @@
 # Commerce API Platform — Day 1 interview lab
 
+## Standard build and release
+
+From the repository root, with Bazelisk and Docker Desktop installed:
+
+```powershell
+bazel test //API:deployment_tests
+bazel run //API:deploy
+```
+
+This builds a wheel and tested runtime image, starts the isolated local `api-release` stack,
+and checks APIs/authentication/the worker. Local deployment is the default. CI builds/tests on
+PRs and publishes the tested image to GHCR before deploying its digest to the configured
+production Kubernetes environment on `master`.
+
+See [the developer and support build/release runbook](docs/BUILD_RELEASE_RUNBOOK.md) for
+setup, commands, required production configuration, schema initialization and rollback.
+The original full observability/ObserveAgent lab instructions below remain available; stop one
+local stack before starting the other on port 8080.
+
 Three small independently runnable services: **orders, customers, products**. Each serves 15
 paginated sample records per tenant (`acme`, `globex`). Follow a request from an Nginx load
 balancer through authentication, tenant-scoped SQL, metrics, logs, and a distributed trace.

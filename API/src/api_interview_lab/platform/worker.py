@@ -45,7 +45,9 @@ def process_one(store, now=None):
 
 def main():
     logging.basicConfig(level=logging.INFO)
-    store = Store(Settings().database_url)
+    cfg = Settings()
+    cfg.validate()
+    store = Store(cfg.database_url)
     running = True
     def stop(*args):
         nonlocal running

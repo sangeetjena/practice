@@ -185,3 +185,25 @@ Read the sibling ObserveAgent configuration and Spark workflow docs for current 
 
 
 ObserveAgent now lives in the sibling `practice/ObserveAgent` directory with its own pyproject and tests. The current implementation uses ChromaDB, configurable OpenAI-compatible embedding/Responses adapters, LangGraph with persistent local checkpoints, approval-gated tools and one diagnostic reflection pass. Read `ObserveAgent/docs/CONFIGURATION.md` from the repository root. SQLite retains source archives and audit records.
+
+## Bazel build and release standardization
+
+`bazel build //API:release` builds a wheel through pinned Hatchling and a deterministic Docker
+context archive. `bazel run //API:image` invokes Docker BuildKit with that context; the final image
+requires successful lint, installed-wheel pytest, governance and deployment tests. Docker image
+building is an explicit run action, not a hermetic rules_oci action. Runtime dependencies still
+resolve from pyproject ranges; exact installed versions are recorded in the image. Do not claim
+fully reproducible runtime dependency resolution until a reviewed transitive lockfile is added.
+
+`bazel run //API:deploy` defaults to local Compose project api-release, preserving API/.env and
+its DB volume. It runs authenticated reads, denied unauthenticated reads and a local import-worker
+smoke check. This smaller stack excludes telemetry/ObserveAgent; their existing full compatibility
+checks remain a CI release gate. Original Compose lab commands remain available separately.
+
+The api-release GitHub workflow builds/tests PRs. After master merges it publishes the same tested
+image to GHCR and deploys its digest through tools/release.py with --environment production.
+Production requires explicit context/namespace, existing secrets/PostgreSQL/collector/TLS ingress,
+pinned app/gateway images and a read-only smoke key. It never seeds demo data, creates credentials
+or rebuilds the image. Initial schema creation uses platform.schema and a separate operator Job;
+future DB changes need versioned migrations. Runbook: docs/BUILD_RELEASE_RUNBOOK.md.
+

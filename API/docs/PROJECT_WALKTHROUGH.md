@@ -153,3 +153,11 @@ application pool, database, worker queue and telemetry pipeline independently?â€
 
 
 ObserveAgent now lives in the sibling `practice/ObserveAgent` directory with its own pyproject and tests. The current implementation uses ChromaDB, configurable OpenAI-compatible embedding/Responses adapters, LangGraph with persistent local checkpoints, approval-gated tools and one diagnostic reflection pass. Read `ObserveAgent/docs/CONFIGURATION.md` from the repository root. SQLite retains source archives and audit records.
+# Build and release entry points
+
+From the repository root, `bazel run //API:deploy` builds and tests the application image,
+starts the isolated local stack and runs smoke checks. `bazel build //API:release` builds
+the Hatchling wheel and Docker context from declared inputs. GitHub Actions publishes the
+tested image and deploys its immutable digest to explicitly configured production Kubernetes.
+See [BUILD_RELEASE_RUNBOOK.md](BUILD_RELEASE_RUNBOOK.md) for developer and support commands.
+

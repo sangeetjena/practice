@@ -1,0 +1,32 @@
+# syntax=docker/dockerfile:1
+# Production CI supplies a digest-pinned Python base through PYTHON_BASE.
+ARG PYTHON_BASE=python:3.12-slim
+FROM ${PYTHON_BASE} AS dependencies
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+COPY wheels/ /wheels/
+RUN pip install --no-cache-dir /wheels/*.whl && pip check && \
+    mkdir -p /build-info && pip freeze > /build-info/requirements-resolved.txt
+
+FROM dependencies AS verify
+WORKDIR /test
+COPY . .
+RUN python -m venv --system-site-packages /opt/test-venv && \
+    /opt/test-venv/bin/pip install --no-cache-dir pytest==8.3.5 pytest-asyncio==0.26.0 ruff==0.11.13
+# Test installed wheel, not an accidentally importable checkout via pytest's pythonpath.
+RUN /opt/test-venv/bin/ruff check . && \
+    /opt/test-venv/bin/python -m pytest -o pythonpath= && \
+    python scripts/governance.py && \
+    python -m unittest discover -s tools -p 'test_*.py' && \
+    touch /build-info/tests-passed
+
+FROM dependencies AS runtime
+ARG REVISION=local
+LABEL org.opencontainers.image.revision=$REVISION
+COPY --from=verify /build-info/tests-passed /build-info/tests-passed
+RUN groupadd --gid 10001 app && useradd --uid 10001 --gid 10001 --create-home app
+WORKDIR /app
+USER 10001:10001
+EXPOSE 8000
+CMD ["uvicorn", "api_interview_lab.platform.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
