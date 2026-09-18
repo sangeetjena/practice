@@ -1,10 +1,14 @@
-"""
+```
 https://leetcode.com/problems/linked-list-cycle-ii/submissions/1283344582/
 https://www.youtube.com/watch?v=95ZfuoSAUPI
 
 
 NOte:take one slow and fast pointer where it will meet that is the start point of cycle
-"""
+```
+<img width="837" height="1127" alt="image" src="https://github.com/user-attachments/assets/c8e42212-2e3d-43b2-bbdf-c5ff289c8689" />
+
+
+``` python
 # Definition for singly-linked list.
 # class ListNode:
 #     def __init__(self, x):
@@ -27,3 +31,4 @@ class Solution:
                 return head
         return None
         
+```
