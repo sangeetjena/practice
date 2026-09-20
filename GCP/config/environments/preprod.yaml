@@ -1,0 +1,11 @@
+environment: preprod
+project_id: replace-me-data-preprod
+network:
+  subnet_cidr: 10.41.0.0/20
+access:
+  deployment_service_account: gcp-deployer@replace-me-data-preprod.iam.gserviceaccount.com
+dataflow:
+  initial_workers: 2
+  max_workers: 5
+dataproc:
+  max_executors: 6

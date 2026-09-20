@@ -1,0 +1,29 @@
+# Merge into the desired environment file. Review network ranges and runner CIDRs.
+network:
+  enable_nat: true
+flink:
+  enabled: true
+  namespace: flink
+  # Replace this documentation-only address with your VPN/runner public egress CIDR.
+  authorized_cidrs: [203.0.113.10/32]
+  pod_cidr: 10.60.0.0/16
+  service_cidr: 10.70.0.0/20
+  master_cidr: 172.16.0.0/28
+  node_machine_type: e2-standard-4
+  min_nodes: 1
+  max_nodes: 3
+  parallelism: 2
+  task_slots: 2
+  join_horizon_seconds: 86400
+  allowed_lateness_seconds: 3600
+  out_of_orderness_seconds: 30
+  idle_timeout_seconds: 120
+  max_retention_seconds: 259200
+  window_seconds: 300
+  checkpoint_interval_seconds: 60
+  checkpoint_timeout_seconds: 600
+  file_discovery_seconds: 10
+  batch_schedule:
+    enabled: false
+    cron: '0 4 * * *'
+    timezone: UTC

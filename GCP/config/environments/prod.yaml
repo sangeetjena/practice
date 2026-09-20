@@ -1,0 +1,19 @@
+environment: prod
+project_id: replace-me-data-prod
+network:
+  subnet_cidr: 10.42.0.0/20
+access:
+  deployment_service_account: gcp-deployer@replace-me-data-prod.iam.gserviceaccount.com
+dataflow:
+  initial_workers: 2
+  max_workers: 10
+dataproc:
+  max_executors: 10
+# Enabled schedules remain paused until an artifact release is deployed.
+jobs:
+  clean-orders:
+    schedule:
+      enabled: true
+  daily-sales:
+    schedule:
+      enabled: true

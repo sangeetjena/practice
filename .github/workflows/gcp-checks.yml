@@ -1,0 +1,74 @@
+name: GCP template checks
+on:
+  pull_request:
+    paths: ['GCP/**', '.github/workflows/gcp-*.yml']
+  push:
+    branches: [master, main]
+    paths: ['GCP/**', '.github/workflows/gcp-*.yml']
+permissions:
+  contents: read
+jobs:
+  flink:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          cache-dependency-path: GCP/jobs/flink/pom.xml
+      - run: mvn -B -f GCP/jobs/flink/pom.xml verify
+  python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: GCP
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - run: python -m pip install -r requirements/dev.lock -r requirements/beam.lock
+      - run: python -m pip install -e . --no-deps
+      - run: python -m pip install pyspark==3.5.3
+      - run: ruff check .
+      - run: pytest -q
+      - run: |
+          gcp-platform validate --env dev
+          gcp-platform validate --env preprod
+          gcp-platform validate --env prod
+          gcp-platform schema
+          git diff --exit-code -- config/schema/platform.schema.json
+          gcp-platform package --version ci
+  terraform:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: GCP
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.11.4'
+      - run: python -m pip install -r requirements/dev.lock
+      - run: python -m pip install -e . --no-deps
+      - run: |
+          gcp-platform render --env dev
+          gcp-platform render --env prod
+          terraform fmt -check -recursive infrastructure
+          terraform -chdir=infrastructure/bootstrap init -backend=false
+          terraform -chdir=infrastructure/bootstrap validate
+          terraform -chdir=infrastructure/environments init -backend=false
+          terraform -chdir=infrastructure/environments validate
+          terraform -chdir=infrastructure/environments test

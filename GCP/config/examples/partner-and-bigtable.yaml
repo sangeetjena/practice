@@ -1,0 +1,28 @@
+# Merge these fields into an environment YAML; this file is not auto-loaded.
+network:
+  enable_nat: true
+bigtable:
+  enabled: true
+secrets:
+  partner:
+    secret_id: partner-api-key
+    version: '1'
+    readers: [dataflow, dataproc]
+jobs:
+  beam-partner:
+    engine: dataflow
+    use_case: partner_extract
+    output_prefix: partner-beam/
+    secret: partner
+    api_url: https://api.example.com/orders
+  spark-api:
+    engine: dataproc
+    use_case: partner_extract
+    output_prefix: partner-spark/
+    secret: partner
+    api_url: https://api.example.com/orders
+  bt-metrics:
+    engine: dataflow
+    use_case: bigtable_metrics
+    input_prefix: orders/
+    output_prefix: bigtable-audit/

@@ -1,0 +1,48 @@
+name: data
+region: asia-south1
+network:
+  subnet_cidr: 10.40.0.0/20
+  enable_nat: false
+access:
+  developer_groups: []
+  operator_groups: []
+  viewer_groups: []
+dataflow:
+  machine_type: n2-standard-2
+  initial_workers: 1
+  max_workers: 3
+  disk_size_gb: 50
+dataproc:
+  runtime_version: '2.2'
+  executor_instances: 2
+  max_executors: 4
+  executor_cores: 4
+  ttl: 7200s
+bigtable:
+  enabled: false
+  zone: asia-south1-a
+  min_nodes: 1
+  max_nodes: 3
+  cpu_target: 60
+  table: customer_metrics
+  column_family: metrics
+secrets: {}
+jobs:
+  clean-orders:
+    engine: dataflow
+    use_case: clean_orders
+    input_prefix: orders/
+    output_prefix: clean-orders/
+    schedule:
+      enabled: false
+      cron: '0 2 * * *'
+      timezone: UTC
+  daily-sales:
+    engine: dataproc
+    use_case: daily_sales
+    input_prefix: orders/
+    output_prefix: daily-sales/
+    schedule:
+      enabled: false
+      cron: '0 3 * * *'
+      timezone: UTC

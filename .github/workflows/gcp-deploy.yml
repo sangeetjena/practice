@@ -1,0 +1,121 @@
+name: GCP deployment
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        type: choice
+        options: [dev, preprod, prod]
+        required: true
+      operation:
+        description: Bootstrap infra once, publish in dev, or deploy an existing promoted release
+        type: choice
+        options: [infra, publish, release]
+        required: true
+      version:
+        description: Immutable release version (required for publish/release)
+        type: string
+        default: ''
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: gcp-deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+jobs:
+  deploy:
+    # Protect these environments with reviewers and allowed deployment branches.
+    environment: gcp-${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: GCP
+    env:
+      TARGET_ENV: ${{ inputs.environment }}
+      OPERATION: ${{ inputs.operation }}
+      RELEASE_VERSION: ${{ inputs.version }}
+      STATE_BUCKET: ${{ vars.GCP_STATE_BUCKET }}
+      ARTIFACT_BUCKET: ${{ vars.GCP_ARTIFACT_BUCKET }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.11.4'
+          terraform_wrapper: false
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - run: python -m pip install -r requirements/dev.lock
+      - run: python -m pip install -e . --no-deps
+      - name: Validate code and configuration
+        run: |
+          set -euo pipefail
+          ruff check .
+          pytest -q tests/test_configuration.py tests/test_runtime.py tests/test_contracts.py
+          gcp-platform validate --env "$TARGET_ENV"
+          test -n "$STATE_BUCKET"
+          if [ "$OPERATION" != "infra" ]; then
+            [[ "$RELEASE_VERSION" =~ ^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$ ]]
+          fi
+      - name: Initialize environment state
+        run: |
+          terraform -chdir=infrastructure/environments init \
+            -backend-config="bucket=$STATE_BUCKET" -backend-config="prefix=platform/$TARGET_ENV"
+      - name: Publish immutable artifacts in dev
+        if: inputs.operation == 'publish'
+        run: |
+          set -euo pipefail
+          test "$TARGET_ENV" = dev
+          mkdir -p "build/$TARGET_ENV"
+          terraform -chdir=infrastructure/environments output -json > "build/$TARGET_ENV/outputs.json"
+          gcp-platform publish --env "$TARGET_ENV" --outputs "build/$TARGET_ENV/outputs.json" --version "$RELEASE_VERSION"
+      - name: Resolve desired configuration
+        if: inputs.operation != 'publish'
+        run: |
+          set -euo pipefail
+          mkdir -p "build/$TARGET_ENV"
+          if [ "$OPERATION" = release ]; then
+            test -n "$ARTIFACT_BUCKET"
+            gcloud storage cp "gs://$ARTIFACT_BUCKET/releases/$RELEASE_VERSION/release.json" "build/$TARGET_ENV/release.json"
+            gcp-platform render --env "$TARGET_ENV" --release "build/$TARGET_ENV/release.json"
+          else
+            # Refuse to clear an already-deployed release accidentally.
+            terraform -chdir=infrastructure/environments state list > "build/$TARGET_ENV/state.txt"
+            if grep -q google_workflows_workflow "build/$TARGET_ENV/state.txt"; then
+              echo 'Existing platform: use release to preserve the deployed artifacts.' >&2
+              exit 1
+            fi
+            gcp-platform render --env "$TARGET_ENV"
+          fi
+      - name: Plan exact change
+        if: inputs.operation != 'publish'
+        run: |
+          terraform -chdir=infrastructure/environments plan \
+            -var-file="../../build/$TARGET_ENV/platform.tfvars.json" -out="../../build/$TARGET_ENV/deploy.tfplan"
+      - name: Save plan for audit
+        if: inputs.operation != 'publish'
+        uses: actions/upload-artifact@v4
+        with:
+          name: gcp-${{ inputs.environment }}-plan-${{ github.run_id }}
+          path: GCP/build/${{ inputs.environment }}/deploy.tfplan
+          retention-days: 7
+      - name: Apply saved plan
+        if: inputs.operation != 'publish'
+        run: terraform -chdir=infrastructure/environments apply "../../build/$TARGET_ENV/deploy.tfplan"
+      - name: Save outputs
+        run: |
+          mkdir -p "build/$TARGET_ENV"
+          terraform -chdir=infrastructure/environments output -json > "build/$TARGET_ENV/outputs.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gcp-${{ inputs.environment }}-outputs-${{ github.run_id }}
+          path: |
+            GCP/build/${{ inputs.environment }}/outputs.json
+            GCP/build/releases/*/*-release.json
+          retention-days: 30

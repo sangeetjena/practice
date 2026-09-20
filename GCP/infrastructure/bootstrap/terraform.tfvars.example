@@ -1,0 +1,7 @@
+project_id           = "your-existing-dev-project"
+region               = "asia-south1"
+environment          = "dev"
+github_repository    = "your-org/practice"
+github_repository_id = "123456789"
+github_owner_id      = "1234567"
+release_branch       = "master"

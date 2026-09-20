@@ -1,0 +1,80 @@
+name: GCP Flink deployment
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: choice
+        options: [dev, preprod, prod]
+        required: true
+      version:
+        description: Flink release already published into this environment
+        type: string
+        required: true
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: gcp-flink-${{ inputs.environment }}
+  cancel-in-progress: false
+jobs:
+  deploy:
+    # This runner's egress must be in flink.authorized_cidrs; do not open the API to the world.
+    runs-on: [self-hosted, linux, gcp-deploy]
+    environment: gcp-${{ inputs.environment }}
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: GCP
+    env:
+      TARGET_ENV: ${{ inputs.environment }}
+      RELEASE_VERSION: ${{ inputs.version }}
+      STATE_BUCKET: ${{ vars.GCP_STATE_BUCKET }}
+      ARTIFACT_BUCKET: ${{ vars.GCP_ARTIFACT_BUCKET }}
+      KUBECONFIG: ${{ github.workspace }}/GCP/build/kubeconfig
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.11.4'
+          terraform_wrapper: false
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          install_components: gke-gcloud-auth-plugin
+      - run: python -m pip install -r requirements/dev.lock
+      - run: python -m pip install -e . --no-deps
+      - name: Read foundation outputs and render reviewed manifests
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_VERSION" =~ ^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$ ]]
+          mkdir -p "build/$TARGET_ENV"
+          terraform -chdir=infrastructure/environments init \
+            -backend-config="bucket=$STATE_BUCKET" -backend-config="prefix=platform/$TARGET_ENV"
+          terraform -chdir=infrastructure/environments output -json > "build/$TARGET_ENV/outputs.json"
+          gcloud storage cp "gs://$ARTIFACT_BUCKET/flink-releases/$RELEASE_VERSION/release.json" "build/$TARGET_ENV/flink-release.json"
+          python -m tooling.flink render --env "$TARGET_ENV" --outputs "build/$TARGET_ENV/outputs.json" --release "build/$TARGET_ENV/flink-release.json"
+      - name: Connect to GKE
+        run: |
+          python -m tooling.connect_gke --outputs "build/$TARGET_ENV/outputs.json"
+      - name: Apply operator-managed application
+        run: |
+          set -euo pipefail
+          # The cluster administrator installs the pinned operator before this workflow runs.
+          kubectl apply --dry-run=server -f "build/flink/$TARGET_ENV/deployment.yaml"
+          kubectl apply -f "build/flink/$TARGET_ENV/bootstrap.yaml"
+          kubectl apply -f "build/flink/$TARGET_ENV/monitoring.yaml"
+          kubectl apply -f "build/flink/$TARGET_ENV/deployment.yaml"
+          if [ -s "build/flink/$TARGET_ENV/schedule.yaml" ]; then
+            kubectl apply -f "build/flink/$TARGET_ENV/schedule.yaml"
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: flink-${{ inputs.environment }}-${{ github.run_id }}
+          path: GCP/build/flink/${{ inputs.environment }}/*.yaml
+          retention-days: 30

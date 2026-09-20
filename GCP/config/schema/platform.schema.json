@@ -1,0 +1,606 @@
+{
+  "$defs": {
+    "Access": {
+      "additionalProperties": false,
+      "properties": {
+        "deployment_service_account": {
+          "title": "Deployment Service Account",
+          "type": "string"
+        },
+        "developer_groups": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Developer Groups",
+          "type": "array"
+        },
+        "operator_groups": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Operator Groups",
+          "type": "array"
+        },
+        "viewer_groups": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Viewer Groups",
+          "type": "array"
+        }
+      },
+      "required": [
+        "deployment_service_account"
+      ],
+      "title": "Access",
+      "type": "object"
+    },
+    "Bigtable": {
+      "additionalProperties": false,
+      "properties": {
+        "column_family": {
+          "default": "metrics",
+          "title": "Column Family",
+          "type": "string"
+        },
+        "cpu_target": {
+          "default": 60,
+          "maximum": 80,
+          "minimum": 10,
+          "title": "Cpu Target",
+          "type": "integer"
+        },
+        "enabled": {
+          "default": false,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "max_nodes": {
+          "default": 3,
+          "minimum": 1,
+          "title": "Max Nodes",
+          "type": "integer"
+        },
+        "min_nodes": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Min Nodes",
+          "type": "integer"
+        },
+        "table": {
+          "default": "customer_metrics",
+          "title": "Table",
+          "type": "string"
+        },
+        "zone": {
+          "title": "Zone",
+          "type": "string"
+        }
+      },
+      "required": [
+        "zone"
+      ],
+      "title": "Bigtable",
+      "type": "object"
+    },
+    "Dataflow": {
+      "additionalProperties": false,
+      "properties": {
+        "disk_size_gb": {
+          "default": 50,
+          "minimum": 30,
+          "title": "Disk Size Gb",
+          "type": "integer"
+        },
+        "initial_workers": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Initial Workers",
+          "type": "integer"
+        },
+        "machine_type": {
+          "default": "n2-standard-2",
+          "title": "Machine Type",
+          "type": "string"
+        },
+        "max_workers": {
+          "default": 3,
+          "minimum": 1,
+          "title": "Max Workers",
+          "type": "integer"
+        }
+      },
+      "title": "Dataflow",
+      "type": "object"
+    },
+    "Dataproc": {
+      "additionalProperties": false,
+      "properties": {
+        "executor_cores": {
+          "default": 4,
+          "enum": [
+            4,
+            8,
+            16
+          ],
+          "title": "Executor Cores",
+          "type": "integer"
+        },
+        "executor_instances": {
+          "default": 2,
+          "minimum": 2,
+          "title": "Executor Instances",
+          "type": "integer"
+        },
+        "max_executors": {
+          "default": 4,
+          "minimum": 2,
+          "title": "Max Executors",
+          "type": "integer"
+        },
+        "runtime_version": {
+          "default": "2.2",
+          "title": "Runtime Version",
+          "type": "string"
+        },
+        "ttl": {
+          "default": "7200s",
+          "pattern": "^[1-9][0-9]*s$",
+          "title": "Ttl",
+          "type": "string"
+        }
+      },
+      "title": "Dataproc",
+      "type": "object"
+    },
+    "Flink": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_lateness_seconds": {
+          "default": 3600,
+          "minimum": 0,
+          "title": "Allowed Lateness Seconds",
+          "type": "integer"
+        },
+        "authorized_cidrs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Authorized Cidrs",
+          "type": "array"
+        },
+        "batch_schedule": {
+          "$ref": "#/$defs/Schedule",
+          "default": {
+            "cron": "0 4 * * *",
+            "enabled": false,
+            "timezone": "UTC"
+          }
+        },
+        "batch_timeout_seconds": {
+          "default": 14400,
+          "maximum": 86400,
+          "minimum": 600,
+          "title": "Batch Timeout Seconds",
+          "type": "integer"
+        },
+        "checkpoint_interval_seconds": {
+          "default": 60,
+          "minimum": 1,
+          "title": "Checkpoint Interval Seconds",
+          "type": "integer"
+        },
+        "checkpoint_timeout_seconds": {
+          "default": 600,
+          "minimum": 1,
+          "title": "Checkpoint Timeout Seconds",
+          "type": "integer"
+        },
+        "enabled": {
+          "default": false,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "file_discovery_seconds": {
+          "default": 10,
+          "minimum": 1,
+          "title": "File Discovery Seconds",
+          "type": "integer"
+        },
+        "idle_timeout_seconds": {
+          "default": 120,
+          "minimum": 1,
+          "title": "Idle Timeout Seconds",
+          "type": "integer"
+        },
+        "jobmanager_cpu": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Jobmanager Cpu",
+          "type": "integer"
+        },
+        "jobmanager_memory": {
+          "default": "2048m",
+          "title": "Jobmanager Memory",
+          "type": "string"
+        },
+        "jobmanager_replicas": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Jobmanager Replicas",
+          "type": "integer"
+        },
+        "join_horizon_seconds": {
+          "default": 86400,
+          "minimum": 1,
+          "title": "Join Horizon Seconds",
+          "type": "integer"
+        },
+        "master_cidr": {
+          "default": "172.16.0.0/28",
+          "title": "Master Cidr",
+          "type": "string"
+        },
+        "max_nodes": {
+          "default": 3,
+          "minimum": 1,
+          "title": "Max Nodes",
+          "type": "integer"
+        },
+        "max_retention_seconds": {
+          "default": 259200,
+          "minimum": 1,
+          "title": "Max Retention Seconds",
+          "type": "integer"
+        },
+        "min_nodes": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Min Nodes",
+          "type": "integer"
+        },
+        "namespace": {
+          "default": "flink",
+          "pattern": "^[a-z][a-z0-9-]{1,30}$",
+          "title": "Namespace",
+          "type": "string"
+        },
+        "node_machine_type": {
+          "default": "e2-standard-4",
+          "title": "Node Machine Type",
+          "type": "string"
+        },
+        "out_of_orderness_seconds": {
+          "default": 30,
+          "minimum": 0,
+          "title": "Out Of Orderness Seconds",
+          "type": "integer"
+        },
+        "parallelism": {
+          "default": 2,
+          "minimum": 1,
+          "title": "Parallelism",
+          "type": "integer"
+        },
+        "pod_cidr": {
+          "default": "10.60.0.0/16",
+          "title": "Pod Cidr",
+          "type": "string"
+        },
+        "rocksdb_local_disk_gb": {
+          "default": 20,
+          "minimum": 1,
+          "title": "Rocksdb Local Disk Gb",
+          "type": "integer"
+        },
+        "service_cidr": {
+          "default": "10.70.0.0/20",
+          "title": "Service Cidr",
+          "type": "string"
+        },
+        "task_slots": {
+          "default": 2,
+          "minimum": 1,
+          "title": "Task Slots",
+          "type": "integer"
+        },
+        "taskmanager_cpu": {
+          "default": 2,
+          "minimum": 1,
+          "title": "Taskmanager Cpu",
+          "type": "integer"
+        },
+        "taskmanager_memory": {
+          "default": "4096m",
+          "title": "Taskmanager Memory",
+          "type": "string"
+        },
+        "window_seconds": {
+          "default": 300,
+          "minimum": 1,
+          "title": "Window Seconds",
+          "type": "integer"
+        }
+      },
+      "title": "Flink",
+      "type": "object"
+    },
+    "Job": {
+      "additionalProperties": false,
+      "properties": {
+        "api_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Api Url"
+        },
+        "engine": {
+          "enum": [
+            "dataflow",
+            "dataproc"
+          ],
+          "title": "Engine",
+          "type": "string"
+        },
+        "input_prefix": {
+          "default": "orders/",
+          "title": "Input Prefix",
+          "type": "string"
+        },
+        "output_prefix": {
+          "default": "results/",
+          "title": "Output Prefix",
+          "type": "string"
+        },
+        "schedule": {
+          "$ref": "#/$defs/Schedule",
+          "default": {
+            "cron": "0 2 * * *",
+            "enabled": false,
+            "timezone": "UTC"
+          }
+        },
+        "secret": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Secret"
+        },
+        "timeout_seconds": {
+          "default": 14400,
+          "maximum": 86400,
+          "minimum": 600,
+          "title": "Timeout Seconds",
+          "type": "integer"
+        },
+        "use_case": {
+          "enum": [
+            "clean_orders",
+            "daily_sales",
+            "partner_extract",
+            "bigtable_metrics"
+          ],
+          "title": "Use Case",
+          "type": "string"
+        }
+      },
+      "required": [
+        "engine",
+        "use_case"
+      ],
+      "title": "Job",
+      "type": "object"
+    },
+    "Network": {
+      "additionalProperties": false,
+      "properties": {
+        "enable_nat": {
+          "default": false,
+          "title": "Enable Nat",
+          "type": "boolean"
+        },
+        "subnet_cidr": {
+          "title": "Subnet Cidr",
+          "type": "string"
+        }
+      },
+      "required": [
+        "subnet_cidr"
+      ],
+      "title": "Network",
+      "type": "object"
+    },
+    "Schedule": {
+      "additionalProperties": false,
+      "properties": {
+        "cron": {
+          "default": "0 2 * * *",
+          "title": "Cron",
+          "type": "string"
+        },
+        "enabled": {
+          "default": false,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "timezone": {
+          "default": "UTC",
+          "title": "Timezone",
+          "type": "string"
+        }
+      },
+      "title": "Schedule",
+      "type": "object"
+    },
+    "Secret": {
+      "additionalProperties": false,
+      "properties": {
+        "readers": {
+          "items": {
+            "enum": [
+              "dataflow",
+              "dataproc"
+            ],
+            "type": "string"
+          },
+          "title": "Readers",
+          "type": "array"
+        },
+        "secret_id": {
+          "pattern": "^[a-zA-Z0-9_-]{1,255}$",
+          "title": "Secret Id",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^[1-9][0-9]*$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "secret_id",
+        "version",
+        "readers"
+      ],
+      "title": "Secret",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "access": {
+      "$ref": "#/$defs/Access"
+    },
+    "bigtable": {
+      "$ref": "#/$defs/Bigtable"
+    },
+    "dataflow": {
+      "$ref": "#/$defs/Dataflow",
+      "default": {
+        "disk_size_gb": 50,
+        "initial_workers": 1,
+        "machine_type": "n2-standard-2",
+        "max_workers": 3
+      }
+    },
+    "dataproc": {
+      "$ref": "#/$defs/Dataproc",
+      "default": {
+        "executor_cores": 4,
+        "executor_instances": 2,
+        "max_executors": 4,
+        "runtime_version": "2.2",
+        "ttl": "7200s"
+      }
+    },
+    "environment": {
+      "enum": [
+        "dev",
+        "preprod",
+        "prod"
+      ],
+      "title": "Environment",
+      "type": "string"
+    },
+    "flink": {
+      "$ref": "#/$defs/Flink",
+      "default": {
+        "allowed_lateness_seconds": 3600,
+        "authorized_cidrs": [],
+        "batch_schedule": {
+          "cron": "0 4 * * *",
+          "enabled": false,
+          "timezone": "UTC"
+        },
+        "batch_timeout_seconds": 14400,
+        "checkpoint_interval_seconds": 60,
+        "checkpoint_timeout_seconds": 600,
+        "enabled": false,
+        "file_discovery_seconds": 10,
+        "idle_timeout_seconds": 120,
+        "jobmanager_cpu": 1,
+        "jobmanager_memory": "2048m",
+        "jobmanager_replicas": 1,
+        "join_horizon_seconds": 86400,
+        "master_cidr": "172.16.0.0/28",
+        "max_nodes": 3,
+        "max_retention_seconds": 259200,
+        "min_nodes": 1,
+        "namespace": "flink",
+        "node_machine_type": "e2-standard-4",
+        "out_of_orderness_seconds": 30,
+        "parallelism": 2,
+        "pod_cidr": "10.60.0.0/16",
+        "rocksdb_local_disk_gb": 20,
+        "service_cidr": "10.70.0.0/20",
+        "task_slots": 2,
+        "taskmanager_cpu": 2,
+        "taskmanager_memory": "4096m",
+        "window_seconds": 300
+      }
+    },
+    "jobs": {
+      "patternProperties": {
+        "^[a-z][a-z0-9-]{1,11}$": {
+          "$ref": "#/$defs/Job"
+        }
+      },
+      "title": "Jobs",
+      "type": "object"
+    },
+    "name": {
+      "default": "data",
+      "pattern": "^[a-z][a-z0-9-]{1,11}$",
+      "title": "Name",
+      "type": "string"
+    },
+    "network": {
+      "$ref": "#/$defs/Network"
+    },
+    "project_id": {
+      "pattern": "^[a-z][a-z0-9-]{4,28}[a-z0-9]$",
+      "title": "Project Id",
+      "type": "string"
+    },
+    "region": {
+      "pattern": "^[a-z]+-[a-z]+[0-9]+$",
+      "title": "Region",
+      "type": "string"
+    },
+    "secrets": {
+      "additionalProperties": {
+        "$ref": "#/$defs/Secret"
+      },
+      "default": {},
+      "title": "Secrets",
+      "type": "object"
+    }
+  },
+  "required": [
+    "environment",
+    "project_id",
+    "region",
+    "network",
+    "access",
+    "bigtable",
+    "jobs"
+  ],
+  "title": "PlatformConfig",
+  "type": "object"
+}

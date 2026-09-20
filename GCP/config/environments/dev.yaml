@@ -1,0 +1,4 @@
+environment: dev
+project_id: replace-me-data-dev
+access:
+  deployment_service_account: gcp-deployer@replace-me-data-dev.iam.gserviceaccount.com

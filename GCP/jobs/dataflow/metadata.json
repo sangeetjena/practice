@@ -1,0 +1,21 @@
+{
+  "name": "GCP batch examples",
+  "description": "Date-windowed order cleansing, partner extraction and Bigtable customer metrics.",
+  "parameters": [
+    {"name": "use_case", "label": "Example", "helpText": "clean_orders, partner_extract or bigtable_metrics"},
+    {"name": "input_uri", "label": "Input prefix", "helpText": "Terraform-resolved raw bucket prefix"},
+    {"name": "output_uri", "label": "Output prefix", "helpText": "Terraform-resolved curated bucket prefix"},
+    {"name": "start_date", "label": "Start date", "helpText": "Inclusive YYYY-MM-DD"},
+    {"name": "end_date", "label": "End date", "helpText": "Exclusive YYYY-MM-DD"},
+    {"name": "run_id", "label": "Run ID", "helpText": "Unique operator-selected or scheduled ID"},
+    {"name": "target_project", "label": "Project", "helpText": "Project for data resources"},
+    {"name": "config_hash", "label": "Configuration hash", "helpText": "SHA-256 of validated environment configuration"},
+    {"name": "sdk_container_image", "label": "Worker image", "helpText": "Immutable Beam worker container digest"},
+    {"name": "secret_version", "label": "Secret reference", "helpText": "Secret Manager numeric version name", "isOptional": true},
+    {"name": "api_url", "label": "Partner endpoint", "helpText": "Configured HTTPS endpoint", "isOptional": true},
+    {"name": "bt_instance", "label": "Bigtable instance", "helpText": "Configured instance", "isOptional": true},
+    {"name": "bt_table", "label": "Bigtable table", "helpText": "Configured table", "isOptional": true},
+    {"name": "bt_family", "label": "Column family", "helpText": "Configured family", "isOptional": true},
+    {"name": "bt_app_profile", "label": "Application profile", "helpText": "Configured batch profile", "isOptional": true}
+  ]
+}

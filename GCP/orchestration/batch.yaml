@@ -1,0 +1,190 @@
+# One deployed workflow per YAML job. Terraform supplies WORKLOAD_SPEC using actual resource outputs.
+main:
+  params: [args]
+  steps:
+    - initialize:
+        assign:
+          - args: ${default(args, {})}
+          - spec: ${json.decode(sys.get_env("WORKLOAD_SPEC"))}
+          - execution: ${sys.get_env("GOOGLE_CLOUD_WORKFLOW_EXECUTION_ID")}
+          - today: ${text.substring(time.format(sys.now()), 0, 10)}
+          - yesterday: ${text.substring(time.format(sys.now() - 86400), 0, 10)}
+          - allowed: [start_date, end_date, run_id, scheduled]
+          - deadline: ${sys.now() + spec.timeout_seconds}
+    - released:
+        switch:
+          - condition: ${not spec.release_ready}
+            raise: "Publish and deploy an artifact release before running this workflow"
+    - argument_keys:
+        for:
+          value: key
+          in: ${keys(args)}
+          steps:
+            - check_key:
+                switch:
+                  - condition: ${not (key in allowed)}
+                    raise: "Unsupported runtime argument; resource and credential overrides are prohibited"
+    - choose_mode:
+        switch:
+          - condition: ${default(map.get(args, "scheduled"), false) == true}
+            next: scheduled_window
+        next: manual_window
+    - scheduled_window:
+        assign:
+          - start_date: ${yesterday}
+          - end_date: ${today}
+          - run_id: ${"d-" + yesterday}
+        next: validate_window
+    - manual_window:
+        assign:
+          - start_date: ${default(map.get(args, "start_date"), "")}
+          - end_date: ${default(map.get(args, "end_date"), "")}
+          - run_id: ${default(map.get(args, "run_id"), "r-" + text.substring(execution, 0, 20))}
+    - validate_window:
+        switch:
+          - condition: ${not text.match_regex(start_date, "^[0-9]{4}-[0-9]{2}-[0-9]{2}$") or not text.match_regex(end_date, "^[0-9]{4}-[0-9]{2}-[0-9]{2}$")}
+            raise: "Supply start_date and exclusive end_date in YYYY-MM-DD format"
+          - condition: ${not text.match_regex(run_id, "^[a-z][a-z0-9-]{2,23}$")}
+            raise: "run_id must contain 3-24 lowercase letters, digits or hyphens, starting with a letter"
+    - parse_dates:
+        assign:
+          - start_seconds: ${time.parse(start_date + "T00:00:00Z")}
+          - end_seconds: ${time.parse(end_date + "T00:00:00Z")}
+          - resource_id: ${spec.job_key + "-" + run_id}
+    - bounds:
+        switch:
+          - condition: ${end_seconds <= start_seconds or end_seconds - start_seconds > 31622400}
+            raise: "Date window must be positive and at most 366 days"
+    - claim_run:
+        try:
+          call: http.post
+          args:
+            url: ${"https://storage.googleapis.com/upload/storage/v1/b/" + spec.control_bucket + "/o"}
+            query:
+              uploadType: media
+              name: ${"runs/" + spec.job_key + "/" + run_id + ".json"}
+              ifGenerationMatch: "0"
+            auth:
+              type: OAuth2
+            headers:
+              Content-Type: application/json
+            body: '${json.encode_to_string({"execution": execution, "start_date": start_date, "end_date": end_date, "release": spec.release_version})}'
+        except:
+          as: error
+          steps:
+            - conflict:
+                switch:
+                  - condition: ${map.get(error, "code") == 412}
+                    raise: "Run ID already claimed. Check its original execution; use a new ID for an intentional retry"
+            - claim_error:
+                raise: ${error}
+    - route:
+        switch:
+          - condition: ${spec.engine == "dataflow"}
+            next: prepare_dataflow
+        next: prepare_dataproc
+    - prepare_dataflow:
+        assign:
+          - request: ${spec.dataflow}
+          - request.launchParameter.jobName: ${resource_id}
+          - request.launchParameter.parameters.start_date: ${start_date}
+          - request.launchParameter.parameters.end_date: ${end_date}
+          - request.launchParameter.parameters.run_id: ${run_id}
+    - launch_dataflow:
+        call: http.post
+        args:
+          url: ${"https://dataflow.googleapis.com/v1b3/projects/" + spec.project + "/locations/" + spec.region + "/flexTemplates:launch"}
+          auth:
+            type: OAuth2
+          timeout: 1800
+          body: ${request}
+        result: launch
+    - remember_dataflow:
+        assign:
+          - status_url: ${"https://dataflow.googleapis.com/v1b3/projects/" + spec.project + "/locations/" + spec.region + "/jobs/" + launch.body.job.id}
+          - job_id: ${launch.body.job.id}
+        next: wait_for_job
+    - prepare_dataproc:
+        assign:
+          - request: ${spec.dataproc}
+          - extra_args: ${["--start_date", start_date, "--end_date", end_date, "--run_id", run_id]}
+    - append_dataproc_args:
+        for:
+          value: argument
+          in: ${extra_args}
+          steps:
+            - append_argument:
+                assign:
+                  - request.pysparkBatch.args: ${list.concat(request.pysparkBatch.args, argument)}
+    - launch_dataproc:
+        call: http.post
+        args:
+          url: ${"https://dataproc.googleapis.com/v1/projects/" + spec.project + "/locations/" + spec.region + "/batches"}
+          query:
+            batchId: ${resource_id}
+            requestId: ${execution}
+          auth:
+            type: OAuth2
+          body: ${request}
+        result: launch
+    - remember_dataproc:
+        assign:
+          - status_url: ${"https://dataproc.googleapis.com/v1/projects/" + spec.project + "/locations/" + spec.region + "/batches/" + resource_id}
+          - job_id: ${resource_id}
+          - operation: ${launch.body.name}
+    - wait_for_job:
+        call: sys.sleep
+        args:
+          seconds: 30
+    - get_status:
+        try:
+          call: http.get
+          args:
+            url: ${status_url}
+            auth:
+              type: OAuth2
+          result: status
+        retry: ${http.default_retry}
+    - inspect:
+        assign:
+          - state: ${default(map.get(status.body, "currentState"), default(map.get(status.body, "state"), "UNKNOWN"))}
+    - terminal:
+        switch:
+          - condition: ${state == "JOB_STATE_DONE" or state == "SUCCEEDED"}
+            next: complete
+          - condition: ${state in ["JOB_STATE_FAILED", "JOB_STATE_CANCELLED", "JOB_STATE_DRAINED", "JOB_STATE_UPDATED", "FAILED", "CANCELLED"]}
+            raise: ${"Batch did not complete successfully. Job " + job_id + " ended in " + state}
+          - condition: ${sys.now() >= deadline}
+            next: cancel_route
+        next: wait_for_job
+    - cancel_route:
+        switch:
+          - condition: ${spec.engine == "dataflow"}
+            next: cancel_dataflow
+        next: cancel_dataproc
+    - cancel_dataflow:
+        call: http.put
+        args:
+          url: ${status_url}
+          auth:
+            type: OAuth2
+          body:
+            requestedState: JOB_STATE_CANCELLED
+        next: timeout_failure
+    - cancel_dataproc:
+        call: http.post
+        args:
+          url: ${"https://dataproc.googleapis.com/v1/" + operation + ":cancel"}
+          auth:
+            type: OAuth2
+          body: {}
+    - timeout_failure:
+        raise: ${"Job exceeded configured timeout; cancellation requested for " + job_id}
+    - complete:
+        return:
+          job_id: ${job_id}
+          state: ${state}
+          run_id: ${run_id}
+          start_date: ${start_date}
+          end_date: ${end_date}
+          release: ${spec.release_version}

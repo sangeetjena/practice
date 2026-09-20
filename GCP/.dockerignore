@@ -1,0 +1,13 @@
+.git
+.venv
+.cache
+build
+dist
+**/__pycache__
+**/.terraform
+**/*.tfstate*
+**/*.tfvars*
+**/backend.hcl
+**/credentials*.json
+**/gha-creds-*.json
+.env

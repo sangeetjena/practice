@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=75,<83"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gcp-data-platform-template"
+version = "0.1.0"
+description = "YAML-driven GCP data engineering infrastructure and batch workloads"
+requires-python = ">=3.11"
+dependencies = ["pydantic>=2.10,<3", "PyYAML>=6.0.2,<7", "tzdata>=2025.1"]
+
+[project.optional-dependencies]
+cloud = ["google-auth>=2.38,<3", "requests>=2.32,<3", "google-cloud-secret-manager>=2.22,<3"]
+beam = ["apache-beam[gcp]==2.69.0", "google-cloud-secret-manager>=2.22,<3"]
+spark = ["pyspark==3.5.3", "google-cloud-secret-manager>=2.22,<3"]
+dev = ["pytest>=8.3,<10", "ruff>=0.11,<1", "python-hcl2>=7,<9"]
+
+[project.scripts]
+gcp-platform = "tooling.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["tooling*", "shared*", "jobs*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 110
+extend-exclude = [".cache", "build"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
