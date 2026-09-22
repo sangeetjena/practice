@@ -13,6 +13,43 @@ documented below. They are not hidden behind nonfunctional placeholder classes.
 
 ## 1. Run it
 
+### Local follow-up requirements
+
+The implementation remains standard-library Python + SQLite: no DynamoDB account,
+containers, Redis, queue, or HTTP server is needed. New runnable access patterns:
+
+```python
+service.search_tags("rel", limit=20)  # normalized literal prefix, not wildcard search
+service.find_resources([tag_a, tag_b], match="all")  # intersection
+service.find_resources([tag_a, tag_b], match="any", product="jira", resource_type="issue")
+```
+
+Here `tag_a` and `tag_b` are tag ID strings. Both methods accept `cursor` and return
+`Page` values. Multi-tag search accepts 1-20 input entries (duplicates count toward
+the cap), deduplicates IDs, and treats missing IDs as empty sets. Thus a missing tag
+makes an ALL query empty but does not discard other matches from an ANY query.
+Filters and matching mode are bound to the cursor; input tag order is irrelevant.
+Prefix search normalizes exactly like creation and rejects empty prefixes. Renames
+can move tags during traversal; pages do not constitute a stable export snapshot.
+
+The reverse SQL index selects candidate assignments; grouping implements Boolean
+matching. Page size bounds returned memory, not total database work. A popular-tag
+intersection may examine many assignments and need temporary sorting. Prefix search
+uses the existing tenant/normalized-name unique index. `tests/test_search.py` covers
+query semantics, tenant isolation, input caps, filters, literal prefixes and cursors.
+
+Production-only notes are also placed next to the relevant code. DynamoDB would
+need resource-keyed items, bucketed reverse GSIs for hot tags, query-specific
+projections for Boolean search, conditional mutations, and explicit eventual
+consistency. GSI results cannot prove a tag is unused. Atomic replacement of 1,000
+assignments cannot simply become one DynamoDB transaction (100 actions / 4 MB);
+generation staging changes the read/publication contract. API replicas need trusted
+identity, admission control, bounded retries and telemetry. None of those external
+components is pretended to exist locally, and billion-row capacity is not claimed.
+
+Ranking/trending tags, recent activity and permission-aware global search remain
+future requirements; this change does not implement those additional semantics.
+
 From `LLD/tagging-service`, with Python 3.11 or newer:
 
 ```powershell

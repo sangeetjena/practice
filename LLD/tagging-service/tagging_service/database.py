@@ -40,6 +40,9 @@ CREATE INDEX IF NOT EXISTS assignments_by_tag
 
 
 class Database:
+    # LOCAL LLD: one SQLite file, no external server. Adding HTTP replicas alone
+    # will not remove the single-writer limit. Production needs a shared backend,
+    # request admission/rate limits, deadlines, telemetry and load-tested capacity.
     def __init__(self, path: str | Path, *, busy_timeout_seconds: float = 5.0):
         if str(path) == ":memory:":
             raise ValueError("Use a file database: operations use independent connections")

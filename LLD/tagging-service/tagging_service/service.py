@@ -5,6 +5,8 @@ SQL stays here deliberately: the transaction spans multiple entities, and a gene
 CRUD repository would hide the concurrency rules that this example teaches.
 """
 
+import hashlib
+import json
 import sqlite3
 from collections.abc import Iterable
 from uuid import uuid4
@@ -28,6 +30,9 @@ MAX_TAGS_PER_RESOURCE = 1000
 
 
 class TaggingService:
+    # LOCAL LLD: SQLite maintains both lookup directions atomically. A production
+    # DynamoDB adapter needs conditional writes and an eventually consistent GSI;
+    # it cannot silently preserve every SQLite snapshot/transaction guarantee.
     def __init__(self, database: Database, tenant_id: str):
         self._database = database
         self._tenant_id = identifier(tenant_id, "tenant_id")
@@ -209,6 +214,96 @@ class TaggingService:
             ).fetchall()
         items = tuple(Tag(**dict(row)) for row in rows[:limit])
         next_cursor = encode_cursor(scope, [items[-1].tag_id]) if len(rows) > limit else None
+        return Page(items, next_cursor)
+
+    def search_tags(self, prefix: str, *, limit: int = 50, cursor: str | None = None) -> Page[Tag]:
+        """Literal normalized prefix search, ordered by normalized name then ID."""
+        _, normalized = tag_name(prefix)
+        limit = page_size(limit)
+        scope = [self._tenant_id, "tag-prefix", normalized]
+        after = decode_cursor(cursor, scope, 2) or ["", ""]
+        # Compute the lexicographic exclusive upper bound, avoiding LIKE wildcard
+        # semantics. The existing tenant/name unique index supports this range.
+        upper = normalized[:-1] + chr(ord(normalized[-1]) + 1)
+        with self._database.transaction() as connection:
+            rows = connection.execute(
+                "SELECT tag_id, display_name, version, normalized_name FROM tags "
+                "WHERE tenant_id=? AND normalized_name>=? AND normalized_name<? "
+                "AND (normalized_name, tag_id) > (?, ?) "
+                "ORDER BY normalized_name, tag_id LIMIT ?",
+                (self._tenant_id, normalized, upper, *after, limit + 1),
+            ).fetchall()
+        items = tuple(
+            Tag(row["tag_id"], row["display_name"], row["version"]) for row in rows[:limit]
+        )
+        next_cursor = None
+        if len(rows) > limit:
+            last = rows[limit - 1]
+            next_cursor = encode_cursor(scope, [last["normalized_name"], last["tag_id"]])
+        return Page(items, next_cursor)
+
+    def find_resources(
+        self,
+        tag_ids: Iterable[str],
+        *,
+        match: str = "all",
+        product: str | None = None,
+        resource_type: str | None = None,
+        limit: int = 50,
+        cursor: str | None = None,
+    ) -> Page[ResourceKey]:
+        """Find resources matching all/any of 1-20 tags with query-bound pagination.
+
+        Missing tag IDs are treated as empty sets. Result size is bounded; SQL
+        aggregation work still grows with matching assignments, not page size.
+        """
+        if isinstance(tag_ids, (str, bytes)) or not isinstance(tag_ids, Iterable):
+            raise ValidationError("tag_ids must be an iterable of tag IDs")
+        requested = set()
+        for count, tag_id in enumerate(tag_ids, start=1):
+            if count > 20:
+                raise ValidationError("search accepts at most 20 input tags")
+            requested.add(identifier(tag_id, "tag_id"))
+        if not requested or match not in ("all", "any"):
+            raise ValidationError("search requires tags and match='all' or 'any'")
+        for value, field in ((product, "product"), (resource_type, "resource_type")):
+            if value is not None:
+                identifier(value, field)
+        limit = page_size(limit)
+        ordered_tags = sorted(requested)
+        query_hash = hashlib.sha256(
+            json.dumps([ordered_tags, match, product, resource_type]).encode()
+        ).hexdigest()
+        scope = [self._tenant_id, "multi-tag", query_hash]
+        after = decode_cursor(cursor, scope, 3) or ["", "", ""]
+        placeholders = ",".join("?" for _ in ordered_tags)
+        filters = ["tenant_id=?", f"tag_id IN ({placeholders})"]
+        parameters = [self._tenant_id, *ordered_tags]
+        for value, field in ((product, "product"), (resource_type, "resource_type")):
+            if value is not None:
+                filters.append(f"{field}=?")
+                parameters.append(value)
+        filters.append("(product, resource_type, resource_id) > (?, ?, ?)")
+        parameters.extend(after)
+        having = " HAVING COUNT(*)=?" if match == "all" else ""
+        if match == "all":
+            parameters.append(len(ordered_tags))
+        parameters.append(limit + 1)
+        # PRODUCTION SCALE: a reverse DynamoDB GSI can query one tag, but cannot
+        # perform this SQL intersection. Use bounded candidate verification or a
+        # search projection for expensive Boolean queries. Hot tags require
+        # bucketed keys, per-bucket cursor progress and a stated staleness policy.
+        with self._database.transaction() as connection:
+            rows = connection.execute(
+                "SELECT product, resource_type, resource_id FROM assignments WHERE "
+                + " AND ".join(filters)
+                + " GROUP BY product, resource_type, resource_id"
+                + having
+                + " ORDER BY product, resource_type, resource_id LIMIT ?",
+                parameters,
+            ).fetchall()
+        items = tuple(ResourceKey(**dict(row)) for row in rows[:limit])
+        next_cursor = encode_cursor(scope, list(items[-1].values())) if len(rows) > limit else None
         return Page(items, next_cursor)
 
     def list_resources(

@@ -8,6 +8,11 @@ The previously created [tagging service](tagging-service/README.md) is also here
 
 ### Runnable implementation and test files
 
+- **Organization Chart:** [design and local commands](org_chart/README.md),
+  [implementation](org_chart/src/transformation/build_org_graph.py),
+  [tests](org_chart/tests/test_organization_directory.py). Migrated independently;
+  its tests use pytest and are not part of the standard-library runner below.
+
 The README files describe the designs; the following Python files implement them:
 
 - **Rate Limiter:** [implementation](rate-limiter/rate_limiter.py),
