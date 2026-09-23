@@ -1,4 +1,5 @@
 import logging
+
 from exceptions import DirectoryError
 from log import configure_logging
 from models.datamodel import Employee, Group
@@ -7,6 +8,12 @@ from transformation.build_org_graph import OrganizationDirectory
 
 
 def main() -> None:
+    """Run the org_chart demonstration using local objects.
+
+    Called by: the script entry point.
+    Returns: None; prints sample operation results.
+    Example: python src/main.py from the project directory.
+    """
     directory = OrganizationDirectory(InMemoryDirectoryRepository())
 
     directory.add_group(Group(1, "Company"))
@@ -28,4 +35,3 @@ if __name__ == "__main__":
     except DirectoryError as error:
         logging.getLogger(__name__).warning("%s: %s", error.code, error)
         raise SystemExit(1) from error
-

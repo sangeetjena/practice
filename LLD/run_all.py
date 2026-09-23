@@ -9,6 +9,12 @@ PROJECTS = ("rate-limiter", "url-router", "snake-game", "file-collections", "age
 
 
 def main() -> int:
+    """Run isolated test suites and optional demos with timeouts.
+
+    Called by: command-line entry point.
+    Returns: exit code 0 on success, 1 if a suite/demo fails.
+    Example: python run_all.py --include-tagging --demos.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--demos", action="store_true")
     parser.add_argument(

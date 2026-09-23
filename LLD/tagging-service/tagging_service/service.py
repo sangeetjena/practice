@@ -34,15 +34,33 @@ class TaggingService:
     # DynamoDB adapter needs conditional writes and an eventually consistent GSI;
     # it cannot silently preserve every SQLite snapshot/transaction guarantee.
     def __init__(self, database: Database, tenant_id: str):
+        """Bind a database and validated tenant identity supplied by a trusted caller.
+
+        Called by: Application startup or per-tenant request composition.
+        Returns: None; construction produces TaggingService.
+        Example: service = TaggingService(db, "tenant-a") after db.initialize().
+        """
         self._database = database
         self._tenant_id = identifier(tenant_id, "tenant_id")
 
     def _resource_values(self, resource: ResourceKey) -> tuple[str, ...]:
+        """Validate a ResourceKey and prepend the service tenant for SQL parameters.
+
+        Called by: Resource read/mutation methods.
+        Returns: Tuple (tenant, product, type, resource_id).
+        Example: For tenant-a and ResourceKey("jira", "issue", "1"), the tuple has four strings.
+        """
         if not isinstance(resource, ResourceKey):
             raise ValidationError("resource must be a ResourceKey")
         return (self._tenant_id, *resource.values())
 
     def _tag(self, connection: sqlite3.Connection, tag_id: str) -> Tag:
+        """Load tag metadata inside the caller's transaction and tenant scope.
+
+        Called by: get_tag and mutation validation.
+        Returns: Tag; absent tag raises NotFound.
+        Example: _tag(connection, tag_id) prevents attaching a nonexistent tag.
+        """
         identifier(tag_id, "tag_id")
         row = connection.execute(
             "SELECT tag_id, display_name, version FROM tags WHERE tenant_id=? AND tag_id=?",
@@ -54,13 +72,27 @@ class TaggingService:
 
     @staticmethod
     def _expected_version(actual: int, expected: int) -> None:
+        """Check a nonnegative expected version against the observed version.
+
+        Called by: rename, delete and replace operations.
+        Returns: None; malformed expectation raises ValidationError, mismatch raises Conflict.
+        Example: _expected_version(2, 1) raises Conflict.
+        """
         if type(expected) is not int or expected < 0:
             raise ValidationError("expected_version must be a nonnegative integer")
         if actual != expected:
             raise Conflict(f"version mismatch: expected {expected}, current {actual}")
 
     def create_tag(self, name: str) -> Tag:
-        """Get-or-create by normalized name. First successful display spelling wins."""
+        """Create or retrieve a normalized tenant-unique tag atomically.
+
+        Called by: Tag creation caller or demo.
+        Returns: Immutable Tag; first committed display spelling wins.
+        Example: create_tag(" Backend ") and create_tag("backend") return the same identity.
+
+        Additional contract:
+        Get-or-create by normalized name. First successful display spelling wins.
+        """
         display, normalized = tag_name(name)
         with self._database.transaction(write=True) as connection:
             connection.execute(
@@ -76,10 +108,22 @@ class TaggingService:
             return Tag(**dict(row))
 
     def get_tag(self, tag_id: str) -> Tag:
+        """Read one tag's metadata from a transaction snapshot.
+
+        Called by: Caller displaying a known tag.
+        Returns: Tag or NotFound exception.
+        Example: service.get_tag(tag.tag_id) returns that tenant's metadata.
+        """
         with self._database.transaction() as connection:
             return self._tag(connection, tag_id)
 
     def rename_tag(self, tag_id: str, name: str, *, expected_version: int) -> Tag:
+        """Rename with normalized-name uniqueness and optimistic version checking.
+
+        Called by: Edit-tag caller using the last observed tag version.
+        Returns: Updated Tag; conflicts raise without partial changes.
+        Example: rename_tag(tag.tag_id, "release", expected_version=tag.version).
+        """
         display, normalized = tag_name(name)
         with self._database.transaction(write=True) as connection:
             tag = self._tag(connection, tag_id)
@@ -97,7 +141,15 @@ class TaggingService:
             return Tag(tag_id, display, tag.version + 1)
 
     def delete_tag(self, tag_id: str, *, expected_version: int) -> None:
-        """Delete unused tags only. Avoid an unbounded global cascade under a lock."""
+        """Delete only an unused tag at the expected metadata version.
+
+        Called by: Delete-tag caller after detachment.
+        Returns: None; used/missing/stale tags raise a domain error.
+        Example: delete_tag(tag.tag_id, expected_version=tag.version) removes an unused tag.
+
+        Additional contract:
+        Delete unused tags only. Avoid an unbounded global cascade under a lock.
+        """
         with self._database.transaction(write=True) as connection:
             tag = self._tag(connection, tag_id)
             self._expected_version(tag.version, expected_version)
@@ -113,6 +165,12 @@ class TaggingService:
             )
 
     def _ensure_resource(self, connection: sqlite3.Connection, values: tuple[str, ...]) -> None:
+        """Insert a version-zero resource row if absent without resetting an existing row.
+
+        Called by: attach_tag and replace_tags inside a write transaction.
+        Returns: None.
+        Example: First attachment calls this before inserting its assignment.
+        """
         connection.execute(
             "INSERT INTO resources (tenant_id, product, resource_type, resource_id) "
             "VALUES (?, ?, ?, ?) ON CONFLICT DO NOTHING",
@@ -120,6 +178,12 @@ class TaggingService:
         )
 
     def _snapshot(self, connection: sqlite3.Connection, values: tuple[str, ...]) -> ResourceTags:
+        """Read assignment version and sorted tag IDs within one transaction.
+
+        Called by: Resource read and mutation methods.
+        Returns: ResourceTags; unseen resource gives empty IDs and version 0.
+        Example: _snapshot(connection, values) returns the state used for version checking.
+        """
         row = connection.execute(
             f"SELECT version FROM resources WHERE {RESOURCE_FILTER}",
             values,
@@ -131,11 +195,23 @@ class TaggingService:
         return ResourceTags(tuple(row["tag_id"] for row in tags), row["version"] if row else 0)
 
     def get_resource_tags(self, resource: ResourceKey) -> ResourceTags:
+        """Read a bounded resource membership and version consistently.
+
+        Called by: Display/edit callers before changing assignments.
+        Returns: Immutable ResourceTags.
+        Example: For an unseen ResourceKey, get_resource_tags(key).version is 0.
+        """
         values = self._resource_values(resource)
         with self._database.transaction() as connection:
             return self._snapshot(connection, values)
 
     def attach_tag(self, resource: ResourceKey, tag_id: str) -> ResourceTags:
+        """Attach an existing tag once, respecting the per-resource cap.
+
+        Called by: Caller adding a resource label.
+        Returns: Committed ResourceTags; duplicate attachment leaves version unchanged.
+        Example: service.attach_tag(ResourceKey("jira", "issue", "1"), tag.tag_id).
+        """
         values = self._resource_values(resource)
         with self._database.transaction(write=True) as connection:
             self._tag(connection, tag_id)
@@ -153,6 +229,12 @@ class TaggingService:
             return self._snapshot(connection, values)
 
     def detach_tag(self, resource: ResourceKey, tag_id: str) -> ResourceTags:
+        """Remove an assignment if present; missing valid IDs are a no-op.
+
+        Called by: Caller removing a resource label.
+        Returns: ResourceTags after the operation.
+        Example: Calling detach_tag(key, tag_id) twice only changes version on the first removal.
+        """
         values = self._resource_values(resource)
         identifier(tag_id, "tag_id")
         with self._database.transaction(write=True) as connection:
@@ -170,7 +252,15 @@ class TaggingService:
     def replace_tags(
         self, resource: ResourceKey, tag_ids: Iterable[str], *, expected_version: int
     ) -> ResourceTags:
-        """Bounded atomic replacement; stale callers must re-read and reconcile."""
+        """Atomically replace membership using a version check and bounded set differences.
+
+        Called by: Bulk-edit caller holding a resource snapshot version.
+        Returns: ResourceTags; invalid/missing IDs or stale versions roll back.
+        Example: replace_tags(key, [tag.tag_id], expected_version=0) initializes an unseen resource.
+
+        Additional contract:
+        Bounded atomic replacement; stale callers must re-read and reconcile.
+        """
         values = self._resource_values(resource)
         if isinstance(tag_ids, (str, bytes)) or not isinstance(tag_ids, Iterable):
             raise ValidationError("tag_ids must be an iterable of tag IDs")
@@ -203,6 +293,12 @@ class TaggingService:
             return self._snapshot(connection, values)
 
     def list_tags(self, *, limit: int = 50, cursor: str | None = None) -> Page[Tag]:
+        """Read a bounded tenant tag page ordered by stable tag ID.
+
+        Called by: Tag browsing caller.
+        Returns: Page[Tag] with items and optional next_cursor.
+        Example: page = service.list_tags(limit=2); pass page.next_cursor for the next page.
+        """
         limit = page_size(limit)
         scope = [self._tenant_id, "tags"]
         after = decode_cursor(cursor, scope, 1)
@@ -217,7 +313,15 @@ class TaggingService:
         return Page(items, next_cursor)
 
     def search_tags(self, prefix: str, *, limit: int = 50, cursor: str | None = None) -> Page[Tag]:
-        """Literal normalized prefix search, ordered by normalized name then ID."""
+        """Search a normalized literal name prefix using indexed range conditions.
+
+        Called by: Autocomplete or tag browsing caller.
+        Returns: Page[Tag] ordered by normalized name then ID.
+        Example: search_tags("rel", limit=10) finds release-like names, not arbitrary substrings.
+
+        Additional contract:
+        Literal normalized prefix search, ordered by normalized name then ID.
+        """
         _, normalized = tag_name(prefix)
         limit = page_size(limit)
         scope = [self._tenant_id, "tag-prefix", normalized]
@@ -252,7 +356,14 @@ class TaggingService:
         limit: int = 50,
         cursor: str | None = None,
     ) -> Page[ResourceKey]:
-        """Find resources matching all/any of 1-20 tags with query-bound pagination.
+        """Find tenant resources matching ALL or ANY requested tags and optional product/type.
+
+        Called by: Boolean-search caller.
+        Returns: Page[ResourceKey]; missing tags act as empty sets.
+        Example: find_resources([a, b], match="all", product="jira") returns Jira resources with both IDs.
+
+        Additional contract:
+        Find resources matching all/any of 1-20 tags with query-bound pagination.
 
         Missing tag IDs are treated as empty sets. Result size is bounded; SQL
         aggregation work still grows with matching assignments, not page size.
@@ -309,6 +420,12 @@ class TaggingService:
     def list_resources(
         self, tag_id: str, *, limit: int = 50, cursor: str | None = None
     ) -> Page[ResourceKey]:
+        """Read a tag's reverse associations with a composite seek cursor.
+
+        Called by: Caller opening a tag's resource list.
+        Returns: Page[ResourceKey]; nonexistent tag raises NotFound.
+        Example: list_resources(tag.tag_id, limit=20) returns at most twenty resource keys.
+        """
         identifier(tag_id, "tag_id")
         limit = page_size(limit)
         scope = [self._tenant_id, "resources", tag_id]

@@ -20,6 +20,12 @@ class FileRecord:
     collection_ids: frozenset[str] = frozenset()
 
     def __post_init__(self) -> None:
+        """Validate size/IDs and freeze bounded, deduplicated collection membership.
+
+        Called by: Generated FileRecord constructor.
+        Returns: None; invalid records raise.
+        Example: FileRecord("f1", 10, ["a", "a"]) stores one membership.
+        """
         _identifier(self.file_id)
         if isinstance(self.size_bytes, bool) or not isinstance(self.size_bytes, int):
             raise TypeError("size_bytes must be an integer")
@@ -37,6 +43,12 @@ class FileRecord:
 
 
 def _identifier(value: str) -> None:
+    """Reject blank, untrimmed, oversized or control-character identifiers.
+
+    Called by: FileRecord validation and delete.
+    Returns: None on success.
+    Example: _identifier("f1") succeeds; _identifier(" f1") raises.
+    """
     if (
         not isinstance(value, str)
         or not value
@@ -70,6 +82,12 @@ class FileCollections:
     """
 
     def __init__(self, *, max_files: int = 100_000, max_memberships: int = 1_000_000) -> None:
+        """Initialize bounded file storage, aggregate counters and a lock.
+
+        Called by: Application startup.
+        Returns: None; construction produces FileCollections.
+        Example: FileCollections(max_files=100) limits distinct files to 100.
+        """
         if type(max_files) is not int or max_files < 1:
             raise ValueError("max_files must be a positive integer")
         if type(max_memberships) is not int or max_memberships < 1:
@@ -85,7 +103,15 @@ class FileCollections:
         self._lock = RLock()
 
     def upsert(self, file: FileRecord, *, expected_version: int | None = None) -> int:
-        """Create or fully replace a file, including its complete memberships."""
+        """Atomically create or replace a file and adjust all collection totals.
+
+        Called by: Caller adding, resizing or changing memberships.
+        Returns: Current global version; equal records are no-ops.
+        Example: On an empty service, upsert(FileRecord("f1", 10)) returns 1.
+
+        Additional contract:
+        Create or fully replace a file, including its complete memberships.
+        """
         if not isinstance(file, FileRecord):
             raise TypeError("file must be a FileRecord")
         with self._lock:
@@ -111,7 +137,15 @@ class FileCollections:
             return self._version
 
     def delete(self, file_id: str, *, expected_version: int | None = None) -> bool:
-        """Remove a file and all contributions; return whether it existed."""
+        """Remove a file and reverse its aggregate contributions atomically.
+
+        Called by: Caller deleting a file.
+        Returns: True if removed, False if missing; stale version raises.
+        Example: After adding f1, delete("f1") returns True, then False.
+
+        Additional contract:
+        Remove a file and all contributions; return whether it existed.
+        """
         _identifier(file_id)
         with self._lock:
             self._check_version(expected_version)
@@ -124,6 +158,12 @@ class FileCollections:
             return True
 
     def _check_version(self, expected_version: int | None) -> None:
+        """Validate optional optimistic concurrency against the global version.
+
+        Called by: upsert and delete while holding the lock.
+        Returns: None; invalid/stale versions raise.
+        Example: At version 2, _check_version(1) raises VersionConflict.
+        """
         if expected_version is not None:
             if isinstance(expected_version, bool) or not isinstance(expected_version, int):
                 raise TypeError("expected_version must be an integer")
@@ -133,6 +173,12 @@ class FileCollections:
                 raise VersionConflict(f"expected {expected_version}, current {self._version}")
 
     def _adjust(self, file: FileRecord, sign: int) -> None:
+        """Add or subtract a record's bytes and collection contributions.
+
+        Called by: upsert/delete under the lock.
+        Returns: None; mutates accounting maps.
+        Example: _adjust(file, -1) reverses an existing record's contribution.
+        """
         self._total_size_bytes += sign * file.size_bytes
         for collection_id in file.collection_ids:
             count = self._collection_counts.get(collection_id, 0) + sign
@@ -146,7 +192,15 @@ class FileCollections:
                 )
 
     def snapshot(self) -> Snapshot:
-        """Capture one consistent state; sort detached immutable values off-lock."""
+        """Capture a consistent view and sort detached immutable values.
+
+        Called by: Reporting clients and tests.
+        Returns: Snapshot of version, unique bytes, files and collections.
+        Example: After adding one 10-byte file, snapshot().total_size_bytes is 10.
+
+        Additional contract:
+        Capture one consistent state; sort detached immutable values off-lock.
+        """
         with self._lock:
             version = self._version
             total = self._total_size_bytes
@@ -160,13 +214,27 @@ class FileCollections:
         )
 
     def _collection_totals(self) -> tuple[CollectionTotal, ...]:
+        """Copy current aggregate maps into immutable values.
+
+        Called by: snapshot and top_k while holding the lock.
+        Returns: Tuple of CollectionTotal objects, not yet sorted.
+        Example: One file of 10 bytes in a gives CollectionTotal("a", 10, 1).
+        """
         return tuple(
             CollectionTotal(collection_id, size, self._collection_counts[collection_id])
             for collection_id, size in self._collection_sizes.items()
         )
 
     def top_k(self, k: int) -> tuple[CollectionTotal, ...]:
-        """Rank by descending size, then ascending case-sensitive collection ID."""
+        """Return the largest collections, breaking ties by collection ID.
+
+        Called by: Reporting code or demo.
+        Returns: Tuple of up to k CollectionTotal values.
+        Example: service.top_k(0) returns ().
+
+        Additional contract:
+        Rank by descending size, then ascending case-sensitive collection ID.
+        """
         if isinstance(k, bool) or not isinstance(k, int):
             raise TypeError("k must be an integer")
         if k < 0:

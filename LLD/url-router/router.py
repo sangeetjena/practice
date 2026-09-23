@@ -17,12 +17,24 @@ class RouteConflictError(ValueError):
 
 
 def _method(value: str) -> str:
+    """Validate and normalize an HTTP method.
+
+    Called by: Router.register and Router.resolve.
+    Returns: Uppercase method string.
+    Example: _method("get") returns "GET".
+    """
     if not isinstance(value, str) or not value or not value.isascii() or not value.isalpha():
         raise ValueError("method must contain ASCII letters")
     return value.upper()
 
 
 def _segments(path: str, *, pattern: bool = False) -> tuple[str, ...]:
+    """Validate an absolute path and split its canonical segments.
+
+    Called by: Router registration and resolution.
+    Returns: Tuple of segments; malformed paths raise ValueError.
+    Example: _segments("/users/42/") returns ("users", "42").
+    """
     if not isinstance(path, str) or not path.startswith("/"):
         raise ValueError("path must be an absolute path")
     if len(path) > MAX_PATH_LENGTH or any(c in path for c in "?#"):
@@ -68,6 +80,12 @@ class _Node:
 def _insert(
     node: _Node, parts: tuple[str, ...], index: int, handler: Handler, pattern: str
 ) -> _Node:
+    """Copy a trie branch and add a handler without modifying published nodes.
+
+    Called by: Router.register and recursive calls.
+    Returns: New immutable root/node; conflicts raise RouteConflictError.
+    Example: Registering /users/:id builds a literal edge followed by a parameter edge.
+    """
     if index == len(parts):
         if node.handler is not None:
             raise RouteConflictError(f"route already registered: {pattern}")
@@ -104,10 +122,22 @@ class Router:
     """
 
     def __init__(self) -> None:
+        """Initialize empty per-method routing tries and a publication lock.
+
+        Called by: Application startup.
+        Returns: None; construction produces a Router.
+        Example: router = Router() starts with no routes.
+        """
         self._roots: dict[str, _Node] = {}
         self._lock = Lock()
 
     def register(self, pattern: str, handler: Handler, *, method: str = "GET") -> None:
+        """Validate and atomically publish a new route and callable handler.
+
+        Called by: Application route setup.
+        Returns: None; duplicate/conflicting routes raise.
+        Example: router.register("/users/:id", lambda id: id) registers GET.
+        """
         method = _method(method)
         parts = _segments(pattern, pattern=True)
         if not callable(handler):
@@ -121,6 +151,12 @@ class Router:
             self._roots[method] = new_root
 
     def resolve(self, path: str, *, method: str = "GET") -> RouteMatch | None:
+        """Find a complete route using literal, parameter, then wildcard precedence.
+
+        Called by: Request dispatch or demo; does not execute the handler.
+        Returns: Immutable RouteMatch or None.
+        Example: After registering /users/:id, resolve("/users/42").parameters["id"] is "42".
+        """
         method = _method(method)
         parts = _segments(path)
         with self._lock:
@@ -129,6 +165,12 @@ class Router:
             return None
 
         def visit(node: _Node, index: int, parameters: dict[str, str]) -> RouteMatch | None:
+            """Backtrack through a captured trie snapshot without leaking parameters.
+
+            Called by: resolve and recursive visits only.
+            Returns: RouteMatch or None when this branch cannot match.
+            Example: A dead-end literal branch may fall back to a parameter branch.
+            """
             if index == len(parts):
                 if node.handler is None:
                     return None

@@ -9,12 +9,24 @@ from ratings import CapacityExceeded, Conflict, RatingService
 
 class RatingTest(unittest.TestCase):
     def test_weighted_average(self):
+        """Verify the scenario: weighted average.
+
+        Called by: unittest discovery with the fixtures arranged below.
+        Returns: None; failed expectations raise assertion errors.
+        Example expectation (using the fixture below): self.assertEqual(Fraction(4), service.get('alice').average)
+        """
         service = RatingService()
         for index, score in enumerate([5, 5, 2]):
             service.record(str(index), "alice", score)
         self.assertEqual(Fraction(4), service.get("alice").average)
 
     def test_ties_count_then_id(self):
+        """Verify the scenario: ties count then id.
+
+        Called by: unittest discovery with the fixtures arranged below.
+        Returns: None; failed expectations raise assertion errors.
+        Example expectation (using the fixture below): self.assertEqual(['top', 'alice', 'bob', 'zoe'], [x.agent_id for x in service.rank()])
+        """
         service = RatingService()
         for event, agent, score in [
             ("1", "zoe", 4),
@@ -27,6 +39,12 @@ class RatingTest(unittest.TestCase):
         self.assertEqual(["top", "alice", "bob", "zoe"], [x.agent_id for x in service.rank()])
 
     def test_replay_and_conflicting_event(self):
+        """Verify the scenario: replay and conflicting event.
+
+        Called by: unittest discovery with the fixtures arranged below.
+        Returns: None; failed expectations raise assertion errors.
+        Example expectation (using the fixture below): self.assertTrue(service.record('1', 'alice', 4).accepted)
+        """
         service = RatingService()
         self.assertTrue(service.record("1", "alice", 4).accepted)
         self.assertFalse(service.record("1", "alice", 4).accepted)
@@ -35,6 +53,12 @@ class RatingTest(unittest.TestCase):
         self.assertEqual(1, service.get("alice").rating_count)
 
     def test_capacity_rejects_without_mutation_but_allows_replay(self):
+        """Verify the scenario: capacity rejects without mutation but allows replay.
+
+        Called by: unittest discovery with the fixtures arranged below.
+        Returns: None; failed expectations raise assertion errors.
+        Example expectation (using the fixture below): self.assertIsNone(service.get('bob'))
+        """
         service = RatingService(max_events=1)
         service.record("1", "alice", 4)
         with self.assertRaises(CapacityExceeded):
@@ -43,6 +67,12 @@ class RatingTest(unittest.TestCase):
         self.assertFalse(service.record("1", "alice", 4).accepted)
 
     def test_agent_capacity_still_allows_existing_agent(self):
+        """Verify the scenario: agent capacity still allows existing agent.
+
+        Called by: unittest discovery with the fixtures arranged below.
+        Returns: None; failed expectations raise assertion errors.
+        Example expectation (using the fixture below): self.assertTrue(service.record('2', 'alice', 3).accepted)
+        """
         service = RatingService(max_agents=1)
         service.record("1", "alice", 4)
         with self.assertRaises(CapacityExceeded):
@@ -50,6 +80,12 @@ class RatingTest(unittest.TestCase):
         self.assertTrue(service.record("2", "alice", 3).accepted)
 
     def test_invalid_inputs(self):
+        """Verify the scenario: invalid inputs.
+
+        Called by: unittest discovery with the fixtures arranged below.
+        Returns: None; failed expectations raise assertion errors.
+        Example expectation (using the fixture below): self.assertRaises(ValueError)
+        """
         service = RatingService()
         for score in (0, 6, True, 1.5, "5"):
             with self.assertRaises(ValueError):
@@ -62,6 +98,12 @@ class RatingTest(unittest.TestCase):
                 service.rank(limit=limit)
 
     def test_snapshot_values_immutable(self):
+        """Verify the scenario: snapshot values immutable.
+
+        Called by: unittest discovery with the fixtures arranged below.
+        Returns: None; failed expectations raise assertion errors.
+        Example expectation (using the fixture below): self.assertEqual(1, result.rating.rating_count)
+        """
         service = RatingService()
         result = service.record("1", "alice", 3)
         with self.assertRaises(FrozenInstanceError):
@@ -70,6 +112,12 @@ class RatingTest(unittest.TestCase):
         self.assertEqual(1, result.rating.rating_count)
 
     def test_empty_and_top_k(self):
+        """Verify the scenario: empty and top k.
+
+        Called by: unittest discovery with the fixtures arranged below.
+        Returns: None; failed expectations raise assertion errors.
+        Example expectation (using the fixture below): self.assertEqual((), service.rank())
+        """
         service = RatingService()
         self.assertEqual((), service.rank())
         self.assertIsNone(service.get("absent"))
@@ -78,10 +126,22 @@ class RatingTest(unittest.TestCase):
         self.assertEqual(3, len(service.rank(limit=3)))
 
     def test_concurrent_replay_contributes_once(self):
+        """Verify the scenario: concurrent replay contributes once.
+
+        Called by: unittest discovery with the fixtures arranged below.
+        Returns: None; failed expectations raise assertion errors.
+        Example expectation (using the fixture below): self.assertEqual(1, service.get('alice').rating_count)
+        """
         service = RatingService()
         barrier = Barrier(8)
 
         def record(_):
+            """Submit the same rating event from concurrent workers to test deduplication.
+
+            Called by: the enclosing test or its thread-pool callback.
+            Returns: service.record('same', 'alice', 5).accepted.
+            Example (with test-local values): barrier.wait(timeout=5)
+            """
             barrier.wait(timeout=5)
             return service.record("same", "alice", 5).accepted
 
@@ -90,6 +150,12 @@ class RatingTest(unittest.TestCase):
         self.assertEqual(1, service.get("alice").rating_count)
 
     def test_concurrent_distinct_events_no_lost_updates(self):
+        """Verify the scenario: concurrent distinct events no lost updates.
+
+        Called by: unittest discovery with the fixtures arranged below.
+        Returns: None; failed expectations raise assertion errors.
+        Example expectation (using the fixture below): self.assertEqual(500, service.get('alice').rating_count)
+        """
         service = RatingService()
         with ThreadPoolExecutor(max_workers=8) as pool:
             list(pool.map(lambda i: service.record(str(i), "alice", i % 5 + 1), range(500)))
@@ -97,9 +163,21 @@ class RatingTest(unittest.TestCase):
         self.assertEqual(1500, service.get("alice").total_score)
 
     def test_concurrent_reads_are_consistent(self):
+        """Verify the scenario: concurrent reads are consistent.
+
+        Called by: unittest discovery with the fixtures arranged below.
+        Returns: None; failed expectations raise assertion errors.
+        Example expectation (using the fixture below): self.assertEqual(rating.rating_count * 5, rating.total_score)
+        """
         service = RatingService()
 
         def work(index):
+            """Execute one indexed operation in the enclosing concurrency scenario.
+
+            Called by: the enclosing test or its thread-pool callback.
+            Returns: None; assertions raise on failure.
+            Example (with test-local values): service.record(str(index), 'alice', 5)
+            """
             service.record(str(index), "alice", 5)
             rating = service.rank()[0]
             self.assertEqual(rating.rating_count * 5, rating.total_score)

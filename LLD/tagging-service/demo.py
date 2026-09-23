@@ -7,6 +7,12 @@ from tagging_service import Conflict, Database, ResourceKey, TaggingService
 
 
 def main() -> None:
+    """Run the tagging-service demonstration using local objects.
+
+    Called by: the script entry point.
+    Returns: None; prints sample operation results.
+    Example: python demo.py from the project directory.
+    """
     with TemporaryDirectory(prefix="tagging-demo-") as directory:
         database = Database(Path(directory) / "demo.sqlite3")
         database.initialize()

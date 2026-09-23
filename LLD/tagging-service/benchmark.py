@@ -12,6 +12,12 @@ from tagging_service import Database, ResourceKey, TaggingService
 
 
 def main() -> None:
+    """Run concurrent SQLite attachments and print measured latency/counts.
+
+    Called by: command-line entry point.
+    Returns: None; prints JSON and checks acknowledged writes.
+    Example: python benchmark.py --requests 200 --workers 8.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--requests", type=int, default=200)
     parser.add_argument("--workers", type=int, default=8)
@@ -25,6 +31,12 @@ def main() -> None:
         tag = service.create_tag("shared")
 
         def attach(index):
+            """Time one resource attachment and capture SQLite operational failure.
+
+            Called by: main through ThreadPoolExecutor.map.
+            Returns: (elapsed_seconds, success_boolean).
+            Example: attach(7) attaches issue 7 to the benchmark tag.
+            """
             start = perf_counter()
             try:
                 service.attach_tag(ResourceKey("jira", "issue", str(index)), tag.tag_id)

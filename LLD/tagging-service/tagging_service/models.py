@@ -22,6 +22,12 @@ class Conflict(TaggingError):
 
 
 def identifier(value: str, field: str) -> str:
+    """Validate a bounded, case-sensitive identifier without surrounding/control whitespace.
+
+    Called by: Models, service methods and cursor validation.
+    Returns: Unchanged string, or ValidationError.
+    Example: identifier("jira", "product") returns "jira".
+    """
     if not isinstance(value, str) or not value or len(value) > 128:
         raise ValidationError(f"{field} must be a nonempty string of at most 128 characters")
     if value != value.strip() or any(unicodedata.category(c).startswith("C") for c in value):
@@ -32,6 +38,12 @@ def identifier(value: str, field: str) -> str:
 
 
 def tag_name(value: str) -> tuple[str, str]:
+    """Normalize compatibility characters, trim display spelling and casefold uniqueness.
+
+    Called by: create_tag, rename_tag and search_tags.
+    Returns: Pair (display_name, normalized_name).
+    Example: tag_name(" Backend ") returns ("Backend", "backend").
+    """
     if not isinstance(value, str):
         raise ValidationError("tag name must be a string")
     display = unicodedata.normalize("NFKC", value).strip()
@@ -49,10 +61,22 @@ class ResourceKey:
     resource_id: str
 
     def __post_init__(self) -> None:
+        """Validate all three resource identity components.
+
+        Called by: Generated ResourceKey constructor.
+        Returns: None; invalid components raise ValidationError.
+        Example: ResourceKey("jira", "issue", "123") validates on construction.
+        """
         for field in ("product", "resource_type", "resource_id"):
             identifier(getattr(self, field), field)
 
     def values(self) -> tuple[str, str, str]:
+        """Expose the canonical product/type/ID ordering for SQL and cursors.
+
+        Called by: Service._resource_values and resource-page cursor encoding.
+        Returns: Three-string tuple.
+        Example: ResourceKey("jira", "issue", "123").values() is ("jira", "issue", "123").
+        """
         return self.product, self.resource_type, self.resource_id
 
 

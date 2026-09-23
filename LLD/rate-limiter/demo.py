@@ -2,6 +2,12 @@ from rate_limiter import FixedWindow, RateLimiter, TokenBucket
 
 
 def main() -> None:
+    """Run the rate-limiter demonstration using local objects.
+
+    Called by: the script entry point.
+    Returns: None; prints sample operation results.
+    Example: python demo.py from the project directory.
+    """
     now = [0.0]
     for policy in (FixedWindow(2, 10), TokenBucket(2, 0.5)):
         now[0] = 0.0

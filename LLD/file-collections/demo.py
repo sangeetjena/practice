@@ -2,6 +2,12 @@ from file_collections import FileCollections, FileRecord
 
 
 def main() -> None:
+    """Run the file-collections demonstration using local objects.
+
+    Called by: the script entry point.
+    Returns: None; prints sample operation results.
+    Example: python demo.py from the project directory.
+    """
     service = FileCollections()
     service.upsert(FileRecord("design.pdf", 100, frozenset({"engineering", "release"})))
     service.upsert(FileRecord("notes.txt", 50, frozenset({"engineering"})))

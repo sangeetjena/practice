@@ -28,6 +28,12 @@ class Cell:
     column: int
 
     def __post_init__(self) -> None:
+        """Reject non-integer coordinates after dataclass construction.
+
+        Called by: Generated Cell constructor.
+        Returns: None; invalid coordinates raise ValueError.
+        Example: Cell(0, 2) is valid; Cell(True, 2) raises.
+        """
         if type(self.row) is not int or type(self.column) is not int:
             raise ValueError("cell coordinates must be integers")
 
@@ -62,6 +68,12 @@ class SnakeGame:
     def __init__(
         self, width: int, height: int, *, grow_every: int = 5, boundary: Boundary = Boundary.WALL
     ) -> None:
+        """Validate board settings and initialize a three-cell snake facing right.
+
+        Called by: Game setup or demo.
+        Returns: None; construction produces a SnakeGame.
+        Example: SnakeGame(10, 5) starts with head Cell(0, 2).
+        """
         if type(width) is not int or width < 3 or type(height) is not int or height < 1:
             raise ValueError("width must be >= 3 and height >= 1, both integers")
         if type(grow_every) is not int or grow_every < 1:
@@ -79,6 +91,12 @@ class SnakeGame:
         self._lock = Lock()
 
     def snapshot(self) -> Snapshot:
+        """Copy the complete game state under the lock.
+
+        Called by: Renderer, client or tests.
+        Returns: Immutable Snapshot with head-first body and version.
+        Example: game.snapshot().version is 0 before any move.
+        """
         with self._lock:
             return Snapshot(
                 tuple(self._body),
@@ -89,6 +107,12 @@ class SnakeGame:
             )
 
     def _result(self) -> MoveResult:
+        """Build a compact result from current fields; caller must hold the lock.
+
+        Called by: move and _end_game.
+        Returns: MoveResult, without mutating state.
+        Example: After one right move on a wide board, head is Cell(0, 3).
+        """
         return MoveResult(
             self._body[0],
             len(self._body),
@@ -99,6 +123,12 @@ class SnakeGame:
         )
 
     def move(self, direction: Direction, *, expected_version: int | None = None) -> MoveResult:
+        """Validate a command and atomically move, grow or end the game.
+
+        Called by: Input handler or demo.
+        Returns: MoveResult; stale versions and reversals raise without mutation.
+        Example: game.move(Direction.RIGHT, expected_version=0) performs the first move.
+        """
         if not isinstance(direction, Direction):
             raise ValueError("direction must be a Direction")
         if expected_version is not None and (
@@ -136,6 +166,12 @@ class SnakeGame:
             return self._result()
 
     def _end_game(self, collision: str) -> MoveResult:
+        """Record a terminal collision and increment the version.
+
+        Called by: move under the lock when a wall/body collision occurs.
+        Returns: Terminal MoveResult.
+        Example: _end_game("wall") records collision="wall" and game_over=True.
+        """
         self._game_over = True
         self._collision = collision
         self._version += 1
