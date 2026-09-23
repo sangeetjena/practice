@@ -11,6 +11,13 @@ Distributed deployment, HTTP transport, identity verification, product permissio
 telemetry, automated migrations, and asynchronous bulk jobs are design extensions
 documented below. They are not hidden behind nonfunctional placeholder classes.
 
+**HLD alignment and method review:** see
+[Implementation review](docs/IMPLEMENTATION_REVIEW.md). The runnable SQLite
+contracts differ from the proposed production HLD in creation, deletion, resource
+identity and pagination order. The review records each difference explicitly.
+[PostgreSQL target schema](schema/postgresql.sql) contains the HLD DDL; it is not
+used by the SQLite `Database` class and is not a completed PostgreSQL adapter.
+
 ## 1. Run it
 
 ### Local follow-up requirements
@@ -216,30 +223,44 @@ required access paths. Display names are not resource identifiers or pagination 
 
 The executable interface is Python. These are proposed HTTP mappings, not running
 HTTP endpoints. Derive tenant ID from verified identity and trusted routing context.
-Represent `resourceKey` through validated path segments or a canonical encoding.
+All routes below use the prefix `/v1/tenants/{tenantId}`. Verify that identity may
+access the routed tenant. Represent `resourceKey` through validated path segments
+or a canonical encoding. These map the current library semantics; the production
+HLD's strict-create and tombstone-delete contracts require the changes in the review.
 
 ```text
-POST   /v1/tags                                      create/get by name
-GET    /v1/tags/{tagId}                              retrieve metadata
-PATCH  /v1/tags/{tagId}                              rename + If-Match
-DELETE /v1/tags/{tagId}                              unused only + If-Match
-GET    /v1/tags?limit=50&cursor=...                   tenant tag page
-PUT    /v1/resources/{resourceKey}/tags/{tagId}       idempotent attach
-DELETE /v1/resources/{resourceKey}/tags/{tagId}       idempotent detach
-GET    /v1/resources/{resourceKey}/tags              IDs + assignment version
-PUT    /v1/resources/{resourceKey}/tags              replace + If-Match
-GET    /v1/tags/{tagId}/resources?limit=50&cursor=...  reverse lookup
+POST   /tags                                      create/get by name
+GET    /tags/{tagId}                               retrieve metadata
+PATCH  /tags/{tagId}                               rename + If-Match
+DELETE /tags/{tagId}                               unused only + If-Match
+GET    /tags?limit=50&cursor=...                    tenant tag page
+GET    /tags?prefix=rel&limit=50&cursor=...          prefix search
+POST   /resource-search                           ALL/ANY search
+PUT    /resources/{resourceKey}/tags/{tagId}        idempotent attach
+DELETE /resources/{resourceKey}/tags/{tagId}        idempotent detach
+GET    /resources/{resourceKey}/tags               IDs + assignment version
+PUT    /resources/{resourceKey}/tags               replace + If-Match
+GET    /tags/{tagId}/resources?limit=50&cursor=...   reverse lookup
 ```
 
 Map invalid input to 400, missing tag to 404, name/used-tag conflicts to 409, and
-stale `If-Match` to 412. The library currently uses one `Conflict` class; an HTTP
-adapter should introduce error codes/subclasses to distinguish those cases without
-parsing text. A bounded lock timeout is a retryable 503; do not expose SQL errors.
+stale `If-Match` to 412. `VersionConflict` is a subtype of `Conflict`, so an HTTP
+adapter can distinguish 412 from business-rule 409 without parsing messages.
+Catch the subtype first. A bounded lock timeout is a retryable 503; do not expose SQL errors.
 Creation can return 201 on insertion and 200 for an existing name, but the current
 library returns only `Tag`, not a created flag. Adapt the return contract explicitly.
 
-Example replacement body: `{"tagIds": ["id1", "id2"]}` with resource version 7
-in `If-Match`. Successful change produces version 8. A retry still carrying version
+Example replacement body:
+
+```http
+PUT /v1/tenants/{tenantId}/resources/{resourceKey}/tags
+If-Match: "tagset-v7"
+Content-Type: application/json
+
+{"tag_ids": ["id1", "id2"]}
+```
+
+Successful change produces version 8. A retry still carrying version
 7 conflicts even if the first request succeeded. For transparent response replay,
 add an idempotency-key record in the same transaction, scoped to tenant, operation,
 and payload hash. Do not confuse membership idempotency with request deduplication.
@@ -416,8 +437,8 @@ Jobs need cancellation, expiry, orphan cleanup, progress reporting, and replay k
 
 ## 12. Testing and evidence
 
-Verified locally on 21 September 2026: 30 tests passed after cursor-validation review.
-A 200-request run with
+The HLD/LLD alignment review passed 36 tests, including typed version-conflict
+regressions. Run the command above to verify the current checkout. A prior 200-request run with
 eight workers persisted all 200 acknowledged attachments with zero database errors
 (SQLite 3.50.4). That single local experiment is not a capacity estimate.
 Ruff configuration is included in `pyproject.toml`; if Ruff is installed, run

@@ -21,6 +21,14 @@ class Conflict(TaggingError):
     """A uniqueness constraint or expected version was violated."""
 
 
+class VersionConflict(Conflict):
+    """An optimistic version check failed; an HTTP adapter can map this to 412.
+
+    Existing callers catching Conflict remain compatible. Name and used-tag
+    conflicts remain plain Conflict and map to 409 without parsing messages.
+    """
+
+
 def identifier(value: str, field: str) -> str:
     """Validate a bounded, case-sensitive identifier without surrounding/control whitespace.
 
@@ -56,6 +64,8 @@ def tag_name(value: str) -> tuple[str, str]:
 
 @dataclass(frozen=True, order=True)
 class ResourceKey:
+    """Immutable product/type/external-ID identity, scoped by the owning service tenant."""
+
     product: str
     resource_type: str
     resource_id: str
@@ -82,6 +92,8 @@ class ResourceKey:
 
 @dataclass(frozen=True)
 class Tag:
+    """Immutable tag metadata; version changes on rename, not on assignment updates."""
+
     tag_id: str
     display_name: str
     version: int
@@ -92,11 +104,15 @@ T = TypeVar("T")
 
 @dataclass(frozen=True)
 class Page(Generic[T]):
+    """Immutable bounded page and optional continuation; traversal is not a snapshot."""
+
     items: tuple[T, ...]
     next_cursor: str | None
 
 
 @dataclass(frozen=True)
 class ResourceTags:
+    """Immutable sorted membership plus its independent optimistic concurrency version."""
+
     tag_ids: tuple[str, ...]
     version: int

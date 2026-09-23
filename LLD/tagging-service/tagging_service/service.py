@@ -20,6 +20,7 @@ from .models import (
     ResourceTags,
     Tag,
     ValidationError,
+    VersionConflict,
     identifier,
     tag_name,
 )
@@ -30,6 +31,8 @@ MAX_TAGS_PER_RESOURCE = 1000
 
 
 class TaggingService:
+    """Coordinate tenant-scoped catalog, membership and query operations atomically."""
+
     # LOCAL LLD: SQLite maintains both lookup directions atomically. A production
     # DynamoDB adapter needs conditional writes and an eventually consistent GSI;
     # it cannot silently preserve every SQLite snapshot/transaction guarantee.
@@ -75,13 +78,13 @@ class TaggingService:
         """Check a nonnegative expected version against the observed version.
 
         Called by: rename, delete and replace operations.
-        Returns: None; malformed expectation raises ValidationError, mismatch raises Conflict.
-        Example: _expected_version(2, 1) raises Conflict.
+        Returns: None; bad input raises ValidationError, mismatch raises VersionConflict.
+        Example: _expected_version(2, 1) raises VersionConflict (also a Conflict).
         """
         if type(expected) is not int or expected < 0:
             raise ValidationError("expected_version must be a nonnegative integer")
         if actual != expected:
-            raise Conflict(f"version mismatch: expected {expected}, current {actual}")
+            raise VersionConflict(f"version mismatch: expected {expected}, current {actual}")
 
     def create_tag(self, name: str) -> Tag:
         """Create or retrieve a normalized tenant-unique tag atomically.

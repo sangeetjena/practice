@@ -6,9 +6,11 @@ from .models import (
     NotFound,
     Page,
     ResourceKey,
+    ResourceTags,
     Tag,
     TaggingError,
     ValidationError,
+    VersionConflict,
 )
 from .service import TaggingService
 
@@ -18,8 +20,10 @@ __all__ = [
     "NotFound",
     "Page",
     "ResourceKey",
+    "ResourceTags",
     "Tag",
     "TaggingError",
     "TaggingService",
     "ValidationError",
+    "VersionConflict",
 ]

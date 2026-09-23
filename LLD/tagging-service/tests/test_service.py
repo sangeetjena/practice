@@ -13,6 +13,7 @@ from tagging_service import (
     ResourceKey,
     TaggingService,
     ValidationError,
+    VersionConflict,
 )
 
 
@@ -33,6 +34,32 @@ class ServiceFixture(unittest.TestCase):
 
 
 class ServiceTest(ServiceFixture):
+    def test_version_conflicts_are_distinct_from_business_conflicts(self):
+        """Keep HTTP precondition failures distinguishable without parsing messages.
+
+        Called by: unittest discovery using the isolated database fixture.
+        Returns: None; assertions verify subtype, rollback and all versioned writes.
+        Example: stale rename/replace/delete raises VersionConflict, a Conflict subtype.
+        """
+        first = self.service.create_tag("first")
+        self.service.create_tag("second")
+        with self.assertRaises(Conflict) as business:
+            self.service.rename_tag(first.tag_id, "second", expected_version=0)
+        self.assertNotIsInstance(business.exception, VersionConflict)
+        renamed = self.service.rename_tag(first.tag_id, "renamed", expected_version=0)
+        self.service.attach_tag(self.resource, first.tag_id)
+        stale_operations = (
+            lambda: self.service.rename_tag(first.tag_id, "stale", expected_version=0),
+            lambda: self.service.delete_tag(first.tag_id, expected_version=0),
+            lambda: self.service.replace_tags(self.resource, [], expected_version=0),
+        )
+        for operation in stale_operations:
+            with self.assertRaises(VersionConflict) as stale:
+                operation()
+            self.assertIsInstance(stale.exception, Conflict)
+        self.assertEqual(renamed, self.service.get_tag(first.tag_id))
+        self.assertEqual((first.tag_id,), self.service.get_resource_tags(self.resource).tag_ids)
+
     def test_normalized_create_is_idempotent(self):
         """Verify the scenario: normalized create is idempotent.
 

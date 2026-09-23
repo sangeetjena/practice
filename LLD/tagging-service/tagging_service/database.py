@@ -40,6 +40,8 @@ CREATE INDEX IF NOT EXISTS assignments_by_tag
 
 
 class Database:
+    """Own SQLite schema bootstrap and per-operation connection/transaction lifecycles."""
+
     # LOCAL LLD: one SQLite file, no external server. Adding HTTP replicas alone
     # will not remove the single-writer limit. Production needs a shared backend,
     # request admission/rate limits, deadlines, telemetry and load-tested capacity.
