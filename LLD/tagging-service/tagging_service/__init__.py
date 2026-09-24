@@ -1,29 +1,5 @@
-"""A transactional, tenant-scoped tagging service for LLD practice."""
+"""Small in-memory tagging service for a timed interview."""
 
-from .database import Database
-from .models import (
-    Conflict,
-    NotFound,
-    Page,
-    ResourceKey,
-    ResourceTags,
-    Tag,
-    TaggingError,
-    ValidationError,
-    VersionConflict,
-)
-from .service import TaggingService
+from .service import Conflict, NotFound, ResourceKey, Tag, TaggingService
 
-__all__ = [
-    "Conflict",
-    "Database",
-    "NotFound",
-    "Page",
-    "ResourceKey",
-    "ResourceTags",
-    "Tag",
-    "TaggingError",
-    "TaggingService",
-    "ValidationError",
-    "VersionConflict",
-]
+__all__ = ["Conflict", "NotFound", "ResourceKey", "Tag", "TaggingService"]
