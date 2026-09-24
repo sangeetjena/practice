@@ -1,5 +1,10 @@
 # Snake Game — LLD and HLD
 
+> **Looking for Snake and Ladder?** See [SNAKE_LADDER.md](SNAKE_LADDER.md),
+> [snake_ladder.py](snake_ladder.py), and [its tests](tests/test_snake_ladder.py).
+> Run `python demo_ladder.py`. That is a separate turn-based board game;
+> the moving-snake implementation documented below is preserved.
+
 ## Run
 
 Python 3.11+, standard library only. From this directory:
