@@ -9,6 +9,18 @@ python demo.py
 python -m unittest discover -v
 ```
 
+With uv in a Windows/PyCharm PowerShell terminal (no third-party dependencies):
+
+```powershell
+uv venv --python 3.11
+uv run --no-project python demo.py
+uv run --no-project python -m unittest discover -v
+```
+
+Choose `.venv\Scripts\python.exe` as the PyCharm interpreter. Debug `demo.py`
+with this directory as the working directory; put a breakpoint in `try_acquire`.
+See [implementation review](docs/IMPLEMENTATION_REVIEW.md) for verified scope.
+
 The parent `run_all.py` also runs this suite. `rate_limiter.py` contains the engine,
 policies and immutable admission result. Tests use an injected fake clock and real
 threads; they do not wait for wall-clock windows to expire.
@@ -31,6 +43,9 @@ Implemented functional requirements:
 - Independent per-key state within one limiter instance.
 - Fixed-window quota aligned to multiples of window length on the supplied clock.
 - Token bucket with continuous replenishment, bounded capacity, and fractional costs.
+- Exact sliding-window log for unit-cost requests in `(now - window, now]`.
+  Its limit is capped at 100,000 timestamps per customer; choose a much smaller
+  limit/customer budget when memory is constrained. These caps are not byte quotas.
 - Atomic refill/reset, check, and consume, including concurrent requests for one key.
 - Finite validated configuration; fixed limits 1..1e12; other positive policy values
   1e-9..1e12. Fixed costs are integer-valued and no larger than quota; token costs
@@ -38,7 +53,7 @@ Implemented functional requirements:
 - Injected monotonic finite time between zero and 1e12 seconds; backward time raises an error.
 - Bounded tracked-customer count and cleanup that cannot manufacture extra quota.
 
-Nonfunctional requirements: deterministic boundary behavior, O(1) normal decisions,
+Nonfunctional requirements: deterministic boundary behavior, O(1) normal balance decisions,
 bounded cardinality, clear extension points, no network work under synchronization,
 and readable/testable code. State is not durable. Lock acquisition has no deadline
 or fairness guarantee. Clock/policy callbacks are trusted and must be fast and pure
@@ -51,18 +66,21 @@ can be admitted around a boundary across two adjacent windows; it does not satis
 an exact any-N-seconds requirement.
 
 **Sliding timestamp log:** exact rolling-window semantics by expiring timestamps;
-memory grows with accepted requests in the window. Expiry is amortized but one
-request may remove many entries. Not implemented because this example explicitly
-selects fixed windows and token buckets.
+memory grows with accepted requests in the window. `SlidingWindowLog` stores exact
+decimal timestamps in a deque and preserves duplicate timestamps. Expiry is amortized
+but one request may remove up to `limit` entries. Denied attempts are not appended;
+weighted costs are deliberately unsupported for this policy.
 
 **Token bucket:** bounded stored credits support bursts while enforcing average
 refill. Capacity is the burst ceiling. This is not a monthly credit ledger or
 unbounded carryover; distinct credit-expiry rules need another policy.
 
 The `Policy` protocol exposes cost validation, new state, acquisition, and the
-condition for safely forgetting state. `RateLimiter` owns keys, the clock, memory
-budget and synchronization. `FixedWindow` and `TokenBucket` are immutable policy
-configurations; their customer states are private mutable values. One policy is
+condition for safely forgetting state. `Policy[StateT]` and `RateLimiter[StateT]`
+share a type parameter; `TrackedState` requires only `last_seen_at`, so the engine
+does not assume every algorithm stores a balance. `RateLimiter` owns keys, the clock,
+memory budget and synchronization. `FixedWindow`, `TokenBucket` and `SlidingWindowLog`
+are immutable policy configurations; their customer states are private mutable values. One policy is
 used per instance. Per-customer policy selection is a documented extension, not
 an unimplemented claim.
 
@@ -72,7 +90,7 @@ flowchart LR
     Engine --> Clock[Injected monotonic clock]
     Engine --> Lock[Instance lock]
     Lock --> States[Customer state dictionary]
-    Lock --> Policy[FixedWindow or TokenBucket]
+    Lock --> Policy[FixedWindow / TokenBucket / SlidingWindowLog]
     Policy --> Decision[Immutable Decision]
 ```
 
@@ -83,6 +101,8 @@ flowchart LR
   subtracted exactly using Python integers.
 - Token balance is replenished up to capacity and consumed only if sufficient.
 - Rejected acquisitions do not subtract cost, but update time/idle bookkeeping.
+- Sliding logs remove events at or before the cutoff and append exactly once on
+  admission. Thus any rolling window contains at most `limit` accepted requests.
 - Cleanup and admission use the same lock and policy, so they cannot operate on
   two independent states for one key.
 
@@ -107,7 +127,8 @@ claim of unconstrained parallel scaling.
 Deleting a depleted idle bucket early would recreate it full on the next request.
 Therefore fixed state is forgettable only after its window passes, and token state
 only once it would refill to capacity. The key must also exceed the supplied idle
-threshold. Cleanup scans under the same lock, eliminating an eviction/reference
+threshold. A sliding log can be forgotten only when its newest accepted event has
+expired. Cleanup scans under the same lock, eliminating an eviction/reference
 race. At `max_customers`, new keys fail with `CustomerCapacityExceeded`; existing
 keys retain their limits. Cleanup is explicit, not an implicit O(K) scan on each
 request. Limit identity-cardinality attacks at the application boundary as well.
@@ -123,7 +144,10 @@ Let K be tracked customers. Admission is expected O(1) dictionary work and O(1)
 policy work, plus synchronization wait. Memory is O(K). Cleanup is O(K) time and
 O(K) temporary expired-key storage in the worst case. Customer count is O(1).
 The bound assumes identifier hashing/length is bounded (keys max 512 characters).
-No unbounded queues or per-request timestamp logs are stored by these policies.
+Fixed-window and token-bucket policies store no per-request events. For sliding logs
+with per-key limit L, memory is O(KL), each admission is amortized O(1) deque work,
+and a single call can prune O(L) expired entries. Cleanup checks the last timestamp
+in O(1) per customer. Numerical bit-length costs still apply.
 
 ## HLD: distributed rate limiting
 
@@ -153,8 +177,9 @@ address co-location/transactions or a reservation protocol; sequential independe
 checks can consume one quota while the other denies.
 
 Partition by canonical quota key. A single hot global key remains serialized;
-consider capacity leases to regional workers, accepting documented overshoot or
-unused reserved capacity. Locally limiting each of N replicas independently multiplies
+consider disjoint capacity leases to regional workers. Correctly fenced allocation
+can preserve a budget at the cost of unused reserved capacity; unsafe lease reuse
+or deliberately approximate allocation permits overshoot. Locally limiting each of N replicas independently multiplies
 the effective limit unless budgets are coordinated. Strict global quotas trade off
 latency and availability during partitions.
 
@@ -180,13 +205,16 @@ Do not silently overwrite policy objects while active state uses another meaning
 
 ## Tests and interview extensions
 
-Tests cover independent keys, exact window reset, rejection, token refill/cap,
+The suite has **22 tests**. Tests cover independent keys, exact window reset, rejection, token refill/cap,
 fractional costs, concurrent check-and-consume, cleanup racing requests, capacity,
-invalid configurations/costs, and invalid/backward time. Thirty-two simultaneous
+invalid configurations/costs, and invalid/backward time. Sliding-log tests also cover
+the open lower window boundary, duplicate timestamps, denied-attempt bookkeeping,
+safe cleanup, concurrent admission and a 1,000-arrival comparison with an independent
+integer-millisecond reference model. Thirty-two simultaneous
 requests against a fixed capacity must produce exactly that many admissions at a
 frozen clock.
 
-Extensions to rehearse: sliding log policy, policy registry per customer, fixed-period
+Extensions to rehearse: sliding counter or GCRA policy, policy registry per customer, fixed-period
 credit carryover with cap and expiry, lock striping, request deduplication, and
 distributed key consistency. State how each changes invariants and add regression
 tests. If blocked, freeze time and reduce the failure to two calls on one key.

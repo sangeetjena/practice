@@ -3,10 +3,11 @@
 import math
 import threading
 import time
+from collections import deque
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from fractions import Fraction
-from typing import Protocol
+from typing import Generic, Protocol, TypeVar
 
 
 def positive_number(value: float, name: str) -> None:
@@ -24,6 +25,8 @@ def positive_number(value: float, name: str) -> None:
 
 @dataclass(frozen=True)
 class Decision:
+    """Immutable admission result; remaining/retry values are advisory under contention."""
+
     allowed: bool
     remaining: float
     retry_after_seconds: float
@@ -31,12 +34,25 @@ class Decision:
 
 @dataclass
 class CustomerState:
+    """Private balance and timing state shared by fixed-window and token policies."""
+
     balance: int | Fraction
     updated_at: float
     last_seen_at: float
 
 
-class Policy(Protocol):
+class TrackedState(Protocol):
+    """Minimum state needed by the engine's idle cleanup, independent of algorithm."""
+
+    last_seen_at: float
+
+
+StateT = TypeVar("StateT", bound=TrackedState)
+
+
+class Policy(Protocol[StateT]):
+    """Strategy contract; each policy owns its state type and safe-expiry rules."""
+
     def validate_cost(self, cost: float) -> None:
         """Define policy-specific request-cost validation.
 
@@ -46,7 +62,7 @@ class Policy(Protocol):
         """
         ...
 
-    def new_state(self, now: float) -> CustomerState:
+    def new_state(self, now: float) -> StateT:
         """Define initialization of a previously unseen customer's quota.
 
         Called by: RateLimiter.try_acquire under its lock.
@@ -55,7 +71,7 @@ class Policy(Protocol):
         """
         ...
 
-    def acquire(self, state: CustomerState, now: float, cost: float) -> Decision:
+    def acquire(self, state: StateT, now: float, cost: float) -> Decision:
         """Define atomic quota calculation and consumption; caller owns synchronization.
 
         Called by: RateLimiter.try_acquire.
@@ -64,7 +80,7 @@ class Policy(Protocol):
         """
         ...
 
-    def can_forget(self, state: CustomerState, now: float) -> bool:
+    def can_forget(self, state: StateT, now: float) -> bool:
         """Define when discarding state cannot grant extra quota.
 
         Called by: RateLimiter.cleanup under its lock.
@@ -233,11 +249,63 @@ class TokenBucket:
         return self._balance(state, now) >= Fraction(str(self.capacity))
 
 
+@dataclass
+class SlidingLogState:
+    """Ordered accepted timestamps; duplicates represent distinct simultaneous requests."""
+
+    last_seen_at: float
+    accepted_at: deque[Fraction] = field(default_factory=deque)
+
+
+@dataclass(frozen=True)
+class SlidingWindowLog:
+    """Exact unit-request cap in (now - window_seconds, now]; O(limit) state per key."""
+
+    limit: int
+    window_seconds: float
+
+    def __post_init__(self) -> None:
+        """Validate configuration, capping the per-key timestamp budget at 100,000."""
+        if type(self.limit) is not int or not 1 <= self.limit <= 100_000:
+            raise ValueError("sliding-log limit must be an integer from 1 through 100000")
+        positive_number(self.window_seconds, "window_seconds")
+
+    def validate_cost(self, cost: float) -> None:
+        """Accept unit cost only; weighted logs require a different accounting contract."""
+        positive_number(cost, "cost")
+        if cost != 1:
+            raise ValueError("sliding-log cost must equal one")
+
+    def new_state(self, now: float) -> SlidingLogState:
+        """Return an empty, independently allocated accepted-event deque."""
+        return SlidingLogState(now)
+
+    def acquire(self, state: SlidingLogState, now: float, cost: float) -> Decision:
+        """Prune expired events, then record only an allowed request under the engine lock."""
+        exact_now = Fraction(str(now))
+        window = Fraction(str(self.window_seconds))
+        cutoff = exact_now - window
+        while state.accepted_at and state.accepted_at[0] <= cutoff:
+            state.accepted_at.popleft()
+        state.last_seen_at = now
+        allowed = len(state.accepted_at) < self.limit
+        if allowed:
+            state.accepted_at.append(exact_now)
+        retry = 0.0 if allowed else float(state.accepted_at[0] + window - exact_now)
+        return Decision(allowed, self.limit - len(state.accepted_at), retry)
+
+    def can_forget(self, state: SlidingLogState, now: float) -> bool:
+        """Allow removal only when even the newest accepted event is outside the window."""
+        return not state.accepted_at or state.accepted_at[-1] <= (
+            Fraction(str(now)) - Fraction(str(self.window_seconds))
+        )
+
+
 class CustomerCapacityExceeded(RuntimeError):
     """No new customer can be tracked without discarding active quota state."""
 
 
-class RateLimiter:
+class RateLimiter(Generic[StateT]):
     """One policy per instance. Every check/consume and cleanup is atomic.
 
     Policies run under the instance lock and must not block or call the limiter.
@@ -246,7 +314,7 @@ class RateLimiter:
 
     def __init__(
         self,
-        policy: Policy,
+        policy: Policy[StateT],
         *,
         clock: Callable[[], float] = time.monotonic,
         max_customers: int = 100_000,
@@ -266,7 +334,7 @@ class RateLimiter:
         self._policy = policy
         self._clock = clock
         self._max_customers = max_customers
-        self._states: dict[str, CustomerState] = {}
+        self._states: dict[str, StateT] = {}
         self._lock = threading.Lock()
         self._last_clock_value = -math.inf
 
