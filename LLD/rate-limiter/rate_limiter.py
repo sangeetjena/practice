@@ -91,7 +91,7 @@ class Policy(Protocol[StateT]):
 
 
 @dataclass(frozen=True)
-class FixedWindow:
+class FixedWindow(Policy[CustomerState]):
     """Windows aligned to multiples of window_seconds on the supplied clock."""
 
     limit: int
@@ -169,7 +169,7 @@ class FixedWindow:
 
 
 @dataclass(frozen=True)
-class TokenBucket:
+class TokenBucket(Policy[CustomerState]):
     """Continuously replenish bounded credits; initialize new customers full."""
 
     capacity: float
@@ -258,7 +258,7 @@ class SlidingLogState:
 
 
 @dataclass(frozen=True)
-class SlidingWindowLog:
+class SlidingWindowLog(Policy[SlidingLogState]):
     """Exact unit-request cap in (now - window_seconds, now]; O(limit) state per key."""
 
     limit: int
