@@ -1,46 +1,38 @@
-# Revised interview scope
+# Current interview scope
 
-The primary implementation is now a small **in-memory** service intended for a
-30-minute coding exercise including tests. `README.md` is the current practice guide.
+The runnable implementation is an in-memory tenant service; README.md is the current
+practice guide. Earlier Google Docs/HLD persistence discussions describe extensions.
 
-## Removed from the timed implementation
+## Read consistency
 
-- SQLite `Database`, connection/transaction setup, WAL and persistence fixtures.
-- Generic `Page`, cursor encoding/validation and query-scoped keyset pagination.
-- `ResourceTags` version snapshots, `VersionConflict`, bulk replacement and expected versions.
-- Prefix/ALL/ANY search, filter/cursor combinations and the benchmark harness.
-- Long method templates and the multi-module error/model framework.
+Writers hold the per-instance lock. They replace affected membership frozensets and
+publish copied metadata/index dictionaries as one tuple. Reads capture published
+values without acquiring that lock; published containers are never mutated.
+Top-K captures the complete tuple before iterating, so concurrent deletion/rename
+cannot produce a missing metadata lookup inside the selected view.
 
-## Retained
+Publication is synchronous before a write returns. An overlapping read may use the
+previous view; this is not a background replication system. The intended runtime is
+normal GIL-enabled CPython. Copying maps and affected sets makes writes more expensive
+and increases transient memory; this trade-off is explicit in the practice guide.
 
-- `TaggingService`: one class with all small operations and a single per-instance lock.
-- Immutable `ResourceKey` and `Tag`; built-in `ValueError`, small `NotFound` and `Conflict` types.
-- Normalized get-or-create, stable IDs, rename, delete-unused and metadata lookup.
-- Idempotent attach/detach; direct resource-to-tags and tag-to-resources indexes.
-- Immutable query results and focused behavior/concurrency tests.
+## Top-K contract
 
-## Deliberate API changes
+`top_k_tags(k) -> tuple[tuple[Tag, int], ...]` ranks this tenant's used tags by distinct
+attached resources, descending, then tag ID descending. Attach retries do not add
+votes; detach reduces the count; unused/deleted tags are excluded. Zero k returns
+empty; negative/noninteger/bool k raises ValueError. This is popularity, not a rolling
+time-window score. Heap selection is computed on demand from the published view.
 
-```python
-# Before: Database initialization + TaggingService(database, tenant_id)
-service = TaggingService("acme")
+## Test scope
 
-# Before: paginated Page and ResourceTags(version, tag_ids)
-service.get_resource_tags(resource)  # frozenset[str]
-service.list_resources(tag_id)       # frozenset[ResourceKey]
+Four tests cover the catalog, assignments/snapshots, ranking/tenant isolation and
+read completion while a separate thread holds the writer lock. This is a focused
+interview suite, not a production concurrency stress or portability certification.
 
-# Before: expected_version required
-service.rename_tag(tag_id, "New name")
-service.delete_tag(tag_id)
-```
+## Still excluded
 
-Attach/detach return None. Name conflicts and used-tag deletion still fail before
-mutation. Unknown tag IDs raise NotFound; malformed names/resource identities raise
-ValueError. There is no root custom exception hierarchy and no version-based stale
-write detection. Services for the same tenant must be reused by the caller; this
-module is not a registry or a process-shared database.
-
-The [previous persistent version](https://github.com/sangeetjena/practice/tree/6cfe841788c3a27028194ed98b31ea7a4aff2c5f/LLD/tagging-service)
-remains available for studying those follow-ups. Existing production HLD/SQL material
-and earlier Google Docs discussions describe a larger design; they must not be read
-as claims about the current timed implementation.
+SQLite/PostgreSQL adapters, cursor pagination, prefix/Boolean search, bulk replacement,
+expected versions, benchmarks, authentication and multi-process coordination. The
+[previous persistent version](https://github.com/sangeetjena/practice/tree/6cfe841788c3a27028194ed98b31ea7a4aff2c5f/LLD/tagging-service)
+is retained in Git history. No new interface or class hierarchy was added for ranking.

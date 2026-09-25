@@ -1,6 +1,7 @@
 """30-minute tagging exercise: one tenant, two indexes, one lock, no dependencies."""
 
 from dataclasses import dataclass
+from heapq import nlargest
 from threading import Lock
 from unicodedata import normalize
 from uuid import uuid4
@@ -52,8 +53,10 @@ def tag_name(name: str) -> str:
 class TaggingService:
     """Reuse one instance per tenant; all state is lost on process restart.
 
-    Both assignment indexes change under the same lock. Reads return immutable
-    copies. The caller supplies trusted tenant/resource identities; this is not
+    Writers serialize and publish a snapshot; reads take no application lock.
+    Published dictionaries are never mutated and contain immutable values.
+    This small CPython example permits reads of the previous published state.
+    The caller supplies trusted tenant/resource identities; this is not
     an authentication layer or a multi-process database implementation.
     """
 
@@ -64,9 +67,14 @@ class TaggingService:
         self._tenant_id = tenant_id
         self._tags: dict[str, Tag] = {}
         self._names: dict[str, str] = {}
-        self._resource_tags: dict[ResourceKey, set[str]] = {}
-        self._tag_resources: dict[str, set[ResourceKey]] = {}
+        self._resource_tags: dict[ResourceKey, frozenset[str]] = {}
+        self._tag_resources: dict[str, frozenset[ResourceKey]] = {}
         self._lock = Lock()
+        self._publish()
+
+    def _publish(self):
+        """Publish one coherent view; writers hold the lock except during init."""
+        self._view = (self._tags.copy(), self._resource_tags.copy(), self._tag_resources.copy())
 
     def _tag(self, tag_id: str) -> Tag:
         """Load a known tag; the caller must hold the lock."""
@@ -83,13 +91,16 @@ class TaggingService:
                 tag = Tag(uuid4().hex, display)
                 self._tags[tag.tag_id] = tag
                 self._names[key] = tag.tag_id
-                self._tag_resources[tag.tag_id] = set()
+                self._tag_resources[tag.tag_id] = frozenset()
+                self._publish()
             return self._tags[self._names[key]]
 
     def get_tag(self, tag_id: str) -> Tag:
         """Return immutable metadata, or raise NotFound."""
-        with self._lock:
-            return self._tag(tag_id)
+        tag = self._view[0].get(tag_id)
+        if tag is None:
+            raise NotFound(tag_id)
+        return tag
 
     def rename_tag(self, tag_id: str, name: str) -> Tag:
         """Rename without changing assignments; a taken name raises Conflict."""
@@ -102,6 +113,7 @@ class TaggingService:
             del self._names[old.display_name.casefold()]
             self._names[key] = tag_id
             self._tags[tag_id] = Tag(tag_id, display)
+            self._publish()
             return self._tags[tag_id]
 
     def delete_tag(self, tag_id: str) -> None:
@@ -113,13 +125,17 @@ class TaggingService:
             del self._names[tag.display_name.casefold()]
             del self._tags[tag_id]
             del self._tag_resources[tag_id]
+            self._publish()
 
     def attach_tag(self, resource: ResourceKey, tag_id: str) -> None:
         """Add an assignment idempotently and update both lookup directions."""
         with self._lock:
             self._tag(tag_id)
-            self._resource_tags.setdefault(resource, set()).add(tag_id)
-            self._tag_resources[tag_id].add(resource)
+            self._resource_tags[resource] = self._resource_tags.get(resource, frozenset()) | {
+                tag_id
+            }
+            self._tag_resources[tag_id] = self._tag_resources[tag_id] | {resource}
+            self._publish()
 
     def detach_tag(self, resource: ResourceKey, tag_id: str) -> None:
         """Remove an assignment idempotently; unknown tag IDs raise NotFound."""
@@ -127,18 +143,27 @@ class TaggingService:
             self._tag(tag_id)
             tags = self._resource_tags.get(resource)
             if tags is not None:
-                tags.discard(tag_id)
-                if not tags:
+                self._resource_tags[resource] = tags - {tag_id}
+                if not self._resource_tags[resource]:
                     del self._resource_tags[resource]
-            self._tag_resources[tag_id].discard(resource)
+            self._tag_resources[tag_id] = self._tag_resources[tag_id] - {resource}
+            self._publish()
 
     def get_resource_tags(self, resource: ResourceKey) -> frozenset[str]:
-        """Return tag IDs as an immutable copy; an unseen resource has none."""
-        with self._lock:
-            return frozenset(self._resource_tags.get(resource, ()))
+        """Read published IDs without locking; an unseen resource has none."""
+        return self._view[1].get(resource, frozenset())
 
     def list_resources(self, tag_id: str) -> frozenset[ResourceKey]:
         """Return resources for a known tag, without scanning all assignments."""
-        with self._lock:
-            self._tag(tag_id)
-            return frozenset(self._tag_resources[tag_id])
+        resources = self._view[2].get(tag_id)
+        if resources is None:
+            raise NotFound(tag_id)
+        return resources
+
+    def top_k_tags(self, k: int) -> tuple[tuple[Tag, int], ...]:
+        """Rank used tags by resource count, then tag ID descending, in one view."""
+        if type(k) is not int or k < 0:
+            raise ValueError("k must be a nonnegative integer")
+        tags, _, resources = self._view
+        ranked = nlargest(k, ((len(items), tag_id) for tag_id, items in resources.items() if items))
+        return tuple((tags[tag_id], count) for count, tag_id in ranked)

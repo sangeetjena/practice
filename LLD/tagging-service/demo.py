@@ -14,6 +14,7 @@ def main():
     print("Resource tags:", service.get_resource_tags(issue))
     print("Tagged resources:", service.list_resources(release.tag_id))
     print("Renamed:", service.rename_tag(release.tag_id, "Release candidate"))
+    print("Tenant top tags:", service.top_k_tags(3))
 
 
 if __name__ == "__main__":
