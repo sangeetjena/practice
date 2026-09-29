@@ -1,6 +1,7 @@
 ```
 https://leetcode.com/problems/linked-list-cycle-ii/submissions/1283344582/
 https://www.youtube.com/watch?v=95ZfuoSAUPI
+https://www.geeksforgeeks.org/dsa/how-does-floyds-slow-and-fast-pointers-approach-work/
 
 
 NOte:take one slow and fast pointer where it will meet that is the start point of cycle
