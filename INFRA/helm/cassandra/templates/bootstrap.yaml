@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cassandra-bootstrap
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  activeDeadlineSeconds: 900
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      containers:
+        - name: bootstrap
+          image: {{ .Values.image | quote }}
+          env:
+            - name: CASSANDRA_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: cassandra-credentials, key: password}
+          command: [/bin/bash, -ec]
+          args:
+            - |
+              host=cassandra-0.cassandra-headless
+              # Existing disks already have the configured password. Never reset them.
+              for attempt in $(seq 1 120); do
+                if cqlsh "$host" -u cassandra -p "$CASSANDRA_PASSWORD" -e 'SELECT cluster_name FROM system.local;' >/dev/null 2>&1; then
+                  exit 0
+                fi
+                if cqlsh "$host" -u cassandra -p cassandra -f /credentials/bootstrap.cql >/dev/null 2>&1; then
+                  exit 0
+                fi
+                sleep 5
+              done
+              echo 'Cassandra authentication bootstrap failed; check credentials and cluster health.' >&2
+              exit 1
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 256Mi}
+          volumeMounts:
+            - {name: credentials, mountPath: /credentials, readOnly: true}
+      volumes:
+        - name: credentials
+          secret: {secretName: cassandra-credentials}

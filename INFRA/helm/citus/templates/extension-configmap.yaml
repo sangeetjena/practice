@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: citus-init
+  labels:
+    app.kubernetes.io/part-of: citus
+data:
+  001-citus.sql: |
+    CREATE EXTENSION IF NOT EXISTS citus;

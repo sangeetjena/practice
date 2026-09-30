@@ -1,0 +1,957 @@
+Create a complete, production-inspired local Kubernetes infrastructure lab for development, platform-engineering practice, and later deployment of an agentic workflow.
+The environment must be fully reproducible, disposable at the Kubernetes-cluster level, and persistent at the database-data level.
+The desired operating model is:
+Git / Terraform / Helm
+        |
+        v
+Recreate Infrastructure
+
+Host Persistent Storage
+        |
+        v
+Restore Existing Database Data
+
+Kubernetes Cluster
+        |
+        v
+Disposable
+The user should be able to destroy the entire Kubernetes cluster and later recreate it without losing PostgreSQL, Cassandra, or Qdrant data.
+
+1. Main Goal
+Build a local infrastructure platform where:
+Kubernetes cluster can be created and destroyed on demand.
+The cluster does not need to start automatically with the computer.
+Database data survives complete cluster deletion.
+Recreating the cluster restores access to previously persisted data.
+Infrastructure configuration is stored in Git.
+Deployment is automated.
+All database and application networking is declarative.
+Applications use Kubernetes DNS instead of pod IPs.
+Databases are not publicly exposed.
+Developer access is available through controlled local endpoints.
+The design should be simple enough to run on a developer laptop.
+The architecture should resemble real infrastructure/platform-engineering practices where practical.
+
+2. Technology Stack
+Use:
+Docker
+kind
+Kubernetes
+kubectl
+Helm
+Terraform
+Make
+Kubernetes StatefulSets
+PersistentVolumes / PersistentVolumeClaims
+Kubernetes Services
+CoreDNS
+Kubernetes NetworkPolicies
+Prepare the architecture for later use of:
+Prometheus
+Grafana
+OpenTelemetry Collector
+Argo CD
+Do not use Ansible unless there is a strong technical reason.
+For this local Kubernetes-focused lab, Terraform + Helm + kind should be the primary infrastructure toolchain.
+
+3. Architecture
+Create:
+Developer Laptop
+│
+├── Docker
+│
+├── Persistent Host Storage
+│   ├── PostgreSQL
+│   ├── Cassandra
+│   └── Qdrant
+│
+└── kind Kubernetes Cluster
+     │
+     ├── Control Plane
+     │
+     ├── Worker 1
+     ├── Worker 2
+     └── Worker 3
+          │
+          ├── PostgreSQL / Citus
+          ├── Cassandra
+          ├── Qdrant
+          ├── Agentic Application
+          └── Monitoring
+The cluster should initially contain:
+1 control-plane node
+3 worker nodes
+The worker nodes are shared infrastructure.
+Do NOT dedicate one Kubernetes worker node to each database.
+Different workloads may share nodes if sufficient resources are available.
+Use scheduling rules so replicas of the same distributed database prefer different worker nodes.
+
+4. Repository Structure
+Create approximately this structure:
+local-platform/
+├── README.md
+├── Makefile
+├── .env.example
+├── .gitignore
+│
+├── cluster/
+│   └── kind-config.yaml
+│
+├── terraform/
+│   ├── main.tf
+│   ├── providers.tf
+│   ├── variables.tf
+│   ├── outputs.tf
+│   └── versions.tf
+│
+├── helm/
+│   ├── cassandra/
+│   │   └── values.yaml
+│   │
+│   ├── qdrant/
+│   │   └── values.yaml
+│   │
+│   ├── postgres/
+│   │   └── values.yaml
+│   │
+│   └── monitoring/
+│       └── values.yaml
+│
+├── kubernetes/
+│   ├── namespaces/
+│   │   └── namespaces.yaml
+│   │
+│   ├── storage/
+│   │   ├── postgres/
+│   │   ├── cassandra/
+│   │   └── qdrant/
+│   │
+│   ├── networking/
+│   │   ├── services/
+│   │   ├── ingress/
+│   │   └── policies/
+│   │
+│   └── apps/
+│       └── agent/
+│           ├── deployment.yaml
+│           ├── service.yaml
+│           ├── configmap.yaml
+│           └── secret.example.yaml
+│
+├── apps/
+│   └── agent/
+│       ├── Dockerfile
+│       ├── pyproject.toml
+│       ├── src/
+│       │   └── main.py
+│       └── tests/
+│
+├── scripts/
+│   ├── check-prerequisites.sh
+│   ├── create-cluster.sh
+│   ├── destroy-cluster.sh
+│   ├── deploy-infra.sh
+│   ├── deploy-agent.sh
+│   ├── expose-services.sh
+│   ├── verify.sh
+│   ├── test-network.sh
+│   └── test-persistence.sh
+│
+└── data/
+    ├── postgres/
+    │   ├── node-0/
+    │   ├── node-1/
+    │   └── node-2/
+    │
+    ├── cassandra/
+    │   ├── node-0/
+    │   ├── node-1/
+    │   └── node-2/
+    │
+    └── qdrant/
+        ├── node-0/
+        ├── node-1/
+        └── node-2/
+
+5. kind Cluster Configuration
+Create:
+cluster/kind-config.yaml
+Cluster name:
+agent-lab
+Topology:
+1 control-plane
+3 workers
+The worker nodes must have access to persistent host storage.
+Map:
+Host:
+<PROJECT_ROOT>/data
+
+Inside kind worker:
+ /data
+Do not hard-code a specific developer's absolute path.
+Make the host storage path configurable.
+Support Linux, macOS, and Windows as reasonably as possible.
+Example concept:
+extraMounts:
+  - hostPath: <CONFIGURABLE_HOST_DATA_PATH>
+    containerPath: /data
+On Windows, support paths such as:
+C:/dev/local-platform/data
+Document any Docker Desktop file-sharing requirements.
+
+6. Persistent Storage Design
+This is a critical requirement.
+Kubernetes must be disposable.
+Database data must not be disposable.
+Use host-mounted storage so this command:
+kind delete cluster --name agent-lab
+does NOT delete:
+data/postgres/
+data/cassandra/
+data/qdrant/
+Use:
+persistentVolumeReclaimPolicy: Retain
+where appropriate.
+Each database replica must have independent storage.
+Correct:
+postgres-0 -> /data/postgres/node-0
+postgres-1 -> /data/postgres/node-1
+postgres-2 -> /data/postgres/node-2
+Incorrect:
+postgres-0 ─┐
+postgres-1 ─┼──> same directory
+postgres-2 ─┘
+Do the same for Cassandra and Qdrant.
+Create PV/PVC configuration under:
+kubernetes/storage/
+Do not depend on ephemeral kind-container storage for important database data.
+
+7. Kubernetes Namespaces
+Create:
+postgres
+cassandra
+qdrant
+agent
+monitoring
+Label namespaces so they can be used with NetworkPolicies.
+Example:
+metadata:
+  labels:
+    name: agent
+Use equivalent labels for the other namespaces.
+
+8. Cassandra
+Deploy a 3-node Cassandra cluster:
+cassandra-0
+cassandra-1
+cassandra-2
+Requirements:
+StatefulSet
+Headless Service
+Stable DNS
+Persistent storage
+3 replicas
+Pod anti-affinity or topology spread constraints
+Readiness probes
+Liveness probes where appropriate
+Resource requests and limits suitable for a laptop
+Cluster discovery between Cassandra replicas
+Configurable memory/CPU
+Logical architecture:
+                Cassandra Service
+                       |
+         +-------------+-------------+
+         |             |             |
+         v             v             v
+   cassandra-0    cassandra-1    cassandra-2
+       |              |              |
+      PVC            PVC            PVC
+Expected internal service:
+cassandra.cassandra.svc.cluster.local:9042
+
+9. Qdrant Vector Database
+Use Qdrant rather than ChromaDB for the distributed-vector-database portion of this lab.
+Deploy:
+qdrant-0
+qdrant-1
+qdrant-2
+Requirements:
+3-node cluster
+Persistent storage
+Stable service discovery
+Cluster configuration
+Sharding capability
+Replication capability
+Resource limits suitable for development
+Pod distribution across workers
+Health checks
+Expose internally:
+qdrant.qdrant.svc.cluster.local:6333
+Also support gRPC:
+qdrant.qdrant.svc.cluster.local:6334
+Prepare an example collection configuration using multiple shards and replication.
+
+10. PostgreSQL / Citus Sharding
+Use Citus for distributed PostgreSQL sharding.
+Architecture:
+Application
+    |
+    v
+Citus Coordinator
+    |
+    +---------+---------+
+    |         |         |
+    v         v         v
+ Worker-0  Worker-1  Worker-2
+Create:
+1 coordinator
+3 workers
+Each worker must use independent persistent storage.
+Example table:
+CREATE TABLE users (
+    tenant_id BIGINT,
+    user_id BIGINT,
+    name TEXT
+);
+Example distribution:
+SELECT create_distributed_table(
+    'users',
+    'tenant_id'
+);
+Document clearly:
+Sharding = distributing different data across nodes
+Replication = storing copies of data across nodes
+Expose the coordinator internally through:
+citus-coordinator.postgres.svc.cluster.local:5432
+Application JDBC example:
+jdbc:postgresql://citus-coordinator.postgres.svc.cluster.local:5432/agentdb
+
+11. Helm
+Use Helm for deploying applications/databases where appropriate.
+Keep custom values in:
+helm/
+Do not copy full upstream Helm charts into the repository unless needed.
+Example:
+helm/cassandra/values.yaml
+helm/qdrant/values.yaml
+helm/postgres/values.yaml
+Pin chart versions when practical.
+Configure:
+replica counts
+resources
+storage
+service configuration
+health probes
+scheduling constraints
+security options
+cluster-specific settings
+
+12. Terraform
+Use Terraform to manage the Kubernetes infrastructure after the kind cluster already exists.
+Terraform should manage where appropriate:
+namespaces
+Helm releases
+common Kubernetes infrastructure configuration
+database deployments
+networking resources if suitable
+Use:
+Kubernetes provider
+Helm provider
+Do not initially make Terraform responsible for creating kind itself.
+Workflow:
+kind create cluster
+        |
+        v
+Terraform
+        |
+        +--> Kubernetes resources
+        +--> Helm releases
+Terraform commands:
+terraform init
+terraform plan
+terraform apply
+Support:
+terraform destroy
+carefully, without deleting persisted host data unless explicitly requested.
+
+13. Agentic Application
+Create a small placeholder agent application under:
+apps/agent/
+Use Python.
+Include:
+Dockerfile
+pyproject.toml
+src/main.py
+tests/
+Expose:
+GET /health
+GET /ready
+The application should read infrastructure endpoints from environment variables.
+Example:
+POSTGRES_HOST
+POSTGRES_PORT
+CASSANDRA_HOST
+CASSANDRA_PORT
+QDRANT_HOST
+QDRANT_PORT
+Do not hard-code database IP addresses.
+
+14. Agent Configuration
+Use ConfigMaps for non-secret configuration.
+Example:
+POSTGRES_HOST=citus-coordinator.postgres.svc.cluster.local
+POSTGRES_PORT=5432
+
+CASSANDRA_HOST=cassandra.cassandra.svc.cluster.local
+CASSANDRA_PORT=9042
+
+QDRANT_HOST=qdrant.qdrant.svc.cluster.local
+QDRANT_PORT=6333
+Use Kubernetes Secrets or environment-secret injection for credentials.
+Do not commit real credentials.
+Create:
+.env.example
+Ignore:
+.env
+secret.yaml
+*.secret.yaml
+where appropriate.
+
+15. Docker
+Use published images for:
+Cassandra
+Qdrant
+PostgreSQL/Citus
+Only create custom Dockerfiles for owned applications such as the agent service.
+Build:
+docker build -t agent-service:local ./apps/agent
+Load into kind:
+kind load docker-image agent-service:local --name agent-lab
+Agent Deployment should use:
+imagePullPolicy: IfNotPresent
+for the local image.
+
+16. Kubernetes Services
+Every database and application must be exposed internally through Kubernetes Services.
+Never connect directly to pod IP addresses.
+Use stable DNS names.
+Expected endpoints:
+PostgreSQL:
+citus-coordinator.postgres.svc.cluster.local:5432
+
+Cassandra:
+cassandra.cassandra.svc.cluster.local:9042
+
+Qdrant REST:
+qdrant.qdrant.svc.cluster.local:6333
+
+Qdrant gRPC:
+qdrant.qdrant.svc.cluster.local:6334
+
+Agent:
+agent.agent.svc.cluster.local:8080
+Use ClusterIP services by default.
+Use headless services when required for StatefulSet peer discovery.
+
+17. Local Developer Exposure
+Databases should NOT be publicly exposed.
+For access from the host laptop, use automated:
+kubectl port-forward
+Provide Make commands:
+make expose-postgres
+make expose-cassandra
+make expose-qdrant
+make expose-agent
+make expose-monitoring
+make expose-all
+Expected localhost endpoints:
+PostgreSQL
+localhost:5432
+
+Cassandra
+localhost:9042
+
+Qdrant REST
+localhost:6333
+
+Qdrant gRPC
+localhost:6334
+
+Agent API
+localhost:8080
+
+Grafana
+localhost:3000
+
+Prometheus
+localhost:9090
+Developer JDBC URL:
+jdbc:postgresql://localhost:5432/agentdb
+
+18. Ingress
+Prepare optional Ingress support.
+Use a local ingress controller such as ingress-nginx if desired.
+Only expose HTTP applications through Ingress.
+Examples:
+http://agent.localhost
+http://grafana.localhost
+Do NOT expose:
+PostgreSQL
+Cassandra
+Qdrant database protocols
+through normal HTTP Ingress.
+
+19. Network Policies
+Implement Kubernetes NetworkPolicies.
+Use a default-deny model where practical.
+Desired communication:
+                   Agent
+                     |
+        +------------+------------+
+        |            |            |
+        v            v            v
+    PostgreSQL   Cassandra      Qdrant
+      5432         9042        6333/6334
+Allow the Agent namespace to access:
+postgres namespace   TCP 5432
+cassandra namespace  TCP 9042
+qdrant namespace     TCP 6333
+qdrant namespace     TCP 6334
+Do not allow arbitrary namespaces to access databases.
+Monitoring namespace must be allowed to scrape required metrics endpoints.
+Make sure CoreDNS access continues to function.
+Create policies such as:
+kubernetes/networking/policies/
+├── default-deny.yaml
+├── allow-dns.yaml
+├── agent-to-postgres.yaml
+├── agent-to-cassandra.yaml
+├── agent-to-qdrant.yaml
+└── monitoring-access.yaml
+
+20. Service Discovery
+Use Kubernetes CoreDNS.
+Applications should resolve services by DNS.
+Examples:
+cassandra.cassandra.svc.cluster.local
+qdrant.qdrant.svc.cluster.local
+citus-coordinator.postgres.svc.cluster.local
+Do not manually manage container IP addresses.
+Do not place pod IP addresses into configuration.
+
+21. Scheduling and Placement
+Use:
+pod anti-affinity
+or
+topologySpreadConstraints
+so replicas of the same database prefer separate worker nodes.
+Example desired placement:
+worker-1
+  cassandra-0
+  qdrant-0
+  postgres-worker-0
+
+worker-2
+  cassandra-1
+  qdrant-1
+  postgres-worker-1
+
+worker-3
+  cassandra-2
+  qdrant-2
+  postgres-worker-2
+This is only an example.
+Do not hard-code specific pod-to-node mappings unless necessary.
+Different services can share the same Kubernetes node.
+Do not use dedicated node pools for the initial local lab.
+
+22. Resource Management
+The lab must be laptop-friendly.
+Start with conservative configurable resource requests.
+Example starting values:
+Cassandra:
+500m CPU
+1–2 GiB RAM
+
+Qdrant:
+250–500m CPU
+512Mi–1Gi RAM
+
+PostgreSQL worker:
+250–500m CPU
+512Mi–1Gi RAM
+
+Agent:
+100–250m CPU
+256–512Mi RAM
+Define both:
+requests
+limits
+where practical.
+Make resource values configurable through Helm values.
+
+23. Makefile
+Create a Makefile supporting:
+make prerequisites
+make create
+make infra
+make build-agent
+make deploy-agent
+make deploy
+make status
+make network-status
+make verify
+make expose-postgres
+make expose-cassandra
+make expose-qdrant
+make expose-agent
+make expose-monitoring
+make expose-all
+make test-network
+make test-persistence
+make stop
+make destroy
+make clean-data
+make reset
+
+24. make prerequisites
+Validate presence of:
+docker
+kind
+kubectl
+helm
+terraform
+make
+Print helpful installation guidance if something is missing.
+Do not silently fail.
+
+25. make create
+Perform:
+validate prerequisites
+        ↓
+create persistent directories
+        ↓
+create kind cluster
+        ↓
+wait for nodes Ready
+        ↓
+verify Kubernetes access
+Expected:
+1 control plane
+3 workers
+
+26. make infra
+Perform:
+create namespaces
+        ↓
+create storage resources
+        ↓
+terraform init
+        ↓
+terraform apply
+        ↓
+deploy Cassandra
+        ↓
+deploy Qdrant
+        ↓
+deploy PostgreSQL/Citus
+        ↓
+wait for readiness
+Make it idempotent where practical.
+
+27. make build-agent
+Perform:
+docker build
+     ↓
+kind load docker-image
+
+28. make deploy-agent
+Deploy:
+ConfigMap
+Secrets references
+Deployment
+Service
+NetworkPolicy
+Wait for rollout success.
+
+29. make deploy
+Perform the complete workflow:
+create
+   ↓
+infra
+   ↓
+build-agent
+   ↓
+deploy-agent
+   ↓
+verify
+A developer should ideally be able to run:
+make deploy
+to build the full environment.
+
+30. make status
+Display:
+kubectl get nodes
+kubectl get pods -A
+kubectl get services -A
+kubectl get statefulsets -A
+kubectl get deployments -A
+kubectl get pv
+kubectl get pvc -A
+kubectl get ingress -A
+kubectl get networkpolicy -A
+helm list -A
+Provide readable output.
+
+31. make network-status
+Display networking information:
+kubectl get services -A
+kubectl get endpoints -A
+kubectl get ingress -A
+kubectl get networkpolicy -A
+Optionally include DNS verification.
+
+32. make stop
+For local usage, provide an option to stop the kind node Docker containers without destroying the cluster.
+Example concept:
+docker stop agent-lab-control-plane
+docker stop agent-lab-worker
+docker stop agent-lab-worker2
+docker stop agent-lab-worker3
+Document that this pauses the local cluster while preserving its current Docker-container state.
+Also document the difference between:
+stop
+and:
+destroy
+
+33. make destroy
+Delete the kind cluster:
+kind delete cluster --name agent-lab
+This command must NOT delete:
+data/
+The persistent database data must remain on the developer's disk.
+
+34. make clean-data
+Explicitly delete persisted database data.
+This is destructive.
+Require clear confirmation or provide a very obvious warning.
+Delete only after explicit invocation.
+Never make this part of normal:
+make destroy
+
+35. make reset
+Provide:
+destroy cluster
+        ↓
+clean persisted data
+        ↓
+recreate environment
+Because this is destructive, require confirmation.
+
+36. Persistence Verification
+Create:
+make test-persistence
+This is a critical requirement.
+The test must:
+Verify all databases are healthy.
+Insert unique test data into PostgreSQL.
+Insert unique test data into Cassandra.
+Insert a vector/document into Qdrant.
+Read the data back.
+Record unique test identifiers.
+Destroy the entire kind cluster.
+Confirm host-side data/ still exists.
+Recreate the kind cluster.
+Redeploy infrastructure.
+Wait for databases to become healthy.
+Query PostgreSQL for the old test record.
+Query Cassandra for the old test record.
+Query Qdrant for the old vector/document.
+Fail the test if any data is missing.
+The output should clearly show:
+PostgreSQL persistence: PASS
+Cassandra persistence: PASS
+Qdrant persistence: PASS
+
+37. Network Verification
+Create:
+make test-network
+Verify:
+Agent -> PostgreSQL PASS
+Agent -> Cassandra  PASS
+Agent -> Qdrant     PASS
+Verify DNS resolution.
+Example names:
+citus-coordinator.postgres.svc.cluster.local
+cassandra.cassandra.svc.cluster.local
+qdrant.qdrant.svc.cluster.local
+Also verify that an unauthorized namespace cannot access protected database services when NetworkPolicies are enabled.
+
+38. Health Checks
+Implement readiness/liveness checks where appropriate.
+Agent:
+/health
+/ready
+Database Helm configuration should use supported database probes.
+Deployment automation must wait for workloads to become ready.
+
+39. Observability
+Prepare the repository for:
+Prometheus
+Grafana
+OpenTelemetry Collector
+Do not overcomplicate the first implementation.
+Provide:
+helm/monitoring/values.yaml
+Eventually support:
+Application
+   |
+OpenTelemetry SDK
+   |
+OTel Collector
+   |
+   +--> Prometheus
+   +--> tracing backend
+Expose monitoring locally using port-forward.
+Expected:
+Grafana:
+http://localhost:3000
+
+Prometheus:
+http://localhost:9090
+
+40. Future Agentic Architecture
+The Kubernetes environment will later run an agentic workflow.
+Prepare for services such as:
+Agent API
+Workflow Worker
+LangGraph
+PostgreSQL checkpoints
+Qdrant knowledge store
+Cassandra event/history store
+OpenTelemetry
+Prometheus/Grafana
+Do not implement an unnecessarily complex agent system now.
+Create infrastructure foundations so additional workloads can be added easily.
+
+41. Configuration Management
+Separate:
+Infrastructure configuration
+Application configuration
+Secrets
+Persistent data
+Infrastructure:
+Terraform
+Helm
+Kubernetes YAML
+Application configuration:
+ConfigMaps
+Helm values
+Secrets:
+Kubernetes Secrets / local environment injection
+Persistent state:
+data/
+Do not mix these concerns.
+
+42. Security
+Do not commit:
+passwords
+API keys
+DB credentials
+private certificates
+Create:
+.env.example
+but ignore:
+.env
+Use least-privilege networking where practical.
+Databases should remain ClusterIP-only.
+
+43. Networking Model
+Document clearly:
+Developer Laptop
+      |
+      | port-forward / optional ingress
+      v
++--------------------------------+
+| Kubernetes                     |
+|                                |
+| Agent Service                  |
+|      |                         |
+|      +--> PostgreSQL Service   |
+|      +--> Cassandra Service    |
+|      +--> Qdrant Service       |
+|                                |
+| CoreDNS                        |
+| NetworkPolicies                |
++--------------------------------+
+Networking rule:
+Databases
+    ↓
+ClusterIP only
+
+Internal applications
+    ↓
+Kubernetes Service + DNS
+
+Developer laptop
+    ↓
+kubectl port-forward
+
+HTTP applications
+    ↓
+Optional Ingress
+
+Public database exposure
+    ↓
+Not allowed
+
+44. Local Port Assignments
+Use defaults:
+5432  PostgreSQL
+9042  Cassandra
+6333  Qdrant REST
+6334  Qdrant gRPC
+8080  Agent API
+3000  Grafana
+9090  Prometheus
+Allow these to be overridden through configuration.
+Detect obvious port conflicts where practical.
+
+45. Scripts
+Create:
+scripts/check-prerequisites.sh
+scripts/create-cluster.sh
+scripts/destroy-cluster.sh
+scripts/deploy-infra.sh
+scripts/deploy-agent.sh
+scripts/expose-services.sh
+scripts/verify.sh
+scripts/test-network.sh
+scripts/test-persistence.sh
+Scripts should:
+set -euo pipefail
+or equivalent.
+Fail fast.
+Print clear status messages.
+Avoid unnecessary complexity.
+
+46. README
+Create a concise but complete README.
+Include architecture diagram.
+Include prerequisites.
+Include exact commands.
+First setup
+make prerequisites
+make deploy
+Verify
+make status
+make verify
+Check networking
+make network-status
+make test-network
+Access PostgreSQL
+make expose-postgres
+Connection:
+jdbc:postgresql
+
+

@@ -1,0 +1,211 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: citus-coordinator
+  labels:
+    app.kubernetes.io/name: citus-coordinator
+spec:
+  serviceName: citus-coordinator
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: citus-coordinator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: citus-coordinator
+        app.kubernetes.io/part-of: citus
+    spec:
+      automountServiceAccountToken: false
+      initContainers:
+        - name: prepare-pgpass
+          image: busybox:1.36.1
+          command: [sh, -ec, "cp /source/pgpass /target/.pgpass && chown 999:999 /target/.pgpass && chmod 0600 /target/.pgpass"]
+          volumeMounts:
+            - name: citus-credentials
+              mountPath: /source
+              readOnly: true
+            - name: pgpass-dir
+              mountPath: /target
+      containers:
+        - name: postgres
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: postgresql
+              containerPort: 5432
+              protocol: TCP
+          env:
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_DB
+              value: {{ .Values.postgres.database | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: citus-credentials
+                  key: password
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: citus-credentials
+                  key: password
+            - name: PGPASSFILE
+              value: /run/postgres-auth/.pgpass
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          resources:
+            {{- toYaml .Values.coordinator.resources | nindent 12 }}
+          startupProbe:
+            exec:
+              command: [pg_isready, -U, postgres]
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command: [pg_isready, -U, postgres]
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command: [pg_isready, -U, postgres]
+            periodSeconds: 20
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+            - name: pgpass-dir
+              mountPath: /run/postgres-auth
+            - name: citus-init
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+      volumes:
+        - name: citus-credentials
+          secret:
+            secretName: citus-credentials
+            defaultMode: 0444
+        - name: pgpass-dir
+          emptyDir: {}
+        - name: citus-init
+          configMap:
+            name: citus-init
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: {{ .Values.coordinator.storageClass | quote }}
+        resources:
+          requests:
+            storage: {{ .Values.coordinator.storage }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: citus-worker
+  labels:
+    app.kubernetes.io/name: citus-worker
+spec:
+  serviceName: citus-worker
+  replicas: {{ .Values.worker.replicas }}
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: citus-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: citus-worker
+        app.kubernetes.io/part-of: citus
+    spec:
+      automountServiceAccountToken: false
+      initContainers:
+        - name: prepare-pgpass
+          image: busybox:1.36.1
+          command: [sh, -ec, "cp /source/pgpass /target/.pgpass && chown 999:999 /target/.pgpass && chmod 0600 /target/.pgpass"]
+          volumeMounts:
+            - name: citus-credentials
+              mountPath: /source
+              readOnly: true
+            - name: pgpass-dir
+              mountPath: /target
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: citus-worker
+      containers:
+        - name: postgres
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: postgresql
+              containerPort: 5432
+              protocol: TCP
+          env:
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_DB
+              value: {{ .Values.postgres.database | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: citus-credentials
+                  key: password
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: citus-credentials
+                  key: password
+            - name: PGPASSFILE
+              value: /run/postgres-auth/.pgpass
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          resources:
+            {{- toYaml .Values.worker.resources | nindent 12 }}
+          startupProbe:
+            exec:
+              command: [pg_isready, -U, postgres]
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command: [pg_isready, -U, postgres]
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command: [pg_isready, -U, postgres]
+            periodSeconds: 20
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+            - name: pgpass-dir
+              mountPath: /run/postgres-auth
+            - name: citus-init
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+      volumes:
+        - name: citus-credentials
+          secret:
+            secretName: citus-credentials
+            defaultMode: 0444
+        - name: pgpass-dir
+          emptyDir: {}
+        - name: citus-init
+          configMap:
+            name: citus-init
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: {{ .Values.worker.storageClass | quote }}
+        resources:
+          requests:
+            storage: {{ .Values.worker.storage }}
