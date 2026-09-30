@@ -1,0 +1,1 @@
+"""Discovery theme plugins."""
