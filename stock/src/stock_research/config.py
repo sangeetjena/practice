@@ -14,8 +14,8 @@ class Settings(BaseSettings):
 
     environment: str = "local"
     execution_mode: ExecutionMode = ExecutionMode.PAPER
-    database_url: str = "postgresql+asyncpg://stock:stock@localhost:5432/stock"
-    redis_url: str = "redis://localhost:6379/0"
+    database_url: str | None = None
+    redis_url: str | None = None
     log_level: str = "INFO"
 
 

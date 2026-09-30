@@ -47,6 +47,8 @@ Capture an improvement proposal with originating critiques, hypothesis, exact ru
 
 Use Postgres for relational truth and transactions; TimescaleDB hypertables for bars, quotes, indicators, event measurements, and telemetry by time; pgvector for optional similarity search over source-grounded document/lesson embeddings; Redis for queues, cooldowns, ephemeral cache, locks and rate limits. Redis is never the sole record of a decision. Excel/CSV can be export or review surfaces, not the canonical event store.
 
+Repository-root `INFRA/` is the existing infrastructure project and owns provisioning. It currently deploys PostgreSQL with Citus, Cassandra, and Qdrant, with PostgreSQL exposed locally by `make expose-postgres`. Do not create infrastructure under `stock/`. TimescaleDB, pgvector, and Redis are target capabilities, not services currently supplied by `INFRA/`; assess compatibility with the Citus installation and decide whether to extend `INFRA/` or adapt the design before writing migrations or workers. Qdrant can be evaluated as the available vector store. Keep the application functional in scaffold mode without configured database or Redis URLs.
+
 Initial tables and key fields:
 
 - `instruments(symbol, exchange, currency, calendar, sector, active)`; `positions(id, symbol, mode, quantity, entry_time, entry_price, status)` and `paper_orders(id, position_id, approval_id, state, created_at)`.

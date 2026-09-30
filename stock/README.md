@@ -11,12 +11,13 @@ python -m venv .venv
 ./.venv/Scripts/python -m pip install -e ".[dev]"  # Windows PowerShell
 # On macOS/Linux: .venv/bin/python -m pip install -e ".[dev]"
 cp .env.example .env  # use Copy-Item on PowerShell
-docker compose -f infra/compose.yaml up -d
+# Start the existing database platform from repository-root INFRA/ (see its README).
+# Keep `make expose-postgres` running there when using a local port-forward.
 ./.venv/Scripts/python -m pytest
 ./.venv/Scripts/python -m uvicorn stock_research.api.app:app --reload
 ```
 
-The health endpoint is `GET /health`. Database containers are development dependencies; persistence adapters, migrations, feeds, model calls, and workers are next-phase work, so this scaffold makes no live market recommendation. `STOCK_EXECUTION_MODE` is restricted to `paper` or `human_approved`.
+The health endpoint is `GET /health`. The repository's existing `INFRA/` owns development infrastructure. It currently provides PostgreSQL/Citus, Cassandra, and Qdrant; TimescaleDB, pgvector, and Redis are architectural targets that need an integration decision before deployment. Persistence adapters, migrations, feeds, model calls, and workers are next-phase work, so this scaffold makes no live market recommendation. `STOCK_EXECUTION_MODE` is restricted to `paper` or `human_approved`.
 
 ## Layout
 
@@ -28,7 +29,6 @@ The health endpoint is `GET /health`. Database containers are development depend
 - `agents`, `workflows`: interpretation ports and orchestration boundaries.
 - `telemetry`: AI invocation usage, cost, and trace contracts.
 - `api`: read-oriented API scaffold.
-- `infra`: local development services.
 
 ## Development gates
 
