@@ -85,8 +85,8 @@ Keep credentials in secret storage or local untracked `.env`; least-privilege fe
 
 ## Phased execution plan
 
-1. **Foundation (this PR):** Package, contracts, rule/theme/agent/storage/telemetry ports, local infrastructure, runbook, basic tests, and this project brief. This is scaffolding, not a functioning trading system.
-2. **Data and deterministic core:** Pick licensed providers and market, create migrations and adapters, ingest bars/news/fundamentals, normalize timestamps/corporate actions, implement indicators and replayable rule engine.
+1. **Foundation (complete):** Package, contracts, rule/theme/agent/storage/telemetry ports, runbook, basic tests, and this project brief. Agents and workflows remain scaffolding.
+2. **Data and deterministic core (in progress):** Alpha Vantage daily/fundamental/news adapter, Citus/Timescale/Qdrant/Redis storage adapters, application schema bootstrap, and TimescaleDB/Redis INFRA services are implemented. Next: provision provider credentials, run live database integration tests, choose market and data license, normalize corporate actions, implement indicators and replayable rule engine.
 3. **Context and research:** Durable thesis transitions and context builder, theme registry, scheduled daily/monthly analysis, technical/fundamental/news/sector/macro/risk/decision agents, immutable decision snapshots, API reads.
 4. **Monitoring and paper trading:** Market-hours worker, event gating, alerts, risk checks, paper positions and explicit approval UI/API, operator runbooks.
 5. **Critique and improvement:** Outcome scoring, critique job, evidence-cited attribution, proposal workflow, leakage-safe backtesting, approval and shadow deployment.
