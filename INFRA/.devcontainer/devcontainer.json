@@ -1,0 +1,39 @@
+{
+  "name": "Local Kubernetes Infrastructure",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "moby": true,
+      "installDockerBuildx": true,
+      "dockerDashComposeVersion": "v2"
+    }
+  },
+  "privileged": true,
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/infra,type=bind,consistency=cached",
+  "workspaceFolder": "/workspaces/infra",
+  "mounts": [
+    "source=local-platform-infra-data,target=/workspaces/infra/data,type=volume"
+  ],
+  "containerEnv": {
+    "INFRA_DATA_DIR": "/workspaces/infra/data"
+  },
+  "remoteUser": "vscode",
+  "postCreateCommand": "bash ./scripts/setup-dev-env.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
+        "hashicorp.terraform",
+        "ms-python.python",
+        "ms-azuretools.vscode-docker"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  }
+}

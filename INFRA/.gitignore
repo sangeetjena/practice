@@ -1,0 +1,12 @@
+.env
+.state/
+data/
+.venv/
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/crash.log
+terraform/terraform.tfvars
+terraform/terraform.tfvars.json
+*.secret.yaml
+secret.yaml

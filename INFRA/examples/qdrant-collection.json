@@ -1,0 +1,9 @@
+{
+  "vectors": {
+    "size": 1536,
+    "distance": "Cosine"
+  },
+  "shard_number": 3,
+  "replication_factor": 2,
+  "write_consistency_factor": 1
+}

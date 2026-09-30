@@ -1,0 +1,102 @@
+# Local Database Platform
+
+A database-focused, disposable kind cluster for development and platform-engineering practice. It deploys PostgreSQL with Citus, Cassandra, and Qdrant. There is no application code, app image, or app deployment in this setup; the `workloads` namespace is reserved for clients you add later.
+
+```text
+Developer machine
+  Docker + kind (1 control plane, 3 workers)
+  Host-mounted data/ directories
+        |
+        +-- Kubernetes + Calico NetworkPolicy enforcement
+              +-- PostgreSQL/Citus: coordinator + 3 workers
+              +-- Cassandra: 3 nodes
+              +-- Qdrant: 3 nodes
+```
+
+Every database replica has its own host directory under `data/`. Deleting the kind cluster does not delete those directories. This is a local learning environment, not a production HA or backup design.
+
+## Requirements
+
+- Docker Desktop with Linux containers, or Docker Engine
+- kind, kubectl, Helm, Terraform, Make, and Bash
+- Windows: WSL2 or Git Bash. Ensure Docker can share/access the directory configured by `INFRA_DATA_DIR`. In Docker Desktop, enable WSL integration for WSL2, or allow the project drive/path for Git Bash. WSL maps `C:/path` to `/mnt/c/path`; for better I/O, a directory inside the WSL Linux filesystem can be used instead.
+- Laptop starting point: 4 CPU cores and about 16 GiB available to Docker. The database limits can use up to roughly 13 GiB in aggregate; reduce chart resources or replicas if your machine has less headroom.
+
+Run `make prerequisites` to check tools and that Docker is running.
+
+## Isolated Python Environment
+
+INFRA owns its Python environment at `INFRA/.venv`; Python dependencies are listed in `requirements-dev.txt`. From this directory in WSL, leave any other project environment and create INFRA's environment:
+
+```bash
+deactivate  # only if another virtualenv, such as GCP/.venv, is active
+make setup
+source .venv/bin/activate
+```
+
+Make targets and helper scripts use `.venv/bin/python` directly, so they continue using INFRA's packages even if another environment is later activated in the shell. The Dev Container runs the same `make setup` bootstrap. Infrastructure CLIs are installed separately in the Dev Container and are not Python packages.
+
+## Configure
+
+From this directory, create `.env` from the example and replace each placeholder with a local value:
+
+```bash
+cp .env.example .env
+```
+
+PostgreSQL and Cassandra passwords must be at least 12 characters; the Qdrant API key must be at least 16. `.env`, Terraform state, rendered kind config, and database data are ignored by Git. Terraform's local state contains deployment secrets and must not be committed or shared.
+
+`INFRA_DATA_DIR` defaults to `./data`. It can be an absolute path; use forward slashes on Windows, for example `C:/dev/local-platform/data`. Under WSL, the script maps this to `/mnt/c/dev/local-platform/data`. The same path must be accessible to Docker Desktop.
+
+This checkout is inside OneDrive. Before starting databases, set `INFRA_DATA_DIR` in `.env` to a directory outside OneDrive (for example `C:/local-platform-data`) so live database files are not synced or locked by a file-sync client. PV capacity values are Kubernetes claim metadata; host-path volumes do not enforce disk quotas, so monitor free disk space.
+
+## Start
+
+```bash
+make prerequisites
+make deploy
+make status
+make verify
+```
+
+`make deploy` creates kind, installs Calico (required for NetworkPolicy enforcement), creates the namespaces and retained host-backed volumes, then applies Terraform-managed Helm releases. Terraform does not create or delete the kind cluster.
+
+## Database Access
+
+Run one port-forward target in a terminal and keep it open:
+
+```bash
+make expose-postgres
+make expose-cassandra
+make expose-qdrant
+make expose-all
+```
+
+Defaults are PostgreSQL `localhost:5432`, Cassandra `localhost:9042`, Qdrant REST `localhost:6333`, and Qdrant gRPC `localhost:6334`. Ports can be overridden in `.env`. All forwards bind to `127.0.0.1`; Kubernetes Services remain ClusterIP.
+
+In-cluster names are `citus-coordinator.postgres.svc.cluster.local:5432`, `cassandra.cassandra.svc.cluster.local:9042`, and `qdrant.qdrant.svc.cluster.local:6333` / `:6334`. Qdrant requests require the configured API key. PostgreSQL's database is `agentdb`; username is `postgres`.
+
+## Citus Sharding
+
+The coordinator registers three workers by Kubernetes DNS. A sample table and distribution command are in [examples/citus-sharding.sql](examples/citus-sharding.sql).
+
+- Sharding distributes different data across workers, for example by `tenant_id`.
+- Replication stores copies of data on multiple nodes for availability.
+- This local setup configures three worker nodes; it does not enable automatic Citus shard replication or node failover.
+
+Qdrant's sample collection configuration in [examples/qdrant-collection.json](examples/qdrant-collection.json) requests three shards and replication factor two. Collection creation is a database operation, not part of the infrastructure bootstrap.
+
+## Operations
+
+- `make stop` pauses the kind node containers without deleting the cluster; `make start` resumes them.
+- `make destroy` removes Helm releases and the kind cluster. It never removes `data/`.
+- `make test-network` checks service DNS, authorized client connectivity, and that an unlabeled namespace is blocked.
+- `make test-persistence` is a destructive cluster-lifecycle test: it writes unique records, destroys/recreates the cluster, then checks records survived. It does not clean data.
+- `make clean-data` permanently removes PostgreSQL, Cassandra, and Qdrant host data and requires typing `DELETE DATABASE DATA`.
+- `make reset` destroys the cluster, requires typing `RESET DATABASE DATA AND CLUSTER`, removes the host data, and recreates the databases from empty directories.
+
+Network policies deny cross-namespace access by default, allow database-internal peer traffic and DNS, and reserve access for namespaces labeled `infra.local/database-client=true`. Label a future database-client namespace only when you are ready to grant it access. Do not expose database protocols through a public Ingress.
+
+## Scope
+
+Prometheus, Grafana, OpenTelemetry Collector, and application workloads are intentionally not installed. The namespaces and database endpoints provide a base for adding those later without coupling them to database provisioning.

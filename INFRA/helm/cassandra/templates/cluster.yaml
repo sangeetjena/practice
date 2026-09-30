@@ -1,0 +1,102 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cassandra
+spec:
+  type: ClusterIP
+  selector: {app.kubernetes.io/name: cassandra}
+  ports:
+    - {name: cql, port: 9042, targetPort: cql}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cassandra-headless
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector: {app.kubernetes.io/name: cassandra}
+  ports:
+    - {name: cql, port: 9042, targetPort: cql}
+    - {name: gossip, port: 7000, targetPort: gossip}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cassandra-credentials
+type: Opaque
+stringData:
+  password: {{ required "dbUser.password is required" .Values.dbUser.password | quote }}
+  bootstrap.cql: |
+    ALTER KEYSPACE system_auth WITH replication = {'class': 'NetworkTopologyStrategy', '{{ .Values.cluster.datacenter }}': 3};
+    ALTER ROLE cassandra WITH PASSWORD = '{{ .Values.dbUser.password | replace "'" "''" }}';
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cassandra
+spec:
+  replicas: {{ .Values.replicaCount }}
+  serviceName: cassandra-headless
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels: {app.kubernetes.io/name: cassandra}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: cassandra}
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 120
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels: {app.kubernetes.io/name: cassandra}
+      containers:
+        - name: cassandra
+          image: {{ .Values.image | quote }}
+          command: [/bin/bash, -ec]
+          args:
+            - |
+              sed -i 's/^authenticator:.*/authenticator: PasswordAuthenticator/; s/^authorizer:.*/authorizer: CassandraAuthorizer/' /etc/cassandra/cassandra.yaml
+              exec docker-entrypoint.sh cassandra -f
+          ports:
+            - {name: cql, containerPort: 9042}
+            - {name: gossip, containerPort: 7000}
+          env:
+            - {name: CASSANDRA_CLUSTER_NAME, value: {{ .Values.cluster.name | quote }}}
+            - {name: CASSANDRA_DC, value: {{ .Values.cluster.datacenter | quote }}}
+            - {name: CASSANDRA_RACK, value: rack1}
+            - {name: CASSANDRA_ENDPOINT_SNITCH, value: GossipingPropertyFileSnitch}
+            - {name: CASSANDRA_NUM_TOKENS, value: "16"}
+            - name: CASSANDRA_SEEDS
+              value: cassandra-0.cassandra-headless.{{ .Release.Namespace }}.svc.cluster.local
+            - {name: MAX_HEAP_SIZE, value: {{ .Values.heap.max | quote }}}
+            - {name: HEAP_NEWSIZE, value: {{ .Values.heap.new | quote }}}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          startupProbe:
+            tcpSocket: {port: cql}
+            periodSeconds: 10
+            failureThreshold: 90
+          readinessProbe:
+            exec:
+              command: [/bin/bash, -ec, "nodetool statusbinary | grep -q running"]
+            timeoutSeconds: 15
+            periodSeconds: 20
+          livenessProbe:
+            tcpSocket: {port: cql}
+            periodSeconds: 30
+            failureThreshold: 6
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/cassandra}
+  volumeClaimTemplates:
+    - metadata: {name: data}
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: {{ .Values.persistence.storageClass | quote }}
+        resources:
+          requests: {storage: {{ .Values.persistence.size }}}

@@ -1,0 +1,16 @@
+replicaCount: 3
+image: cassandra:5.0.6
+dbUser:
+  password: ""
+cluster:
+  name: local-platform
+  datacenter: dc1
+heap:
+  max: 768M
+  new: 192M
+resources:
+  requests: {cpu: 500m, memory: 1Gi}
+  limits: {cpu: "1", memory: 2Gi}
+persistence:
+  storageClass: local-cassandra
+  size: 8Gi

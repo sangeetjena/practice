@@ -1,0 +1,169 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: cassandra-node-0
+spec:
+  capacity:
+    storage: 8Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-cassandra
+  claimRef:
+    namespace: cassandra
+    name: data-cassandra-0
+  hostPath:
+    path: /data/cassandra/node-0
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: cassandra-node-1
+spec:
+  capacity:
+    storage: 8Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-cassandra
+  claimRef:
+    namespace: cassandra
+    name: data-cassandra-1
+  hostPath:
+    path: /data/cassandra/node-1
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: cassandra-node-2
+spec:
+  capacity:
+    storage: 8Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-cassandra
+  claimRef:
+    namespace: cassandra
+    name: data-cassandra-2
+  hostPath:
+    path: /data/cassandra/node-2
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: qdrant-node-0
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-qdrant
+  claimRef:
+    namespace: qdrant
+    name: qdrant-storage-qdrant-0
+  hostPath:
+    path: /data/qdrant/node-0
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: qdrant-node-1
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-qdrant
+  claimRef:
+    namespace: qdrant
+    name: qdrant-storage-qdrant-1
+  hostPath:
+    path: /data/qdrant/node-1
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: qdrant-node-2
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-qdrant
+  claimRef:
+    namespace: qdrant
+    name: qdrant-storage-qdrant-2
+  hostPath:
+    path: /data/qdrant/node-2
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: citus-coordinator
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-citus-coordinator
+  claimRef:
+    namespace: postgres
+    name: postgres-data-citus-coordinator-0
+  hostPath:
+    path: /data/postgres/coordinator
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: citus-worker-0
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-citus-worker
+  claimRef:
+    namespace: postgres
+    name: postgres-data-citus-worker-0
+  hostPath:
+    path: /data/postgres/worker-0
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: citus-worker-1
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-citus-worker
+  claimRef:
+    namespace: postgres
+    name: postgres-data-citus-worker-1
+  hostPath:
+    path: /data/postgres/worker-1
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: citus-worker-2
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-citus-worker
+  claimRef:
+    namespace: postgres
+    name: postgres-data-citus-worker-2
+  hostPath:
+    path: /data/postgres/worker-2
+    type: DirectoryOrCreate
