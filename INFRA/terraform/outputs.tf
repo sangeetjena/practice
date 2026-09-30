@@ -15,3 +15,13 @@ output "qdrant_endpoints" {
   }
   description = "Internal Qdrant REST and gRPC endpoints."
 }
+
+output "timescale_endpoint" {
+  value       = "timescale.timescale.svc.cluster.local:5432"
+  description = "Internal TimescaleDB endpoint for stock bars."
+}
+
+output "redis_endpoint" {
+  value       = "redis.redis.svc.cluster.local:6379"
+  description = "Internal Redis endpoint for ephemeral stock cache and queues."
+}

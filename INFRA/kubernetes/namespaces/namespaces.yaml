@@ -32,3 +32,17 @@ metadata:
   name: monitoring
   labels:
     infra.local/monitoring: "true"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: timescale
+  labels:
+    infra.local/database: "true"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: redis
+  labels:
+    infra.local/database: "true"

@@ -22,6 +22,15 @@ postgres_query() {
     env PGPASSWORD="$POSTGRES_PASSWORD" psql -U postgres -d agentdb -tAc "$1"
 }
 
+timescale_query() {
+  kubectl --context "$CONTEXT" -n timescale exec timescale-0 -- \
+    env PGPASSWORD="$TIMESCALE_PASSWORD" psql -U postgres -d stock -tAc "$1"
+}
+
+redis_query() {
+  kubectl --context "$CONTEXT" -n redis exec redis-0 -- redis-cli "$@"
+}
+
 cassandra_query() {
   kubectl --context "$CONTEXT" -n cassandra exec cassandra-0 -- \
     cqlsh -u cassandra --password "$CASSANDRA_PASSWORD" -k infra_lab -e "$1"
@@ -38,6 +47,14 @@ postgres_query "SELECT create_distributed_table('infra_persistence', 'id') WHERE
 postgres_query "INSERT INTO infra_persistence VALUES ('$TEST_ID', 'survives-cluster-recreation') ON CONFLICT (id) DO UPDATE SET value = EXCLUDED.value;"
 POSTGRES_VALUE="$(postgres_query "SELECT value FROM infra_persistence WHERE id = '$TEST_ID'")"
 [[ "$POSTGRES_VALUE" == survives-cluster-recreation ]]
+
+timescale_query "CREATE TABLE IF NOT EXISTS infra_persistence (id text PRIMARY KEY, value text NOT NULL);"
+timescale_query "INSERT INTO infra_persistence VALUES ('$TEST_ID', 'survives-cluster-recreation') ON CONFLICT (id) DO UPDATE SET value = EXCLUDED.value;"
+TIMESCALE_VALUE="$(timescale_query "SELECT value FROM infra_persistence WHERE id = '$TEST_ID'")"
+[[ "$TIMESCALE_VALUE" == survives-cluster-recreation ]]
+redis_query SET "infra:persistence:$TEST_ID" survives-cluster-recreation >/dev/null
+[[ "$(redis_query GET "infra:persistence:$TEST_ID")" == survives-cluster-recreation ]]
+sleep 2  # AOF appendfsync everysec must flush before the cluster is destroyed.
 
 kubectl --context "$CONTEXT" -n cassandra exec cassandra-0 -- \
   cqlsh -u cassandra --password "$CASSANDRA_PASSWORD" -e \
@@ -73,7 +90,8 @@ bash "$INFRA_DIR/scripts/destroy-cluster.sh"
 for directory in \
   postgres/coordinator postgres/worker-0 postgres/worker-1 postgres/worker-2 \
   cassandra/node-0 cassandra/node-1 cassandra/node-2 \
-  qdrant/node-0 qdrant/node-1 qdrant/node-2; do
+  qdrant/node-0 qdrant/node-1 qdrant/node-2 \
+  timescale redis; do
   [[ -d "$DATA_DIR/$directory" ]]
 done
 bash "$INFRA_DIR/scripts/create-cluster.sh"
@@ -82,6 +100,9 @@ bash "$INFRA_DIR/scripts/verify.sh"
 
 POSTGRES_VALUE="$(postgres_query "SELECT value FROM infra_persistence WHERE id = '$TEST_ID'")"
 [[ "$POSTGRES_VALUE" == survives-cluster-recreation ]]
+TIMESCALE_VALUE="$(timescale_query "SELECT value FROM infra_persistence WHERE id = '$TEST_ID'")"
+[[ "$TIMESCALE_VALUE" == survives-cluster-recreation ]]
+[[ "$(redis_query GET "infra:persistence:$TEST_ID")" == survives-cluster-recreation ]]
 CASSANDRA_RESULT="$(cassandra_query "SELECT value FROM persistence_check WHERE id = '$TEST_ID';")"
 grep -Fq survives-cluster-recreation <<< "$CASSANDRA_RESULT"
 QDRANT_RESULT="$(kubectl --context "$CONTEXT" -n qdrant run infra-qdrant-persistence-check \
@@ -93,4 +114,6 @@ grep -Fq "$TEST_ID" <<< "$QDRANT_RESULT"
 echo "PostgreSQL persistence: PASS"
 echo "Cassandra persistence: PASS"
 echo "Qdrant persistence: PASS"
+echo "TimescaleDB persistence: PASS"
+echo "Redis AOF persistence: PASS"
 rm -f "$STATE_FILE"

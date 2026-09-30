@@ -8,6 +8,15 @@ kubectl --context "$CONTEXT" -n postgres rollout status statefulset/citus-coordi
 kubectl --context "$CONTEXT" -n postgres rollout status statefulset/citus-worker --timeout=30m
 kubectl --context "$CONTEXT" -n cassandra rollout status statefulset/cassandra --timeout=30m
 kubectl --context "$CONTEXT" -n qdrant rollout status statefulset/qdrant --timeout=20m
+kubectl --context "$CONTEXT" -n timescale rollout status statefulset/timescale --timeout=20m
+kubectl --context "$CONTEXT" -n redis rollout status statefulset/redis --timeout=10m
+
+kubectl --context "$CONTEXT" -n timescale exec timescale-0 -- \
+  psql -U postgres -d stock -tAc "SELECT default_version FROM pg_available_extensions WHERE name='timescaledb';" | \
+  grep -Eq '^[0-9]'
+echo "TimescaleDB: extension available PASS"
+kubectl --context "$CONTEXT" -n redis exec redis-0 -- redis-cli ping | grep -qx PONG
+echo "Redis: authenticated PING PASS"
 
 active_workers="$(kubectl --context "$CONTEXT" -n postgres exec citus-coordinator-0 -- \
   psql -U postgres -d agentdb -tAc "SELECT count(*) FROM pg_dist_node WHERE isactive AND noderole='primary' AND groupid > 0;")"

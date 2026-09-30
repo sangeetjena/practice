@@ -1,0 +1,16 @@
+image:
+  repository: timescale/timescaledb
+  tag: 2.30.1-pg16
+  pullPolicy: IfNotPresent
+postgres:
+  database: stock
+  password: ""
+storageClass: local-timescale
+storage: 10Gi
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi

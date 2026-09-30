@@ -8,19 +8,24 @@ version = "0.1.0"
 description = "Auditable event-driven stock research foundation"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = ["pydantic>=2.7,<3", "pydantic-settings>=2.3,<3", "fastapi>=0.111,<1"]
+dependencies = ["pydantic>=2.7,<3", "pydantic-settings>=2.3,<3", "fastapi>=0.111,<1", "httpx>=0.27,<1"]
 
 [project.optional-dependencies]
-db = ["sqlalchemy>=2.0,<3", "asyncpg>=0.29,<1", "pgvector>=0.3,<1", "redis>=5,<7", "alembic>=1.13,<2"]
+db = ["asyncpg>=0.29,<1", "redis>=5,<7"]
 workers = ["apscheduler>=3.10,<4"]
 telemetry = ["opentelemetry-sdk>=1.26,<2", "opentelemetry-instrumentation-fastapi>=0.47b0,<1"]
-dev = ["pytest>=8,<10", "ruff>=0.6,<1", "mypy>=1.11,<2", "httpx>=0.27,<1"]
+dev = ["pytest>=8,<10", "ruff>=0.6,<1", "mypy>=1.11,<2", "uvicorn>=0.30,<1"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/stock_research"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"src/stock_research/storage/sql/postgres.sql" = "stock_research/storage/sql/postgres.sql"
+"src/stock_research/storage/sql/timescale.sql" = "stock_research/storage/sql/timescale.sql"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = ["integration: requires live local INFRA port-forwards and test credentials"]
 
 [tool.ruff]
 line-length = 100

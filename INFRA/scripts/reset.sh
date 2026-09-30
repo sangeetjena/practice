@@ -10,7 +10,7 @@ fi
 set -a
 source "$INFRA_DIR/.env"
 set +a
-for variable_name in POSTGRES_PASSWORD CASSANDRA_PASSWORD QDRANT_API_KEY; do
+for variable_name in POSTGRES_PASSWORD CASSANDRA_PASSWORD QDRANT_API_KEY TIMESCALE_PASSWORD REDIS_PASSWORD; do
   if [[ -z "${!variable_name:-}" || "${!variable_name}" == replace-* ]]; then
     echo "$variable_name must be set in .env before resetting." >&2
     exit 1

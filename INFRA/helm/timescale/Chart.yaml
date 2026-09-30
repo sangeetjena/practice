@@ -1,0 +1,6 @@
+apiVersion: v2
+name: timescale
+description: Local TimescaleDB for stock market bars
+type: application
+version: 0.1.0
+appVersion: "2.30.1"

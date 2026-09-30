@@ -9,7 +9,8 @@ root = Path(os.environ['DATA_DIR']).resolve()
 infra = Path(__file__).resolve().parent.parent
 marker = root / '.local-platform-data'
 directories = ['postgres/coordinator', *[f'postgres/worker-{i}' for i in range(3)],
-               *[f'{db}/node-{i}' for db in ('cassandra', 'qdrant') for i in range(3)]]
+               *[f'{db}/node-{i}' for db in ('cassandra', 'qdrant') for i in range(3)],
+               'timescale', 'redis']
 if root == Path(root.anchor) or root in (Path.home().resolve(), infra):
     raise SystemExit(f'Unsafe data root: {root}')
 if any((root / name).is_symlink() for name in ['postgres', 'cassandra', 'qdrant', *directories]):
@@ -23,7 +24,7 @@ elif mode in ('validate', 'clean'):
     if not marker.is_file() or marker.read_text().strip() != 'local-platform-data-v1':
         raise SystemExit('Missing lab data marker. Run make create with the correct data path first.')
     if mode == 'clean':
-        for name in ('postgres', 'cassandra', 'qdrant'):
+        for name in ('postgres', 'cassandra', 'qdrant', 'timescale', 'redis'):
             target = root / name
             if target.exists():
                 shutil.rmtree(target)

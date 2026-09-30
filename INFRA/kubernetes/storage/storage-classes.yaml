@@ -25,3 +25,17 @@ metadata:
   name: local-citus-worker
 provisioner: kubernetes.io/no-provisioner
 volumeBindingMode: WaitForFirstConsumer
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-timescale
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-redis
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
