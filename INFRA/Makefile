@@ -1,7 +1,7 @@
 SHELL := bash
 .SHELLFLAGS := -euo pipefail -c
 
-.PHONY: prerequisites create start infra deploy status network-status verify test-network test-persistence expose-postgres expose-cassandra expose-qdrant expose-all stop destroy clean-data reset
+.PHONY: prerequisites create start infra deploy status network-status verify test-network test-persistence expose-postgres expose-cassandra expose-qdrant expose-timescale expose-redis expose-all stop destroy clean-data reset
 
 prerequisites:
 	bash ./scripts/check-prerequisites.sh
@@ -52,6 +52,12 @@ expose-cassandra:
 
 expose-qdrant:
 	bash ./scripts/expose-services.sh qdrant
+
+expose-timescale:
+	bash ./scripts/expose-services.sh timescale
+
+expose-redis:
+	bash ./scripts/expose-services.sh redis
 
 .PHONY: expose-monitoring test-static
 expose-monitoring:

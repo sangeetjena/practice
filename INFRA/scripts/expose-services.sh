@@ -24,6 +24,14 @@ forward() {
         svc/qdrant "${QDRANT_HTTP_LOCAL_PORT:-6333}:6333" \
         "${QDRANT_GRPC_LOCAL_PORT:-6334}:6334"
       ;;
+    timescale)
+      kubectl --context "$CONTEXT" -n timescale port-forward --address 127.0.0.1 \
+        svc/timescale "${TIMESCALE_LOCAL_PORT:-5433}:5432"
+      ;;
+    redis)
+      kubectl --context "$CONTEXT" -n redis port-forward --address 127.0.0.1 \
+        svc/redis "${REDIS_LOCAL_PORT:-6379}:6379"
+      ;;
     grafana)
       kubectl --context "$CONTEXT" -n monitoring port-forward --address 127.0.0.1 \
         svc/monitoring-grafana "${GRAFANA_LOCAL_PORT:-3000}:80"
@@ -33,7 +41,7 @@ forward() {
         svc/monitoring-kube-prometheus-prometheus "${PROMETHEUS_LOCAL_PORT:-9090}:9090"
       ;;
     *)
-      echo "Usage: $0 {postgres|cassandra|qdrant|grafana|prometheus|monitoring|all}" >&2
+      echo "Usage: $0 {postgres|cassandra|qdrant|timescale|redis|grafana|prometheus|monitoring|all}" >&2
       return 2
       ;;
   esac
@@ -46,7 +54,7 @@ fi
 
 mkdir -p "$INFRA_DIR/.state"
 pids=()
-services=(postgres cassandra qdrant)
+services=(postgres cassandra qdrant timescale redis)
 if [[ "${1:-}" == monitoring ]]; then
   services=(grafana prometheus)
 elif [[ "${ENABLE_MONITORING:-false}" == true ]]; then

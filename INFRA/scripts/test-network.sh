@@ -21,7 +21,9 @@ for endpoint in \
   "citus-coordinator.postgres.svc.cluster.local 5432" \
   "cassandra.cassandra.svc.cluster.local 9042" \
   "qdrant.qdrant.svc.cluster.local 6333" \
-  "qdrant.qdrant.svc.cluster.local 6334"; do
+  "qdrant.qdrant.svc.cluster.local 6334" \
+  "timescale.timescale.svc.cluster.local 5432" \
+  "redis.redis.svc.cluster.local 6379"; do
   read -r host port <<< "$endpoint"
   kubectl --context "$CONTEXT" -n workloads exec "$AUTHORIZED_POD" -- \
     nslookup "$host" >/dev/null
@@ -40,7 +42,9 @@ for endpoint in \
   "citus-coordinator.postgres.svc.cluster.local 5432" \
   "cassandra.cassandra.svc.cluster.local 9042" \
   "qdrant.qdrant.svc.cluster.local 6333" \
-  "qdrant.qdrant.svc.cluster.local 6334"; do
+  "qdrant.qdrant.svc.cluster.local 6334" \
+  "timescale.timescale.svc.cluster.local 5432" \
+  "redis.redis.svc.cluster.local 6379"; do
   read -r host port <<< "$endpoint"
   kubectl --context "$CONTEXT" -n "$UNAUTHORIZED_NAMESPACE" exec "$UNAUTHORIZED_POD" -- nslookup "$host" >/dev/null
   # A remote marker distinguishes a failed connection from a failed kubectl exec.

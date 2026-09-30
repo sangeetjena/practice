@@ -167,3 +167,37 @@ spec:
   hostPath:
     path: /data/postgres/worker-2
     type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: timescale
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-timescale
+  claimRef:
+    namespace: timescale
+    name: timescale-data-timescale-0
+  hostPath:
+    path: /data/timescale
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: redis
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-redis
+  claimRef:
+    namespace: redis
+    name: redis-data-redis-0
+  hostPath:
+    path: /data/redis
+    type: DirectoryOrCreate

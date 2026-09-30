@@ -39,6 +39,30 @@ resource "helm_release" "citus" {
 
 }
 
+resource "helm_release" "timescale" {
+  name             = "timescale"
+  namespace        = "timescale"
+  chart            = "${path.module}/../helm/timescale"
+  create_namespace = false
+  wait             = true
+  timeout          = 900
+  cleanup_on_fail  = true
+
+  values = [file("${path.module}/../helm/timescale/values.yaml"), yamlencode({ postgres = { password = var.timescale_password } })]
+}
+
+resource "helm_release" "redis" {
+  name             = "redis"
+  namespace        = "redis"
+  chart            = "${path.module}/../helm/redis"
+  create_namespace = false
+  wait             = true
+  timeout          = 900
+  cleanup_on_fail  = true
+
+  values = [file("${path.module}/../helm/redis/values.yaml"), yamlencode({ password = var.redis_password })]
+}
+
 resource "helm_release" "monitoring" {
   count      = var.enable_monitoring ? 1 : 0
   name       = "monitoring"

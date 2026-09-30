@@ -43,6 +43,28 @@ variable "qdrant_api_key" {
   }
 }
 
+variable "timescale_password" {
+  description = "Local TimescaleDB superuser password, sourced from .env."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = length(var.timescale_password) >= 12
+    error_message = "TIMESCALE_PASSWORD must contain at least 12 characters."
+  }
+}
+
+variable "redis_password" {
+  description = "Local Redis password, sourced from .env."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = length(var.redis_password) >= 12
+    error_message = "REDIS_PASSWORD must contain at least 12 characters."
+  }
+}
+
 variable "enable_monitoring" {
   description = "Install disposable local Prometheus/Grafana when explicitly enabled."
   type        = bool

@@ -1,6 +1,6 @@
 # Local Database Platform
 
-A database-focused, disposable kind cluster for development and platform-engineering practice. It deploys PostgreSQL with Citus, Cassandra, and Qdrant. There is no application code, app image, or app deployment in this setup; the `workloads` namespace is reserved for clients you add later.
+A database-focused, disposable kind cluster for development and platform-engineering practice. It deploys PostgreSQL with Citus, Cassandra, Qdrant, TimescaleDB, and Redis. There is no application code, app image, or app deployment in this setup; the `workloads` namespace is reserved for clients you add later.
 
 ```text
 Developer machine
@@ -11,6 +11,8 @@ Developer machine
               +-- PostgreSQL/Citus: coordinator + 3 workers
               +-- Cassandra: 3 nodes
               +-- Qdrant: 3 nodes
+              +-- TimescaleDB: 1 node
+              +-- Redis: 1 node with AOF
 ```
 
 Every database replica has its own host directory under `data/`. Deleting the kind cluster does not delete those directories. This is a local learning environment, not a production HA or backup design.
@@ -44,7 +46,7 @@ From this directory, create `.env` from the example and replace each placeholder
 cp .env.example .env
 ```
 
-PostgreSQL and Cassandra passwords must be at least 12 characters; the Qdrant API key must be at least 16. `.env`, Terraform state, rendered kind config, and database data are ignored by Git. Terraform's local state contains deployment secrets and must not be committed or shared.
+PostgreSQL, TimescaleDB, Cassandra, and Redis passwords must be at least 12 characters; the Qdrant API key must be at least 16. `.env`, Terraform state, rendered kind config, and database data are ignored by Git. Terraform's local state contains deployment secrets and must not be committed or shared.
 
 `INFRA_DATA_DIR` defaults to `./data`. It can be an absolute path; use forward slashes on Windows, for example `C:/dev/local-platform/data`. Under WSL, the script maps this to `/mnt/c/dev/local-platform/data`. The same path must be accessible to Docker Desktop.
 
@@ -69,12 +71,14 @@ Run one port-forward target in a terminal and keep it open:
 make expose-postgres
 make expose-cassandra
 make expose-qdrant
+make expose-timescale
+make expose-redis
 make expose-all
 ```
 
-Defaults are PostgreSQL `localhost:5432`, Cassandra `localhost:9042`, Qdrant REST `localhost:6333`, and Qdrant gRPC `localhost:6334`. Ports can be overridden in `.env`. All forwards bind to `127.0.0.1`; Kubernetes Services remain ClusterIP.
+Defaults are PostgreSQL/Citus `localhost:5432`, TimescaleDB `localhost:5433`, Redis `localhost:6379`, Cassandra `localhost:9042`, Qdrant REST `localhost:6333`, and Qdrant gRPC `localhost:6334`. Ports can be overridden in `.env`. All forwards bind to `127.0.0.1`; Kubernetes Services remain ClusterIP.
 
-In-cluster names are `citus-coordinator.postgres.svc.cluster.local:5432`, `cassandra.cassandra.svc.cluster.local:9042`, and `qdrant.qdrant.svc.cluster.local:6333` / `:6334`. Qdrant requests require the configured API key. PostgreSQL's database is `agentdb`; username is `postgres`.
+In-cluster names are `citus-coordinator.postgres.svc.cluster.local:5432`, `timescale.timescale.svc.cluster.local:5432`, `redis.redis.svc.cluster.local:6379`, `cassandra.cassandra.svc.cluster.local:9042`, and `qdrant.qdrant.svc.cluster.local:6333` / `:6334`. Qdrant requests require the configured API key. PostgreSQL/Citus uses database `agentdb` and TimescaleDB uses database `stock`; both use the `postgres` username. Redis requires its configured password.
 
 ## Citus Sharding
 
@@ -92,7 +96,7 @@ Qdrant's sample collection configuration in [examples/qdrant-collection.json](ex
 - `make destroy` removes Helm releases and the kind cluster. It never removes `data/`.
 - `make test-network` checks service DNS, authorized client connectivity, and that an unlabeled namespace is blocked.
 - `make test-persistence` is a destructive cluster-lifecycle test: it writes unique records, destroys/recreates the cluster, then checks records survived. It does not clean data.
-- `make clean-data` permanently removes PostgreSQL, Cassandra, and Qdrant host data and requires typing `DELETE DATABASE DATA`.
+- `make clean-data` permanently removes PostgreSQL, Cassandra, Qdrant, TimescaleDB, and Redis host data and requires typing `DELETE DATABASE DATA`.
 - `make reset` destroys the cluster, requires typing `RESET DATABASE DATA AND CLUSTER`, removes the host data, and recreates the databases from empty directories.
 
 Network policies deny cross-namespace access by default, allow database-internal peer traffic and DNS, and reserve access for namespaces labeled `infra.local/database-client=true`. Label a future database-client namespace only when you are ready to grant it access. Do not expose database protocols through a public Ingress.

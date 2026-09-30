@@ -24,4 +24,6 @@ kubectl --context kind-local-platform -n postgres rollout status statefulset/cit
 kubectl --context kind-local-platform -n postgres rollout status statefulset/citus-worker --timeout=30m
 kubectl --context kind-local-platform -n cassandra rollout status statefulset/cassandra --timeout=30m
 kubectl --context kind-local-platform -n qdrant rollout status statefulset/qdrant --timeout=20m
+kubectl --context kind-local-platform -n timescale rollout status statefulset/timescale --timeout=20m
+kubectl --context kind-local-platform -n redis rollout status statefulset/redis --timeout=10m
 echo "Database infrastructure is ready."

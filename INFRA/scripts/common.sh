@@ -31,7 +31,7 @@ resolve_data_dir() {
 
 require_credentials() {
   local name
-  for name in POSTGRES_PASSWORD CASSANDRA_PASSWORD QDRANT_API_KEY; do
+  for name in POSTGRES_PASSWORD CASSANDRA_PASSWORD QDRANT_API_KEY TIMESCALE_PASSWORD REDIS_PASSWORD; do
     if [[ -z "${!name:-}" || "${!name}" == replace-* ]]; then
       echo "$name must be configured in INFRA/.env." >&2
       return 1
@@ -40,6 +40,8 @@ require_credentials() {
   export TF_VAR_postgres_password="$POSTGRES_PASSWORD"
   export TF_VAR_cassandra_password="$CASSANDRA_PASSWORD"
   export TF_VAR_qdrant_api_key="$QDRANT_API_KEY"
+  export TF_VAR_timescale_password="$TIMESCALE_PASSWORD"
+  export TF_VAR_redis_password="$REDIS_PASSWORD"
   export TF_VAR_enable_monitoring="${ENABLE_MONITORING:-false}"
   export TF_VAR_grafana_password="${GRAFANA_PASSWORD:-}"
 }
