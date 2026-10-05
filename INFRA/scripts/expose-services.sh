@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-INFRA_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-if [[ -f "$INFRA_DIR/.env" ]]; then
-  set -a
-  source "$INFRA_DIR/.env"
-  set +a
-fi
-CONTEXT=kind-local-platform
+source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
+load_deployment_flags
 
 forward() {
+  local selected="$1"
+  [[ "$selected" == postgres ]] && selected=citus
+  [[ "$selected" == grafana || "$selected" == prometheus ]] && selected=monitoring
+  if ! service_enabled "$selected"; then
+    echo "$1 is disabled in INFRA/.env." >&2
+    return 1
+  fi
   case "$1" in
     postgres)
       kubectl --context "$CONTEXT" -n postgres port-forward --address 127.0.0.1 \
@@ -54,11 +56,24 @@ fi
 
 mkdir -p "$INFRA_DIR/.state"
 pids=()
-services=(postgres cassandra qdrant timescale redis)
+services=()
 if [[ "${1:-}" == monitoring ]]; then
   services=(grafana prometheus)
-elif [[ "${ENABLE_MONITORING:-false}" == true ]]; then
-  services+=(grafana prometheus)
+else
+  for service in postgres cassandra qdrant timescale redis; do
+    selected="$service"
+    [[ "$selected" == postgres ]] && selected=citus
+    if service_enabled "$selected"; then
+      services+=("$service")
+    fi
+  done
+  if service_enabled monitoring; then
+    services+=(grafana prometheus)
+  fi
+fi
+if [[ "${#services[@]}" == 0 ]]; then
+  echo "No services are enabled in INFRA/.env." >&2
+  exit 1
 fi
 for service in "${services[@]}"; do
   bash "$0" "$service" >"$INFRA_DIR/.state/port-forward-$service.log" 2>&1 &

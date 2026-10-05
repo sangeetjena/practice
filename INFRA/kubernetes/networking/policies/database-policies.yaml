@@ -299,3 +299,21 @@ spec:
               infra.local/database-client: "true"
       ports:
         - {protocol: TCP, port: 6379}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: stock-model-clients
+  namespace: logistic-regression
+spec:
+  podSelector:
+    matchLabels:
+      app: stock-model
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              infra.local/database-client: "true"
+      ports:
+        - {protocol: TCP, port: 8000}

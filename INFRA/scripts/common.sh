@@ -29,19 +29,50 @@ resolve_data_dir() {
   export DATA_DIR
 }
 
+load_deployment_flags() {
+  local service name value default
+  for service in citus cassandra qdrant timescale redis monitoring; do
+    name="ENABLE_${service^^}"
+    default=true
+    [[ "$service" == monitoring ]] && default=false
+    value="${!name:-$default}"
+    if [[ "$value" != true && "$value" != false ]]; then
+      echo "$name must be true or false in INFRA/.env." >&2
+      return 1
+    fi
+    printf -v "$name" '%s' "$value"
+    export "$name"
+    export "TF_VAR_enable_${service}=$value"
+  done
+}
+
+service_enabled() {
+  local name="ENABLE_${1^^}"
+  [[ "${!name:-false}" == true ]]
+}
+
 require_credentials() {
-  local name
-  for name in POSTGRES_PASSWORD CASSANDRA_PASSWORD QDRANT_API_KEY TIMESCALE_PASSWORD REDIS_PASSWORD; do
+  load_deployment_flags || return 1
+  local service name
+  for service in citus cassandra qdrant timescale redis monitoring; do
+    service_enabled "$service" || continue
+    case "$service" in
+      citus) name=POSTGRES_PASSWORD ;;
+      cassandra) name=CASSANDRA_PASSWORD ;;
+      qdrant) name=QDRANT_API_KEY ;;
+      timescale) name=TIMESCALE_PASSWORD ;;
+      redis) name=REDIS_PASSWORD ;;
+      monitoring) name=GRAFANA_PASSWORD ;;
+    esac
     if [[ -z "${!name:-}" || "${!name}" == replace-* ]]; then
-      echo "$name must be configured in INFRA/.env." >&2
+      echo "$name must be configured in INFRA/.env when $service is enabled." >&2
       return 1
     fi
   done
-  export TF_VAR_postgres_password="$POSTGRES_PASSWORD"
-  export TF_VAR_cassandra_password="$CASSANDRA_PASSWORD"
-  export TF_VAR_qdrant_api_key="$QDRANT_API_KEY"
-  export TF_VAR_timescale_password="$TIMESCALE_PASSWORD"
-  export TF_VAR_redis_password="$REDIS_PASSWORD"
-  export TF_VAR_enable_monitoring="${ENABLE_MONITORING:-false}"
+  export TF_VAR_postgres_password="${POSTGRES_PASSWORD:-}"
+  export TF_VAR_cassandra_password="${CASSANDRA_PASSWORD:-}"
+  export TF_VAR_qdrant_api_key="${QDRANT_API_KEY:-}"
+  export TF_VAR_timescale_password="${TIMESCALE_PASSWORD:-}"
+  export TF_VAR_redis_password="${REDIS_PASSWORD:-}"
   export TF_VAR_grafana_password="${GRAFANA_PASSWORD:-}"
 }

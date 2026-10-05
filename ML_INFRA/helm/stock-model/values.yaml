@@ -1,0 +1,20 @@
+image:
+  repository: stock-model
+  tag: candidate
+  pullPolicy: IfNotPresent
+nodeSelector:
+  kubernetes.io/hostname: local-platform-worker
+database:
+  postgresSecret: citus-credentials
+  timescaleSecret: timescale-credentials
+  postgresHost: citus-coordinator.postgres.svc.cluster.local
+  timescaleHost: timescale.timescale.svc.cluster.local
+  postgresName: agentdb
+  timescaleName: stock
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi

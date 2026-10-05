@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "stock-ml-infra"
+version = "0.1.0"
+description = "Training and model deployment project for stock research"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["pydantic>=2.7,<3", "pydantic-settings>=2.3,<3", "asyncpg>=0.29,<1", "numpy>=1.26,<3", "torch>=2.4,<3", "fastapi>=0.111,<1", "uvicorn>=0.30,<1"]
+
+[project.optional-dependencies]
+train = []
+db = ["asyncpg>=0.29,<1"]
+tracking = ["mlflow>=2.17,<4"]
+serve = ["fastapi>=0.111,<1", "uvicorn>=0.30,<1", "httpx>=0.27,<1"]
+dev = ["pytest>=8,<10", "ruff>=0.6,<1", "mypy>=1.11,<2"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ml_infra"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

@@ -10,13 +10,44 @@ variable "kube_context" {
   default     = "kind-local-platform"
 }
 
+variable "enable_citus" {
+  description = "Deploy the Citus PostgreSQL cluster."
+  type        = bool
+  default     = true
+}
+
+variable "enable_cassandra" {
+  description = "Deploy the Cassandra cluster."
+  type        = bool
+  default     = true
+}
+
+variable "enable_qdrant" {
+  description = "Deploy the Qdrant cluster."
+  type        = bool
+  default     = true
+}
+
+variable "enable_timescale" {
+  description = "Deploy TimescaleDB."
+  type        = bool
+  default     = true
+}
+
+variable "enable_redis" {
+  description = "Deploy Redis."
+  type        = bool
+  default     = true
+}
+
 variable "postgres_password" {
   description = "Local PostgreSQL/Citus superuser password, sourced from .env."
   type        = string
   sensitive   = true
+  default     = ""
 
   validation {
-    condition     = length(var.postgres_password) >= 12
+    condition     = var.postgres_password == "" || length(var.postgres_password) >= 12
     error_message = "POSTGRES_PASSWORD must contain at least 12 characters."
   }
 }
@@ -25,9 +56,10 @@ variable "cassandra_password" {
   description = "Local Cassandra user password, sourced from .env."
   type        = string
   sensitive   = true
+  default     = ""
 
   validation {
-    condition     = length(var.cassandra_password) >= 12
+    condition     = var.cassandra_password == "" || length(var.cassandra_password) >= 12
     error_message = "CASSANDRA_PASSWORD must contain at least 12 characters."
   }
 }
@@ -36,9 +68,10 @@ variable "qdrant_api_key" {
   description = "Local Qdrant API key, sourced from .env."
   type        = string
   sensitive   = true
+  default     = ""
 
   validation {
-    condition     = length(var.qdrant_api_key) >= 16
+    condition     = var.qdrant_api_key == "" || length(var.qdrant_api_key) >= 16
     error_message = "QDRANT_API_KEY must contain at least 16 characters."
   }
 }
@@ -47,9 +80,10 @@ variable "timescale_password" {
   description = "Local TimescaleDB superuser password, sourced from .env."
   type        = string
   sensitive   = true
+  default     = ""
 
   validation {
-    condition     = length(var.timescale_password) >= 12
+    condition     = var.timescale_password == "" || length(var.timescale_password) >= 12
     error_message = "TIMESCALE_PASSWORD must contain at least 12 characters."
   }
 }
@@ -58,9 +92,10 @@ variable "redis_password" {
   description = "Local Redis password, sourced from .env."
   type        = string
   sensitive   = true
+  default     = ""
 
   validation {
-    condition     = length(var.redis_password) >= 12
+    condition     = var.redis_password == "" || length(var.redis_password) >= 12
     error_message = "REDIS_PASSWORD must contain at least 12 characters."
   }
 }

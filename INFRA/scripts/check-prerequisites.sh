@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
 required=(docker kind kubectl helm terraform make bash python3)
 missing=()
 for command_name in "${required[@]}"; do

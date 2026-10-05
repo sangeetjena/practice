@@ -1,4 +1,5 @@
 resource "helm_release" "cassandra" {
+  count            = var.enable_cassandra ? 1 : 0
   name             = "cassandra"
   namespace        = "cassandra"
   chart            = "${path.module}/../helm/cassandra"
@@ -12,6 +13,7 @@ resource "helm_release" "cassandra" {
 }
 
 resource "helm_release" "qdrant" {
+  count            = var.enable_qdrant ? 1 : 0
   name             = "qdrant"
   namespace        = "qdrant"
   repository       = "https://qdrant.github.io/qdrant-helm"
@@ -27,6 +29,7 @@ resource "helm_release" "qdrant" {
 }
 
 resource "helm_release" "citus" {
+  count            = var.enable_citus ? 1 : 0
   name             = "citus"
   namespace        = "postgres"
   chart            = "${path.module}/../helm/citus"
@@ -40,6 +43,7 @@ resource "helm_release" "citus" {
 }
 
 resource "helm_release" "timescale" {
+  count            = var.enable_timescale ? 1 : 0
   name             = "timescale"
   namespace        = "timescale"
   chart            = "${path.module}/../helm/timescale"
@@ -52,6 +56,7 @@ resource "helm_release" "timescale" {
 }
 
 resource "helm_release" "redis" {
+  count            = var.enable_redis ? 1 : 0
   name             = "redis"
   namespace        = "redis"
   chart            = "${path.module}/../helm/redis"
@@ -75,11 +80,11 @@ resource "helm_release" "monitoring" {
 
   values = [file("${path.module}/../helm/monitoring/values.yaml"), yamlencode({
     grafana = { adminPassword = var.grafana_password }
-    prometheus = { prometheusSpec = { additionalScrapeConfigs = [{
+    prometheus = { prometheusSpec = { additionalScrapeConfigs = var.enable_qdrant ? [{
       job_name       = "qdrant"
       authorization  = { type = "Bearer", credentials = var.qdrant_api_key }
       static_configs = [{ targets = [for i in range(3) : "qdrant-${i}.qdrant-headless.qdrant.svc.cluster.local:6333"] }]
-    }] } }
+    }] : [] } }
   })]
   lifecycle {
     precondition {

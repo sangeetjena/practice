@@ -1,6 +1,6 @@
 # Local Database Platform
 
-A database-focused, disposable kind cluster for development and platform-engineering practice. It deploys PostgreSQL with Citus, Cassandra, Qdrant, TimescaleDB, and Redis. There is no application code, app image, or app deployment in this setup; the `workloads` namespace is reserved for clients you add later.
+A database-focused, disposable kind cluster for development and platform-engineering practice. It can deploy any selection of PostgreSQL with Citus, Cassandra, Qdrant, TimescaleDB, and Redis. There is no application code, app image, or app deployment in this setup; the `workloads` namespace is reserved for clients you add later.
 
 ```text
 Developer machine
@@ -22,7 +22,7 @@ Every database replica has its own host directory under `data/`. Deleting the ki
 - Docker Desktop with Linux containers, or Docker Engine
 - kind, kubectl, Helm, Terraform, Make, and Bash
 - Windows: WSL2 or Git Bash. Ensure Docker can share/access the directory configured by `INFRA_DATA_DIR`. In Docker Desktop, enable WSL integration for WSL2, or allow the project drive/path for Git Bash. WSL maps `C:/path` to `/mnt/c/path`; for better I/O, a directory inside the WSL Linux filesystem can be used instead.
-- Laptop starting point: 4 CPU cores and about 16 GiB available to Docker. The database limits can use up to roughly 13 GiB in aggregate; reduce chart resources or replicas if your machine has less headroom.
+- The full five-database profile needs substantial RAM. On a 16 GB laptop, start with TimescaleDB alone and add services as resources allow. A profile flag prevents its database pods from starting but does not reduce the size of the kind node cluster itself.
 
 Run `make prerequisites` to check tools and that Docker is running.
 
@@ -46,7 +46,23 @@ From this directory, create `.env` from the example and replace each placeholder
 cp .env.example .env
 ```
 
-PostgreSQL, TimescaleDB, Cassandra, and Redis passwords must be at least 12 characters; the Qdrant API key must be at least 16. `.env`, Terraform state, rendered kind config, and database data are ignored by Git. Terraform's local state contains deployment secrets and must not be committed or shared.
+Set `ENABLE_CITUS`, `ENABLE_CASSANDRA`, `ENABLE_QDRANT`, `ENABLE_TIMESCALE`, and `ENABLE_REDIS` to `true` or `false` in `.env`. All five default to `true` for existing deployments; monitoring defaults to `false`. Only enabled services require credentials. PostgreSQL, TimescaleDB, Cassandra, Redis, and Grafana passwords must be at least 12 characters; the Qdrant API key must be at least 16. `.env`, Terraform state, rendered kind config, and database data are ignored by Git. Terraform's local state contains deployment secrets and must not be committed or shared.
+
+For a small stock-research setup on a 16 GB laptop, start with TimescaleDB alone:
+
+```dotenv
+ENABLE_CITUS=false
+ENABLE_CASSANDRA=false
+ENABLE_QDRANT=false
+ENABLE_TIMESCALE=true
+ENABLE_REDIS=false
+ENABLE_MONITORING=false
+TIMESCALE_PASSWORD=your-local-password-at-least-12-characters
+```
+
+Keep `INFRA_DATA_DIR` and the port settings in the same `.env` file. `make deploy` still creates the shared kind cluster, namespaces, storage definitions, and network policies; Terraform installs only the enabled Helm releases. `make verify` checks only enabled services, and `make expose-all` forwards only enabled services. To add Redis later, set `ENABLE_REDIS=true`, set `REDIS_PASSWORD`, and run `make infra` then `make verify`.
+
+**Changing an enabled service to `false` plans to uninstall its existing Helm release.** Run `make plan` and review the destroy actions before `make infra` or `make deploy`, which apply the plan automatically. Retained volumes and host data remain, but treat them as data requiring a backup before removal or re-enabling. The `moved.tf` declarations preserve state addresses for releases that remain enabled.
 
 `INFRA_DATA_DIR` defaults to `./data`. It can be an absolute path; use forward slashes on Windows, for example `C:/dev/local-platform/data`. Under WSL, the script maps this to `/mnt/c/dev/local-platform/data`. The same path must be accessible to Docker Desktop.
 
@@ -56,12 +72,14 @@ This checkout is inside OneDrive. Before starting databases, set `INFRA_DATA_DIR
 
 ```bash
 make prerequisites
-make deploy
+make create
+make plan
+make infra
 make status
 make verify
 ```
 
-`make deploy` creates kind, installs Calico (required for NetworkPolicy enforcement), creates the namespaces and retained host-backed volumes, then applies Terraform-managed Helm releases. Terraform does not create or delete the kind cluster.
+`make deploy` combines `make create`, `make infra`, and `make verify` when you do not need a separate plan review. Cluster creation installs Calico (required for NetworkPolicy enforcement); `make infra` creates the namespaces and retained host-backed volumes, then applies Terraform-managed Helm releases. Terraform does not create or delete the kind cluster.
 
 ## Database Access
 
@@ -94,8 +112,8 @@ Qdrant's sample collection configuration in [examples/qdrant-collection.json](ex
 
 - `make stop` pauses the kind node containers without deleting the cluster; `make start` resumes them.
 - `make destroy` removes Helm releases and the kind cluster. It never removes `data/`.
-- `make test-network` checks service DNS, authorized client connectivity, and that an unlabeled namespace is blocked.
-- `make test-persistence` is a destructive cluster-lifecycle test: it writes unique records, destroys/recreates the cluster, then checks records survived. It does not clean data.
+- `make test-network` checks the full five-database profile's service DNS, authorized client connectivity, and that an unlabeled namespace is blocked.
+- `make test-persistence` requires the full five-database profile and is a destructive cluster-lifecycle test: it writes unique records, destroys/recreates the cluster, then checks records survived. It does not clean data.
 - `make clean-data` permanently removes PostgreSQL, Cassandra, Qdrant, TimescaleDB, and Redis host data and requires typing `DELETE DATABASE DATA`.
 - `make reset` destroys the cluster, requires typing `RESET DATABASE DATA AND CLUSTER`, removes the host data, and recreates the databases from empty directories.
 
@@ -103,4 +121,8 @@ Network policies deny cross-namespace access by default, allow database-internal
 
 ## Scope
 
-Prometheus, Grafana, OpenTelemetry Collector, and application workloads are intentionally not installed. The namespaces and database endpoints provide a base for adding those later without coupling them to database provisioning.
+Prometheus and Grafana are optional through `ENABLE_MONITORING`; OpenTelemetry Collector and application workloads are not installed. The namespaces and enabled database endpoints provide a base for adding those later without coupling them to database provisioning.
+
+# Model serving namespace
+
+`kubernetes/namespaces/namespaces.yaml` now creates `logistic-regression`. It is labeled as a database client so its single model-serving pod can read Citus/Postgres and TimescaleDB through the existing database network policies. The ML_INFRA Helm chart owns the model Deployment and Service; INFRA owns the namespace and shared network rules. See `../ML_INFRA/README.md` for `make train`, `make deploy`, and `make predict`.

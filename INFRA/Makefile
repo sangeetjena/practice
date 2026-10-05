@@ -1,7 +1,7 @@
 SHELL := bash
 .SHELLFLAGS := -euo pipefail -c
 
-.PHONY: prerequisites create start infra deploy status network-status verify test-network test-persistence expose-postgres expose-cassandra expose-qdrant expose-timescale expose-redis expose-all stop destroy clean-data reset
+.PHONY: prerequisites create start plan infra deploy status network-status verify test-network test-persistence expose-postgres expose-cassandra expose-qdrant expose-timescale expose-redis expose-all stop destroy clean-data reset
 
 prerequisites:
 	bash ./scripts/check-prerequisites.sh
@@ -12,11 +12,15 @@ create: prerequisites
 start: prerequisites
 	bash ./scripts/start-cluster.sh
 
+plan:
+	bash ./scripts/plan-infra.sh
+
 infra:
 	bash ./scripts/deploy-infra.sh
 
 deploy:
 	$(MAKE) create
+	$(MAKE) plan
 	$(MAKE) infra
 	$(MAKE) verify
 

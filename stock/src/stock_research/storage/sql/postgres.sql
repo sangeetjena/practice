@@ -38,3 +38,24 @@ CREATE TABLE IF NOT EXISTS critiques (
     outcome text NOT NULL,
     critique jsonb NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS model_predictions (
+    prediction_id uuid PRIMARY KEY,
+    symbol text NOT NULL,
+    cutoff_at timestamptz NOT NULL,
+    model_name text NOT NULL,
+    model_version text NOT NULL,
+    feature_version text NOT NULL,
+    features jsonb NOT NULL,
+    target text NOT NULL,
+    probability_up double precision NOT NULL CHECK (probability_up BETWEEN 0 AND 1),
+    created_at timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (symbol, cutoff_at, model_name, model_version)
+);
+CREATE TABLE IF NOT EXISTS stock_summary_daily (
+    symbol text NOT NULL,
+    cutoff_at timestamptz NOT NULL,
+    summary jsonb NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (symbol, cutoff_at)
+);

@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stock-model
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: stock-model}
+  template:
+    metadata:
+      labels: {app: stock-model}
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      containers:
+        - name: model
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports: [{containerPort: 8000, name: http}]
+          env:
+            - name: ML_DATABASE_URL
+              valueFrom:
+                secretKeyRef: {name: stock-model-db-urls, key: postgres_url}
+            - name: ML_TIMESCALE_URL
+              valueFrom:
+                secretKeyRef: {name: stock-model-db-urls, key: timescale_url}
+            - name: ML_MODEL_TOKEN
+              valueFrom:
+                secretKeyRef: {name: stock-model-db-urls, key: model_token}
+          readinessProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 30
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

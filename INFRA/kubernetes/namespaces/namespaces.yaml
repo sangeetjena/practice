@@ -29,6 +29,14 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
+  name: logistic-regression
+  labels:
+    infra.local/database-client: "true"
+    infra.local/model-serving: "true"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
   name: monitoring
   labels:
     infra.local/monitoring: "true"

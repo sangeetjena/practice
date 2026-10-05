@@ -27,6 +27,10 @@ The health endpoint is `GET /health`. The repository's existing `INFRA/` owns de
 
 Data ownership: Citus/Postgres stores source events, stock contexts, decisions, and critiques; TimescaleDB stores OHLCV bars; Qdrant stores embeddings supplied by a future embedding pipeline; Redis stores short-lived cache entries and cooldowns. Cassandra remains part of `INFRA/` but has no stock adapter because this phase has no Cassandra workload. The ingestion command writes source events to Postgres and bars to TimescaleDB. It does not invent embeddings or call an LLM.
 
+## Model responsibility
+
+For the first daily logistic model, `ML_INFRA/` reads existing stock databases and computes versioned features in its serving service. `stock/` calls that service, stores the model prediction, and assembles `stock_summary_daily`. Run `python -m stock_research.predict --symbol IBM` after setting `STOCK_MODEL_URL`, `STOCK_MODEL_TOKEN`, and `STOCK_DATABASE_URL`. Final LLM synthesis, human feedback, and an hourly model remain future work. See [the ML platform plan](../ML_INFRA/PROJECT_PLAN.md).
+
 ## Layout
 
 - `ai_skill/SKILL.md`: durable project brief, architecture, invariants, schema, and delivery plan.

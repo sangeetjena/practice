@@ -20,10 +20,20 @@ PLAN_FILE="$INFRA_DIR/.state/infra.tfplan"
 terraform -chdir="$INFRA_DIR/terraform" plan -input=false -out="$PLAN_FILE"
 terraform -chdir="$INFRA_DIR/terraform" apply -input=false -auto-approve "$PLAN_FILE"
 
-kubectl --context kind-local-platform -n postgres rollout status statefulset/citus-coordinator --timeout=30m
-kubectl --context kind-local-platform -n postgres rollout status statefulset/citus-worker --timeout=30m
-kubectl --context kind-local-platform -n cassandra rollout status statefulset/cassandra --timeout=30m
-kubectl --context kind-local-platform -n qdrant rollout status statefulset/qdrant --timeout=20m
-kubectl --context kind-local-platform -n timescale rollout status statefulset/timescale --timeout=20m
-kubectl --context kind-local-platform -n redis rollout status statefulset/redis --timeout=10m
+if service_enabled citus; then
+  kubectl --context kind-local-platform -n postgres rollout status statefulset/citus-coordinator --timeout=30m
+  kubectl --context kind-local-platform -n postgres rollout status statefulset/citus-worker --timeout=30m
+fi
+if service_enabled cassandra; then
+  kubectl --context kind-local-platform -n cassandra rollout status statefulset/cassandra --timeout=30m
+fi
+if service_enabled qdrant; then
+  kubectl --context kind-local-platform -n qdrant rollout status statefulset/qdrant --timeout=20m
+fi
+if service_enabled timescale; then
+  kubectl --context kind-local-platform -n timescale rollout status statefulset/timescale --timeout=20m
+fi
+if service_enabled redis; then
+  kubectl --context kind-local-platform -n redis rollout status statefulset/redis --timeout=10m
+fi
 echo "Database infrastructure is ready."

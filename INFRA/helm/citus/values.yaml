@@ -1,6 +1,6 @@
 image:
   repository: citusdata/citus
-  tag: 12.1.6-pg16
+  tag: 12.1.6
   pullPolicy: IfNotPresent
 postgres:
   database: agentdb

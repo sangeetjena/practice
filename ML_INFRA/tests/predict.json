@@ -1,0 +1,14 @@
+{
+  "symbol": "GOOGL",
+  "cutoff_at": "2026-09-30T20:00:00+00:00",
+  "feature_version": "daily-v1",
+  "features": {
+    "return_1": 0.002,
+    "return_5": 0.01,
+    "sma_5_gap": 0.004,
+    "sma_20_gap": 0.02,
+    "volume_ratio_5": 1.1,
+    "volatility_5": 0.012,
+    "pe_ratio": 24.0
+  }
+}
