@@ -6,7 +6,7 @@ Given an n x n array of integers matrix, return the minimum sum of any falling p
 A falling path starts at any element in the first row and chooses the element in the next row that is either directly below or diagonally left/right. Specifically, the next element from position (row, col) will be (row + 1, col - 1), (row + 1, col), or (row + 1, col + 1).
 
 Note:
-
+similar to colour cake problem 
 ```
 <img width="628" height="629" alt="image" src="https://github.com/user-attachments/assets/7c96e06d-86c0-4012-93cb-80e753d896f6" />
 <img width="525" height="485" alt="image" src="https://github.com/user-attachments/assets/efb7f711-803d-45c3-98af-245088e86d09" />
