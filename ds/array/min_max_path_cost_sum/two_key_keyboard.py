@@ -45,4 +45,6 @@ class Solution:
                     # chcking if we can create group of 2, 3, 4, ..n elemnet.
                     # then checking how many step it took to create that group.
                     dp[i] = min(dp[i], dp[int(i / j)] + j)
+                    #                      ^ j = num element in the group
+                    #                      ^ i/j = num of operation needed using that group and j = num operation to create that group.
         return dp[n]
