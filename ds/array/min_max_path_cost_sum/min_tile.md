@@ -2,6 +2,12 @@
 https://leetcode.com/problems/tiling-a-rectangle-with-the-fewest-squares/description/
 
 Given a rectangle of size n x m, return the minimum number of integer-sided squares that tile the rectangle.
+
+Note:
+https://www.youtube.com/watch?v=Ak9kNDNkVok
+step1 : create different rectangle in the grid (1st two loop)
+step 2: in that rectangle to divide horizontal space or vertical space into two half( symmetry structure)
+and at it position till //2 and calculate min cuts needed at each step. 
 ```
 <img width="554" height="519" alt="image" src="https://github.com/user-attachments/assets/5ae0b02b-4920-444f-afb5-07d4c34413d6" />
 <img width="362" height="301" alt="image" src="https://github.com/user-attachments/assets/b87cfaa5-5c65-4243-b559-fce65a486f65" />
