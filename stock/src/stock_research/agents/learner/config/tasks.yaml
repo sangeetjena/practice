@@ -1,0 +1,9 @@
+learner_task:
+  guardrail_max_retries: 2
+  agent: learner
+  description: Read evaluated historical master predictions, code-calculated accuracy
+    and critique suggestions from CSV memory. Identify recurring mistakes and bounded
+    improvement lessons for the master. Do not retrain or change rules. Return the
+    supplied structured output schema. The tool already binds stock, time cutoff and
+    evidence; call it with no arguments.
+  expected_output: LearningResult JSON with no invented values.

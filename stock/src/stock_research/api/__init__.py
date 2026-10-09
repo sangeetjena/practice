@@ -1,1 +1,0 @@
-"""Read-oriented API layer."""

@@ -1,0 +1,37 @@
+volume_task:
+  guardrail_max_retries: 2
+  agent: volume
+  description: Analyze only volume, volume ratio and price/volume interaction in the
+    bound snapshot. Give next-session direction with concise reasoning. Return the
+    supplied structured output schema. The tool already binds stock, time cutoff and
+    evidence; call it with no arguments.
+  expected_output: AnalysisPrediction JSON with no invented values.
+  async_execution: true
+candlestick_task:
+  guardrail_max_retries: 2
+  agent: candlestick
+  description: Analyze only completed OHLC candles, bodies and wicks in the bound
+    snapshot. Give next-session direction with concise reasoning. Return the supplied
+    structured output schema. The tool already binds stock, time cutoff and evidence;
+    call it with no arguments.
+  expected_output: AnalysisPrediction JSON with no invented values.
+  async_execution: true
+bollinger_task:
+  guardrail_max_retries: 2
+  agent: bollinger
+  description: Analyze only deterministic Bollinger band values and closing prices
+    in the bound snapshot. Give next-session direction with concise reasoning. Return
+    the supplied structured output schema. The tool already binds stock, time cutoff
+    and evidence; call it with no arguments.
+  expected_output: AnalysisPrediction JSON with no invented values.
+  async_execution: true
+assembly_task:
+  agent: assembly
+  description: Confirm that all three specialist tasks completed without altering
+    their predictions. Return the supplied structured output schema. The tool already
+    binds stock, time cutoff and evidence; call it with no arguments.
+  expected_output: AgentNote JSON with no invented values.
+  context:
+  - volume_task
+  - candlestick_task
+  - bollinger_task

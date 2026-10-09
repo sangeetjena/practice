@@ -1,0 +1,54 @@
+discovery_task:
+  guardrail_max_retries: 2
+  agent: discovery
+  description: Discover stocks from the bound watchlist or screener. Select only supplied
+    tickers. Return the supplied structured output schema. The tool already binds
+    stock, time cutoff and evidence; call it with no arguments.
+  expected_output: DiscoveryResult JSON with no invented values.
+technical_task:
+  guardrail_max_retries: 2
+  agent: technical
+  description: Call the technical tool and return its exact completed bars, price
+    and calculated indicators. Never calculate or estimate numbers yourself. Return
+    the supplied structured output schema. The tool already binds stock, time cutoff
+    and evidence; call it with no arguments.
+  expected_output: TechnicalData JSON with no invented values.
+  async_execution: true
+fundamental_task:
+  guardrail_max_retries: 2
+  agent: fundamental
+  description: Call the fundamental tool. It reads calendar-month CSV memory or fetches
+    a fresh company snapshot. Return exact tool values and fetched_at. Return the
+    supplied structured output schema. The tool already binds stock, time cutoff and
+    evidence; call it with no arguments.
+  expected_output: FundamentalData JSON with no invented values.
+  async_execution: true
+earnings_task:
+  guardrail_max_retries: 2
+  agent: earnings
+  description: Call the earnings tool for known earnings dates during the current
+    Monday-Sunday week. Unknown is not proof that there are no earnings. Return the
+    supplied structured output schema. The tool already binds stock, time cutoff and
+    evidence; call it with no arguments.
+  expected_output: EarningsData JSON with no invented values.
+  async_execution: true
+news_task:
+  guardrail_max_retries: 2
+  agent: news
+  description: Call the news tool. Preserve articles and metadata exactly, and add
+    a concise summary of their sentiment, reported events and coverage gaps. Return
+    the supplied structured output schema. The tool already binds stock, time cutoff
+    and evidence; call it with no arguments.
+  expected_output: NewsData JSON with no invented values.
+  async_execution: true
+assembly_task:
+  agent: assembly
+  description: Confirm that the parallel ingestion tasks have completed. Do not change
+    their facts. Return the supplied structured output schema. The tool already binds
+    stock, time cutoff and evidence; call it with no arguments.
+  expected_output: AgentNote JSON with no invented values.
+  context:
+  - technical_task
+  - fundamental_task
+  - earnings_task
+  - news_task

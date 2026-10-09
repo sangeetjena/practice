@@ -1,0 +1,10 @@
+critique_task:
+  guardrail_max_retries: 2
+  agent: critique
+  description: Explain the supplied objective next-session verdict. Assess original
+    reasoning using ONLY original evidence; distinguish later invalidation using later
+    events. Do not infer a causal mistake from a losing prediction alone. Propose
+    a concrete correction or state insufficient attribution evidence. Return the supplied
+    structured output schema. The tool already binds stock, time cutoff and evidence;
+    call it with no arguments.
+  expected_output: CritiqueResult JSON with no invented values.

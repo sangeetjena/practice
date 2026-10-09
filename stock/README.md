@@ -1,53 +1,80 @@
-# Stock research system
+# Stock prediction â€” CrewAI + CSV memory
 
-An auditable, event-driven Python foundation for stock analysis. The Alpha Vantage provider pulls daily OHLCV, company overview, and news; storage adapters persist events and decisions to Citus/Postgres, bars to TimescaleDB, embeddings to Qdrant, and ephemeral cache to Redis. Agents remain interfaces. No live broker execution is provided.
+A compact CrewAI Flow project, initialized with the official classic generator:
+`crewai create flow stock-research --classic --skip-provider`.
+Agents/tasks are YAML-backed. CSV stores source snapshots, predictions and feedback.
+The application makes no Postgres, Timescale or vector-store writes in this version.
 
-## Start locally
+## Structure
 
-From `stock/`:
-
-```bash
-python -m venv .venv
-./.venv/Scripts/python -m pip install -e ".[db,dev]"  # Windows PowerShell
-# On macOS/Linux: .venv/bin/python -m pip install -e ".[db,dev]"
-cp .env.example .env  # use Copy-Item on PowerShell
-# Configure INFRA/.env and deploy from repository-root INFRA/ (see its README).
-# Keep `make expose-all` running there when using local port-forwards.
-./.venv/Scripts/python -m stock_research.ingest init-db
-./.venv/Scripts/python -m stock_research.ingest daily --symbol IBM
-./.venv/Scripts/python -m stock_research.ingest fundamentals --symbol IBM
-./.venv/Scripts/python -m stock_research.ingest news --symbol IBM
-# Premium entitlement only: enable STOCK_ALPHA_VANTAGE_INTRADAY_ENABLED in .env
-./.venv/Scripts/python -m stock_research.ingest intraday --symbol IBM
-./.venv/Scripts/python -m pytest
-./.venv/Scripts/python -m uvicorn stock_research.api.app:app --reload
+```text
+stock/
+  src/stock_research/
+    main.py                  # CrewAI kickoff/plot and CLI
+    config.py                # .env settings
+    agents/
+      data_ingestion/        # discovery, technical, fundamental, earnings, news
+      analytical/            # volume, candlestick, Bollinger specialists
+      master/                # final prediction and concise reasoning
+      learner/               # lessons from historical outcomes/criticism
+      critique/              # previous predictions against next-session outcomes
+      # Each group: crew.py + config/agents.yaml + config/tasks.yaml
+    models/                  # all documented Pydantic input/output contracts
+    flow/                    # group Flows, master Flow, crew execution boundary
+    tools/
+      api/                   # Alpha Vantage, screener, local ML HTTP client
+      db/                    # retained connectors and SQL; unused by this workflow
+      market.py              # online data extraction and deterministic indicators
+      indicators.py          # reused indicator calculations
+      csv_memory.py          # atomic CSV memory and monthly fundamental cache
+      review.py              # deterministic outcomes and historical selection
+      agent_tool.py          # CrewAI BaseTool adapter
+      offline.py             # explicit synthetic test fixtures
+  examples/watchlist.csv
+  knowledge/research.md       # editable reference knowledge for master agent
+  tests/
+  docs/RUNBOOK.md
+  ai_skill/SKILL.md
 ```
 
-The health endpoint is `GET /health`. The repository's existing `INFRA/` owns development infrastructure, including the TimescaleDB and Redis services added with these adapters. Set its credentials in `INFRA/.env` and the matching connection URLs in `stock/.env`; neither file belongs in Git. `init-db` creates idempotent application tables and the Timescale hypertable. `daily` uses the provider's latest 100 bars and fails if the requested start predates its available compact window. Fundamental `OVERVIEW` is a current snapshot, not a historical point-in-time reconstruction. Alpha Vantage intraday data requires a premium entitlement and is disabled by default. Provider access may also be limited by plan, exchange rights, and API quota. No API key or running database was available for a live integration test in this session. `STOCK_EXECUTION_MODE` is restricted to `paper` or `human_approved`.
+## Setup and test
 
-Data ownership: Citus/Postgres stores source events, stock contexts, decisions, and critiques; TimescaleDB stores OHLCV bars; Qdrant stores embeddings supplied by a future embedding pipeline; Redis stores short-lived cache entries and cooldowns. Cassandra remains part of `INFRA/` but has no stock adapter because this phase has no Cassandra workload. The ingestion command writes source events to Postgres and bars to TimescaleDB. It does not invent embeddings or call an LLM.
-
-## Model responsibility
-
-For the first daily logistic model, `ML_INFRA/` reads existing stock databases and computes versioned features in its serving service. `stock/` calls that service, stores the model prediction, and assembles `stock_summary_daily`. Run `python -m stock_research.predict --symbol IBM` after setting `STOCK_MODEL_URL`, `STOCK_MODEL_TOKEN`, and `STOCK_DATABASE_URL`. Final LLM synthesis, human feedback, and an hourly model remain future work. See [the ML platform plan](../ML_INFRA/PROJECT_PLAN.md).
-
-## Layout
-
-- `ai_skill/SKILL.md`: durable project brief, architecture, invariants, schema, and delivery plan.
-- `src/stock_research/domain`: validated contracts and decision lifecycle.
-- `providers`, `storage`: source and persistence ports plus Alpha Vantage, Postgres, TimescaleDB, Qdrant, and Redis implementations.
-- `rules`: deterministic versioned trigger evaluation.
-- `themes`: extensible candidate discovery contract.
-- `agents`, `workflows`: interpretation ports and orchestration boundaries.
-- `telemetry`: AI invocation usage, cost, and trace contracts.
-- `api`: read-oriented API scaffold.
-
-## Development gates
+Use Python 3.12 from `stock/`. Preserve the existing untracked `.env`.
 
 ```bash
-python -m pytest
-python -m ruff check src tests
-python -m mypy src
+uv venv --python 3.12 .venv-crewai-wsl  # first WSL/Linux setup only
+source .venv-crewai-wsl/bin/activate
+uv pip install -e '.[dev]'
+python -m stock_research.main --offline --stocks IBM --output output.md
+python -m pytest -q
 ```
 
-Set API keys only in an untracked `.env`; use licensed data feeds and respect source terms. Start with historical replay and paper trading, then compare outcomes and costs before any human-approved order integration.
+For PowerShell use a separate Windows environment:
+
+```powershell
+uv venv --python 3.12 .venv-crewai  # first Windows setup only
+./.venv-crewai/Scripts/Activate.ps1
+uv pip install -e ".[dev]"
+python -m stock_research.main --offline --stocks IBM
+```
+
+Reuse the appropriate existing environment; do not share a virtual environment between Windows and WSL.
+
+Offline uses synthetic data/agent stand-ins and isolates CSV under `data/offline/`.
+It runs the real Flow/tool contracts without API credentials or model calls.
+Live mode runs actual CrewAI agents and requires LLM credentials:
+
+```bash
+python -m stock_research.main --stocks IBM MSFT
+# Or configure watchlist/.env and use the generated CrewAI entrypoint:
+crewai run
+```
+
+Outputs: `data/ingestion.csv`, `data/fundamentals.csv`, `data/stock_memory.csv`,
+and verbose workflow steps in `output.md`. See [the runbook](docs/RUNBOOK.md)
+for configuration, exact CSV columns, execution order, cache expiry and review semantics.
+
+The older API, database-writing ingestion CLI and mixed research scaffolding were
+removed. Future database/vector-store integration belongs behind `tools`.
+The retained ML HTTP client is available for future integration; this version's
+three specialist agents interpret source indicators directly. No trade execution.

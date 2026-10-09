@@ -1,0 +1,9 @@
+master_task:
+  guardrail_max_retries: 2
+  agent: master
+  description: Combine the three specialist predictions, source facts, local research
+    knowledge, learner lessons and previous critique. Give one next-completed-session
+    direction and a precise concise reason. Abstain if technical history is insufficient.
+    Return the supplied structured output schema. The tool already binds stock, time
+    cutoff and evidence; call it with no arguments.
+  expected_output: MasterPrediction JSON with no invented values.
