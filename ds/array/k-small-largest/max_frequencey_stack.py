@@ -33,4 +33,39 @@ freqStack.pop();   // return 5, as 5 is the most frequent. The stack becomes [5,
 freqStack.pop();   // return 4, as 4, 5 and 7 is the most frequent, but 4 is closest to the top. The stack becomes [5,7].
 """
 
-to-do
+class FreqStack:
+
+    def __init__(self):
+        self.dict = defaultdict(lambda : {'freq': int(), 'i': list()})
+        self.heap = []
+        self.ind = -1
+        
+    def push(self, val: int) -> None:
+        self.ind+=1
+        self.dict[val]['freq']+=1
+        if self.dict[val]['i'] is None:
+            self.dict[val]['i'] = [self.ind*-1]
+        else:
+            self.dict[val]['i'].append(self.ind*-1)
+        self.heap = []
+        for k in self.dict.keys():
+            heapq.heappush(self.heap, (self.dict[k]['freq']*-1, sorted(self.dict[k]['i']), k))
+
+    def pop(self) -> int:
+        if not self.heap:
+            return []
+        f,i,k = heapq.heappop(self.heap)
+        self.dict[k]['freq']-=1
+        del self.dict[k]['i'][-1]
+        if -f>1:
+            heapq.heappush(self.heap, (f+1,i[1:], k))
+        else:
+            del self.dict[k]
+        return k
+
+
+
+# Your FreqStack object will be instantiated and called as such:
+# obj = FreqStack()
+# obj.push(val)
+# param_2 = obj.pop()
