@@ -28,6 +28,7 @@ Output: []
 
 
 Note: can solved in backtracking . solved in subset pattern. to avoid duplicate take index and always take next index >= currrent index.
+- this is similar to the frog jump problem.
 
 """
 =======0/1 knap sack =====
