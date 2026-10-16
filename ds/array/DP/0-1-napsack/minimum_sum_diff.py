@@ -16,7 +16,7 @@ Explanation: One optimal partition is: [3,9] and [7,3].
 The absolute difference between the sums of the arrays is abs((3 + 9) - (7 + 3)) = 2.
 
 Note: meet at the middle.
-approah 1: (compexity = 2^n) bruite force solution: find all subset sum. represetn intin a tiem line and find the sum closest to the target sum. 
+approah 1: (compexity = 2^n) bruite force solution: find all subset sum. represetn intin a tiem line and find the sum closest to the target sum. Note: this approach will not work for -ve number
 approach 2:( optimization on top of the above approach)  devide the array into two set and find each possible subset in the devided array. 
 so here to reduce the time complexity we devide the set to two and find all sum possible in two set separately.
 then take two pointer approach and keep one pointer in set 1 and find the second element in the second set. to to find the sexond element 
