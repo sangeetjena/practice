@@ -31,6 +31,23 @@ We earn 9 + 5 + 6 = 20 dollars in total.
 
 Note: this solution has issue with memory limit exceed exception
 """
+
+# using bisect
+from bisect import bisect_right
+class Solution:
+    def maxTaxiEarnings(self, n: int, rides: List[List[int]]) -> int:
+        rides = sorted(rides, key=lambda x: x[1])
+        ends = [ride[1] for ride in rides]
+        dp = [0] * (len(rides)+1)
+        for i in range(1, len(rides)+1):
+            s, e, v =  rides[i-1]
+            non_overlaping_index = bisect_right(ends, s, 0, i-1)
+            taken = v + (e-s) + dp[non_overlaping_index]
+            not_taken = dp[i-1]
+            dp[i] = max(dp[i], max(taken, not_taken))
+        return dp[-1]
+
+############################# time exceding
 class Solution:
     def maxTaxiEarnings(self, n: int, rides: List[List[int]]) -> int:
         dp = [0 for i in range(n)]
