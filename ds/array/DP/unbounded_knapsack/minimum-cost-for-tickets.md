@@ -20,8 +20,28 @@ else find the min between ticket for day 1,7 and 30 and also add cost to each da
 ```
 <img width="742" height="469" alt="image" src="https://github.com/user-attachments/assets/99d85c14-7961-4f86-914f-7e268e6d7498" />
 
-
 ``` python
+# optimization: binary search
+from bisect import bisect_right
+class Solution:
+    def mincostTickets(self, days: list[int], costs: list[int]) -> int:
+        dp = [float("inf")]*(len(days)+1)
+        dp[0] = 0
+        period = [1,7,30]
+        for i in range(1, len(days)+1):
+            res = float("inf")
+            for j in range(len(costs)):
+                # search for just previous days where out side of current period boundary
+                searchval =  days[i-1]-period[j] if  days[i-1]-period[j]>= 0 else 0 
+                index = bisect_right(days,searchval,0,i-1)
+                res = min(res, dp[index] + costs[j])
+            dp[i] = res
+        print(dp)
+        return dp[-1]
+
+```
+``` python
+# here issue is that , we have to create index for all the days in dp irrespective of he is travelling on that day or not. 
 class Solution:
     def mincostTickets(self, days: List[int], costs: List[int]) -> int:
         # create entry for all date range either travelling date or not. idea is non travelling date will simply hold the min cost of last visited date to avoid search.
@@ -43,3 +63,4 @@ class Solution:
         print(dp)
         return dp[-1]
 ```
+
