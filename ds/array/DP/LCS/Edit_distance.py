@@ -44,6 +44,7 @@ class Solution:
                     dp[i][j] = max(i,j)
                     continue
                 if word2[i-1] == word1[j-1]:
+                    # when matched no operation is needed, it will take operation needed by previous step (dingonal)
                     dp[i][j] = dp[i-1][j-1]
                 else:
                     # if not match then option 1: delete or insert in word1 or word2 i.e (dp[i-1][j] or dp[i][j-1])
