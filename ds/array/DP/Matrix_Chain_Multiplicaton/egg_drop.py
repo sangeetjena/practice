@@ -1,6 +1,8 @@
 """
 https://leetcode.com/problems/super-egg-drop/description/
 
+https://www.youtube.com/watch?v=UvksR0hR9nA
+
 You are given k identical eggs and you have access to a building with n floors labeled from 1 to n.
 
 You know that there exists a floor f where 0 <= f <= n such that any egg dropped at a floor higher than f will break, and any egg dropped at or below floor f will not break.
@@ -47,7 +49,11 @@ class Solution:
                     continue
                 min_val_perfloor = 9999999
                 for l in range(0,j):
+                    # at l-th floot if we will throw an egg there would be two cases - 1- egg break or 2 -  egg service.
+                    # if egg service then the critical floor remains to check is j-k and eggs will remain as it is i.e i
+                    # if egg break then the critical floor would bve bellow l floor , and eggs remain = i-1 and floor remain as l-q
                     max_val = max(dp[i-1][l], dp[i][j-l-1])
+                    # after comparing from all the floor, find what is the min attempt it took comparing all the floors
                     min_val_perfloor = min(min_val_perfloor, max_val)
                 dp[i][j] = 1 + min_val_perfloor
         return dp[-1][-1]
