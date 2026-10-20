@@ -29,7 +29,7 @@ then increase the window size and reuse already calculated value for its earlier
 class Solution:
     def numTrees(self, n: int) -> int:
         nodes = [1] * (n+1)
-        
+        # base condition: for o and 1 window values will be 1 so window size will start from 2
         for window in range(2, n+1):
             total = 0
             for node in range(1, window+1):
