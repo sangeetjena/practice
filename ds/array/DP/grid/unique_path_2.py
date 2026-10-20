@@ -34,5 +34,26 @@ n == obstacleGrid[i].length
 1 <= m, n <= 100
 obstacleGrid[i][j] is 0 or 1.
 
-Note: similar to unique path but grid is given.
+Note: similar to unique path but grid is given. so at the current position parsiing if the blocker is there then mark it as 0 as it will not contribute to any additional path.
 """
+class Solution:
+    def uniquePathsWithObstacles(self, obstacleGrid: List[List[int]]) -> int:
+        if obstacleGrid[0][0] == 1 or obstacleGrid[-1][-1] == 1:
+            return 0
+        for i in range(len(obstacleGrid)):
+            for j in range(len(obstacleGrid[0])):
+                if i == 0  and j == 0:
+                    obstacleGrid[0][0] = 1
+                    continue
+                
+                if obstacleGrid[i][j] == 1:
+                    obstacleGrid[i][j] = 0
+                    continue
+                if i == 0 :
+                    obstacleGrid[i][j] = obstacleGrid[i][j-1]
+                    continue
+                if j == 0 :
+                    obstacleGrid[i][j] = obstacleGrid[i-1][j]
+                    continue
+                obstacleGrid[i][j] = obstacleGrid[i-1][j] + obstacleGrid[i][j-1]
+        return obstacleGrid[-1][-1]
