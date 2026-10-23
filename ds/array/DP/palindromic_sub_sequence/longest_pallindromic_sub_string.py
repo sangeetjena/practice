@@ -7,7 +7,21 @@ Approach1:
 =============
 dp implementation: https://www.youtube.com/watch?v=UflHuQj6MVA
 
+class Solution:
+    def longestPalindrome(self, s: str) -> str:
+        lps = ""
+        dp = [[False for i in range(len(s)+1)] for x in range(len(s)+1)]
+        for e in range(1, len(s)+1):
+            dp[e][e] = True
+            for st in range(e):
+                if s[st-1] == s[e-1] and (e-st<=1 or dp[st+1][e-1]):
+                    print(st, e, s[st-1], s[e-1])
+                    lps = max(lps, s[st-1: e])
+                    print(lps)
+                    dp[st][e] = True
 
+        print(dp)
+        return lps
 
 Approach2: (using pointer)
 ===========================
