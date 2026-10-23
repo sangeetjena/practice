@@ -52,3 +52,35 @@ class Solution:
                     dp[i][j] = dp[i - 1][j]
 
         return int(dp[n][m])
+
+
+
+# Memoisation 
+
+class Solution:
+    def __init__(self):
+        self.dp = {}
+    def find_lcs(self, s,t, si, ti):
+        res = 0
+        if ti == len(t):
+            return 1
+        if si == len(s):
+            return 0
+        if (si,ti) in self.dp.keys():
+            return self.dp[(si,ti)]
+        # if not match then increase the pointer for both the location
+        if s[si] == t[ti]:
+            res += self.find_lcs(s,t, si+1,ti+1)
+        # irrespective of mathc or not match i will explore other possibility 
+        res += self.find_lcs(s,t,si+1, ti)
+        self.dp[(si,ti)] = res
+        return res
+
+
+    
+    def numDistinct(self, s: str, t: str) -> int:
+        # base case
+        self.find_lcs(s,t,0,0)
+        print(self.dp)
+        return self.dp[(0,0)]
+        
