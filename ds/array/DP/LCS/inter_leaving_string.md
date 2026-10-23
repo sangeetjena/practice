@@ -40,3 +40,32 @@ class Solution:
 
         return dp[m][n]
 ```
+
+
+# Memoisation
+``` Python
+class Solution:
+
+    def find_interleaving( self,  s1, s2, s3, i, j, k):
+        # base case :
+        if k == len(s3):
+            return i==len(s1) and j == len(s2)
+        # Memoisation
+        if (i,j,k) in self.dp.keys():
+            return self.dp[(i,j,k)]
+        # print(i, j ,k)
+        if i<len(s1) and s1[i] == s3[k]:
+            if self.find_interleaving(s1,s2,s3, i+1,j,  k+1):
+                self.dp[(i,j,k)] = True
+                return True
+        if j< len(s2) and s2[j] == s3[k]:
+            if  self.find_interleaving(s1,s2,s3, i, j+1, k+1):
+                self.dp[(i,j,k)] = True
+                return True
+        self.dp[(i,j,k)] = False
+        return False
+
+    def isInterleave(self, s1: str, s2: str, s3: str) -> bool:
+        self.dp = {}
+        return self.find_interleaving(s1,s2,s3,0,0,0)
+```
