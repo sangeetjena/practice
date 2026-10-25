@@ -49,22 +49,27 @@ class Solution:
             dp[i] =  max(taken, not_taken)
         return dp[-1]
 
-############################# time exceding
+############################# memoisationi
+
+from bisect import bisect_left
 class Solution:
+    def dfs(self,rides, j, start):
+        if j >= len(rides):
+            return 0
+        if j in self.dp:
+            return self.dp[j]
+        ind = bisect_left(start, rides[j][1], j+1, len(rides))
+        # just take max between,  the next non overlapping trip and next trip if current trip not taken.
+        res = max(
+            self.dfs(rides, ind, start) + rides[j][2] + (rides[j][1] - rides[j][0]),
+            self.dfs(rides, j+1, start)
+            )
+        self.dp[j]  = res
+        return res
     def maxTaxiEarnings(self, n: int, rides: List[List[int]]) -> int:
-        dp = [0 for i in range(n)]
-        rides = sorted(rides)
-        for ride in rides:
-            s,e,tip = ride     
-            # why -1 because we are starting dp index positon from 0.
-            dp[e-1] = max(dp[e-1], max(dp[e-1-1], e-s+tip+dp[s-1]))
-            #.            ^existing val, this is to handle the case where previous points already updated the end location with higher value. 
-            #             ex: (1,8,100),(2,6,1),(6,8,2), so here 1,8 updated with highest value but when 6,8 will com, then we will check if the 
-            #             end positon is already updated with higher value by other trips or not.
-            #                           ^prev_val(not take, ^ take (prev end positon value (starting postition) + current =  if take then then (end-start)+tip +total money before current start trip
-            # update all the value from the end to it right side all the values
-            # to optimize it do binary search, search the 1st non zero value from 0: start position 
-            for i in range(e, n):
-                dp[i] = max(dp[i], dp[e-1])
-        print(dp)
-        return dp[-1]
+        rides.sort(key=lambda x:x[0])
+        start = [x[0] for x in rides]
+        self.dp = defaultdict(int)
+        self.dfs(rides, 0, start)
+        print(self.dp)
+        return self.dp[0]
