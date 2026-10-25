@@ -61,20 +61,23 @@ class Solution:
 
 
 
-======back tracking =====
+======back tracking - memoisation =====
+from typing import List
+
 class Solution:
+    def rec(self, ftarget, csm,res, i, candidates ):
+        if csm == 0:
+            return
+        if csm == self.dp.keys():
+            return self.dp[csm]
+        for j in range(i, len(candidates)):
+            if candidates[j] <= csm:
+                temp = copy.deepcopy(res) + [candidates[j]]
+                self.rec(ftarget, csm - candidates[j], copy.deepcopy(temp), j , candidates)
+                self.dp[ftarget - (csm - candidates[j])].append(temp)
+
+
     def combinationSum(self, candidates: List[int], target: int) -> List[List[int]]:
-        total_list = []
-        templist = []
-        def total_sums(candidates, target, templst,i):
-            print(type(templst))
-            print(templst)
-            if target==0:
-                total_list.append(templst)
-                return
-            if target < 0:
-                return
-            for i in range(i, len(candidates)):
-                total_sums(candidates, target-candidates[i],templst+[candidates[i]], i)
-        total_sums(candidates, target, templist,0)
-        return total_list
+        self.dp = defaultdict(list)
+        self.rec(target,target, [], 0 , candidates)
+        return self.dp[target]
