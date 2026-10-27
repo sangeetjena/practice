@@ -72,55 +72,21 @@ class Solution:
                         ans = min(ans, diff) 
         return ans
 
-===== or using dp pattern like subset sum quals to k.
- # Note: for negetive number we can find the max negetive number and shift the numbers so that all number will become positive then subset sum equals to k will work as it is.
- from typing import List
+===== or memoisation
 
-class Solution:
-    def minimumDifference(self, nums: List[int]) -> int:
-        n = len(nums) // 2  # number of elements in each group
-        minnum = min(nums)
-        # to handle negetive numbers.
-        if minnum <0:
-            nums = [i - minnum for i in nums]
+ class Solution:
+    def dfs(self, i, nums, currsm):
+        if i == len(nums):
+            return currsm
+        if (i, currsm) in self.dp:
+            return self.dp[(i, currsm)]
+        # i can say one set i will fill with +ve number and other set as -ve number and sum of two will give me min diff.
+        # that means in once call i will add the number to cummsm and in other call i will substract and then finally i will get the diffrence , then i have to take the minimum of both the decession
+        self.dp[(i,currsm)] = abs(min( self.dfs(i+1, nums, currsm + nums[i]), 
+                                    self.dfs(i+1, nums, currsm - nums[i])))
+        return self.dp[(i, currsm)]
+    def lastStoneWeightII(self, nums: List[int]) -> int:
+        self.dp = defaultdict(int)
+        return self.dfs(0, nums, 0)
 
-        print(nums)
-
-        mid_sum = sum(nums) // 2
-        print(mid_sum,n)
-
-        # Return list of achievable subset sums <= target
-        def subset_sum(nums, target):
-            dp = [[0] * (target + 1) for _ in range(len(nums) + 1)]
-            for i in range(1, len(nums) + 1):
-                for j in range(1, target + 1):
-                    if nums[i - 1] <= j:
-                        dp[i][j] = max(dp[i - 1][j], nums[i - 1] + dp[i - 1][j - nums[i - 1]])
-                    else:
-                        dp[i][j] = dp[i - 1][j]
-            # Extract all achievable sums from last row
-            print(dp)
-            return sorted(set(dp[len(nums)][j] for j in range(target + 1)))
-
-        # Divide into two halves and get subset sums
-        left_sum = subset_sum(nums[:n], mid_sum)
-        right_sum = subset_sum(nums[n:], mid_sum)
-        print(left_sum, right_sum)
-
-        # Two-pointer approach to find best sum <= mid_sum
-        l, h = 0, len(right_sum) - 1
-        maxsm = 0
-        while l < len(left_sum) and h >= 0:
-            sm = left_sum[l] + right_sum[h]
-            # as left and right array is sorted, and i started smallest index(value) from left and bigest value from right.
-            # so if the sum has became bigger than half the sum, that means i have to reduce the value from bigger side else increase from smaller side.
-            if sm <= mid_sum:
-                maxsm = max(maxsm, sm)
-                l += 1
-            else:
-                h -= 1
-
-        total = sum(nums)
-        print(maxsm, total)
-        return abs(total - 2 * maxsm)
-
+        
