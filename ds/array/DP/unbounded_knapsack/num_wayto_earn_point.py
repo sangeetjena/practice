@@ -41,6 +41,26 @@ Explanation: You can only earn 18 points by answering all questions.
 
 """
 # not time limit exceeding 
+# approach 1
+class Solution:
+    def solve(self, types, i, tar):
+        if i >= len(types):
+            return 0
+        if tar == 0:
+            return 1
+        take = 0
+        if tar - types[i][1] >= 0 and types[i][0] > 0:
+            types[i][0] -= 1
+            take = self.solve(types, i, tar - types[i][1])
+            types[i][0] += 1
+        nottake = self.solve(types, i + 1, tar)
+        return take + nottake
+
+    def waysToReachTarget(self, target, types):
+        return self.solve(types, 0, target)
+
+
+# approach 2
 from functools import cache
 class Solution:
     def waysToReachTarget(self, target: int, types: list[list[int]]) -> int:
