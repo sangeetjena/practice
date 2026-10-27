@@ -35,3 +35,25 @@ class Solution:
                 # if element is greater than sum value then we can't consider that element and only option left is without taking that elemen if sum can form using previous element.
                     dp[i][j] = dp[i-1][j]
         return dp[-1][-1]>0
+
+# memoisation 
+
+class Solution:
+    def dfs(self, currsm,target, i, nums):
+        if i == len(nums):
+            return 1 if currsm == target else 0
+        if (i,currsm) in self.dp:
+            return self.dp[(i, currsm)]
+        # similar to target sum either i will take or not take .
+        # there is another way to look at it , in one add value in other substract value and in this case target we have to take as 0
+        self.dp[(i,currsm)] = self.dfs(currsm + nums[i], target,i+1, nums) + self.dfs(currsm, target, i+1, nums)
+        return self.dp[(i,currsm)]
+
+    def canPartition(self, nums: list[int]) -> bool:
+        self.dp =  defaultdict(int)
+        sm = sum(nums)
+        if sm %2 !=0:
+            return False
+        target = sm // 2
+        res = self.dfs(0, target, 0 ,nums)
+        return True if res>0 else False
