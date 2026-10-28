@@ -26,3 +26,25 @@ class Solution:
                     dp[j][i] = max(dp[j-1][i] , dp[j][i-1])
         return dp[-1][-1]
         
+
+# memoisatin 
+
+class Solution:
+    def dfs(self, s1, s2, i, j):
+        if i > len(s1)-1 or j > len(s2)-1:
+            return 0
+        if (i, j) in self.dp:
+            return self.dp[(i, j)]
+        res = 0
+        if s1[i] == s2[j]:
+            res = 1 + self.dfs(s1, s2, i+1, j+1)
+        take1 = self.dfs(s1,s2, i+1, j)
+        take2 = self.dfs(s1, s2, i, j+1) 
+        res = max(res, take1, take2)
+        self.dp[(i,j)] = res
+        return res
+
+    def longestCommonSubsequence(self, text1: str, text2: str) -> int:
+        self.dp = defaultdict(int)
+        res = self.dfs(text1, text2, 0, 0)
+        return res
