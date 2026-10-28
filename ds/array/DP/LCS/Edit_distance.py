@@ -58,3 +58,29 @@ class Solution:
         print(dp)
         return lcs
         
+# memoisation 
+class Solution:
+    def dfs(self, i, j,  word1, word2):
+        if i> len(word1)-1 or j == len(word2):
+            if i > len(word1)-1:
+                return len(word2)-j
+            return len(word1) - i if j==len(word2)  else float("inf")
+        # memoisation
+        if (i, j) in self.dp:
+            return self.dp[(i, j)]
+        # if both the charactor matched then move both i and j 
+        if word1[i] == word2[j]:
+            self.dp[(i, j)] = self.dfs(i+1, j+1, word1, word2)
+        # if noth the char not match then insert or update or delete and either of any operation will increase count by 1 operation
+        else:
+            self.dp[(i, j)] =  1 + min(
+                self.dfs(i+1, j, word1, word2), # delete
+                self.dfs(i+1, j+1, word1, word2), # replace 
+                self.dfs(i, j+1, word1, word2) # insert
+            )
+        return self.dp[(i, j)]
+    def minDistance(self, word1: str, word2: str) -> int:
+        self.dp = defaultdict(int)
+        res = self.dfs(0, 0, word1, word2)
+        print(self.dp)
+        return res
