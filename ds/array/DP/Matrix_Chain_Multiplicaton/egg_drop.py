@@ -33,6 +33,45 @@ Output: 4
  
 
 """
+# memoisation 
+class Solution:
+    def dfs(self, s, e, egg):
+        # - s > e: no floors remain → 0 drops.
+        # - s == e: one floor remains → 1 drop.
+        # - egg == 0 with floors remaining: impossible → infinity.
+        # - egg == 1: test sequentially → e - s + 1 drops.
+        # base case
+        if s > e:
+            return 0
+        if egg == 0:
+            return float("inf")
+        if s == e:
+            return 1
+        if egg == 1:
+            return e - s + 1
+
+        # memoisation
+        state = (s, e, egg)
+        if state in self.dp:
+            return self.dp[state]
+
+        minval = float("inf")
+
+        # recurssion logic
+        for floor in range(s, e + 1):
+            egg_break = self.dfs(s, floor - 1, egg - 1)
+            egg_not_break = self.dfs(floor + 1, e, egg)
+
+            worst_case = 1 + max(egg_break, egg_not_break)
+            minval = min(minval, worst_case)
+
+        self.dp[state] = minval
+        return minval
+
+    def superEggDrop(self, k: int, n: int) -> int:
+        self.dp = {}
+        return self.dfs(1, n, k)
+  # Tabulation technique
 class Solution:
     def superEggDrop(self, k: int, n: int) -> int:
         dp = [[0 for _ in range(n+1)] for _ in range(k+1)]
