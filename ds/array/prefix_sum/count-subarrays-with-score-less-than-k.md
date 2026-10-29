@@ -43,6 +43,7 @@ Note:
 
 ```
 ## window
+``` python
 class Solution:
     def countSubarrays(self, nums: List[int], k: int) -> int:
         i,j = 0,0
@@ -53,7 +54,7 @@ class Solution:
             cnt+=(j-i)+1
         return cnt 
             
-                
+```                
 
 ## bruteforce
 ``` sql
