@@ -34,7 +34,29 @@ Explanation: The asteroid -6 makes the asteroid 3 and 5 explode, and then contin
 
 """
 
-
-"""
-
-"""
+class Solution:
+    def asteroidCollision(self, asteroids: list[int]) -> list[int]:
+        mstack = []
+        dct = {('u', 'd'): True,
+                ('u','u'): False,
+                ('d','u'): False,
+                ('d','d'): False }
+        for asteroid in asteroids:
+            s = 'u' if len(mstack)> 0 and mstack[-1]>0 else 'd'
+            e = 'u' if asteroid>0 else 'd'
+            while len(mstack)>0 and dct[s,e]:
+                if abs(mstack[-1]) > abs(asteroid):
+                    break
+                elif asteroid + mstack[-1] == 0:
+                    del mstack[-1]
+                    asteroid = 0
+                    break
+                else:
+                    del mstack[-1]
+                s = 'u' if len(mstack)> 0 and mstack[-1]>0 else 'd'
+            if asteroid == 0:
+                continue
+            if len(mstack) ==0 or not dct[s,e]:
+                mstack.append(asteroid)
+        print(mstack)
+        return mstack
