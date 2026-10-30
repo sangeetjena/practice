@@ -44,15 +44,15 @@ class Solution:
                     continue
                 if disc[v] == -1:  # not visited
                     dfs(v, u)
+                    # in backtracking check low of its child and current
                     low[u] = min(low[u], low[v])
                     if low[v] > disc[u]:
                         res.append([u, v])
                 else:
+                    # for the last call in the circle , check low of current node and discovery time of it child.
                     low[u] = min(low[u], disc[v])
 
-        for i in range(n):
-            if disc[i] == -1:
-                dfs(i, -1)
+        dfs(i, -1)
 
         return res
 
