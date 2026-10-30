@@ -37,22 +37,20 @@ class Solution:
         print(pattern)
         queue = deque([(beginWord,1)])
         mincnt = 999999
-        visited = []
+        visited = defaultdict(int)
         # common bfs pattern
         while len(queue)>0:
+            
             currWord, cnt = queue.popleft()
             if currWord == endWord:
                 print(currWord, endWord, cnt, mincnt)
                 mincnt = min(mincnt,cnt)
-            if currWord in visited:
-                continue
-            
+
             # find all patterns for the word
             for i in range(len(currWord)):
                 pat = currWord[:i] + '*' + currWord[i+1:]
                 for words in pattern[pat]:
-                    if words in visited:
-                        continue
-                    queue.append((words,cnt+1))
-            visited.append(currWord)
+                    if words not in visited or visited[words] > cnt +1:
+                        queue.append((words,cnt+1))
+            visited[currWord] = cnt
         return mincnt if mincnt!=999999 else 0
